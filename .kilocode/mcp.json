@@ -1,0 +1,1 @@
+{"mcpServers":{"figma-dev-mode":{"type":"http","url":"https://mcp.figma.com/mcp"},"memory":{"command":"npx","args":["-y","@modelcontextprotocol/server-memory"],"alwaysAllow":["read_graph"]}}}
