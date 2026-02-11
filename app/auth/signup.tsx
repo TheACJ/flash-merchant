@@ -1,3 +1,4 @@
+import { useRouter } from 'expo-router';
 import React, { useRef, useState } from 'react';
 import {
   KeyboardAvoidingView,
@@ -670,6 +671,7 @@ export { SignupScreen1, SignupScreen2, SignupScreen3, SignupScreen4 };
 
 // Default export for route navigation - Multi-step signup flow
 const SignupScreen = () => {
+  const router = useRouter();
   const [currentStep, setCurrentStep] = useState(1);
   const [userData, setUserData] = useState({});
 
@@ -681,7 +683,13 @@ const SignupScreen = () => {
   const handleComplete = (data: object) => {
     const finalData = { ...userData, ...data };
     console.log('Signup completed:', finalData);
-    // TODO: Navigate to next screen or call API
+    
+    // Navigate based on wallet type
+    if (finalData.walletType === 'create') {
+      router.push('/auth/create-wallet/seed_phrase');
+    } else if (finalData.walletType === 'import') {
+      router.push('/auth/login/seed-phrase');
+    }
   };
 
   switch (currentStep) {

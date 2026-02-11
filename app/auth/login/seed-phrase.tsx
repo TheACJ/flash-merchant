@@ -1,110 +1,97 @@
 import { router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import {
-    Alert,
-    Dimensions,
-    SafeAreaView,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Alert,
+  Dimensions,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 
 const { width } = Dimensions.get('window');
 const TOTAL_PHRASES = 12;
-
-const WORD_SUGGESTIONS: string[][] = [
-  ['able', 'absent', 'account', 'accident', 'account'],
-  ['abandon', 'report', 'appear', 'regard', 'announce'],
-  ['arrogant', 'pride'],
-];
 
 export default function SeedPhraseScreen() {
   const [seedPhrases, setSeedPhrases] = useState<string[]>(
     Array(TOTAL_PHRASES).fill('')
   );
   const [activeIndex, setActiveIndex] = useState(0);
+  const inputRefs = useRef<(TextInput | null)[]>([]);
 
-  const handleWordSelect = (word: string) => {
+  const handleCodeChange = (text: string, index: number) => {
     const updated = [...seedPhrases];
-    updated[activeIndex] = word;
+    updated[index] = text.trim();
     setSeedPhrases(updated);
 
-    // Move to next empty slot
-    const nextEmpty = updated.findIndex(
-      (val, idx) => idx > activeIndex && val === ''
-    );
-    if (nextEmpty !== -1) {
-      setActiveIndex(nextEmpty);
-    } else {
-      const firstEmpty = updated.findIndex((val) => val === '');
-      if (firstEmpty !== -1) {
-        setActiveIndex(firstEmpty);
-      }
+    // Move to next slot if text is entered
+    if (text.length > 0 && index < TOTAL_PHRASES - 1) {
+      inputRefs.current[index + 1]?.focus();
     }
   };
 
-  const handleSlotPress = (index: number) => {
-    setActiveIndex(index);
-  };
-
-  const handleClearSlot = (index: number) => {
-    const updated = [...seedPhrases];
-    updated[index] = '';
-    setSeedPhrases(updated);
-    setActiveIndex(index);
+  const handleKeyPress = (e: any, index: number) => {
+    // Handle backspace to go to previous slot
+    if (e.nativeEvent.key === 'Backspace' && seedPhrases[index] === '' && index > 0) {
+      inputRefs.current[index - 1]?.focus();
+    }
   };
 
   const handleVerify = () => {
-    const allFilled = seedPhrases.every((phrase) => phrase !== '');
+    const allFilled = seedPhrases.every((phrase) => phrase.trim() !== '');
+    const filledCount = seedPhrases.filter((p) => p.trim() !== '').length;
+
     if (allFilled) {
-      Alert.alert('Success', 'Wallet verified successfully!', [
+      // Log the seed phrase for verification
+      console.log('Seed phrases entered:', seedPhrases.join(' '));
+      
+      Alert.alert('Success', 'Wallet imported successfully!', [
         {
           text: 'Continue',
-          onPress: () => router.replace('/'),
+          onPress: () => router.replace('/auth/create-wallet/notice'),
         },
       ]);
     } else {
-      const emptyCount = seedPhrases.filter((p) => p === '').length;
       Alert.alert(
         'Incomplete',
-        `Please fill ${emptyCount} remaining seed phrase slot${emptyCount > 1 ? 's' : ''}.`
+        `Please fill in all ${TOTAL_PHRASES} seed phrase slots (${filledCount}/${TOTAL_PHRASES} filled)`
       );
     }
   };
 
-  const filledCount = seedPhrases.filter((p) => p !== '').length;
-
   const renderSeedSlot = (index: number) => {
     const isActive = activeIndex === index;
-    const isFilled = seedPhrases[index] !== '';
+    const isFilled = seedPhrases[index].trim() !== '';
 
     return (
-      <TouchableOpacity
+      <View
         key={index}
         style={[
           styles.seedSlot,
           isActive && styles.seedSlotActive,
           isFilled && styles.seedSlotFilled,
         ]}
-        onPress={() =>
-          isFilled ? handleClearSlot(index) : handleSlotPress(index)
-        }
-        activeOpacity={0.7}
       >
         <View style={styles.seedNumber}>
           <Text style={styles.seedNumberText}>{index + 1}</Text>
         </View>
-        {isFilled ? (
-          <Text style={styles.seedWord} numberOfLines={1}>
-            {seedPhrases[index]}
-          </Text>
-        ) : isActive ? (
-          <View style={styles.cursor} />
-        ) : null}
-      </TouchableOpacity>
+        <TextInput
+          ref={(ref) => { inputRefs.current[index] = ref; }}
+          style={styles.seedInput}
+          value={seedPhrases[index]}
+          onChangeText={(text) => handleCodeChange(text, index)}
+          onKeyPress={(e) => handleKeyPress(e, index)}
+          onFocus={() => setActiveIndex(index)}
+         /*  placeholder={`Word ${index + 1}`}
+          placeholderTextColor="#999" */
+          autoCapitalize="none"
+          autoCorrect={false}
+        />
+      </View>
     );
   };
 
@@ -123,12 +110,9 @@ export default function SeedPhraseScreen() {
 
       {/* Header */}
       <View style={styles.headerContainer}>
-        <Text style={styles.title}>Enter your seed phrase</Text>
+        <Text style={styles.title}>Import Wallet</Text>
         <Text style={styles.subtitle}>
-          Enter the correct seed phrase for each number
-        </Text>
-        <Text style={styles.progress}>
-          {filledCount} / {TOTAL_PHRASES} completed
+          Enter your 12-word seed phrase in order
         </Text>
       </View>
 
@@ -151,46 +135,14 @@ export default function SeedPhraseScreen() {
         <TouchableOpacity
           style={[
             styles.verifyButton,
-            filledCount === TOTAL_PHRASES && styles.verifyButtonActive,
+            seedPhrases.every((p) => p.trim() !== '') && styles.verifyButtonActive,
           ]}
           onPress={handleVerify}
           activeOpacity={0.8}
         >
-          <Text style={styles.verifyButtonText}>Verify Seed Phrase</Text>
+          <Text style={styles.verifyButtonText}>Import Wallet</Text>
         </TouchableOpacity>
       </ScrollView>
-
-      {/* Word Suggestions */}
-      <View style={styles.suggestionsContainer}>
-        <Text style={styles.suggestionsLabel}>Select a word:</Text>
-        {WORD_SUGGESTIONS.map((row, rowIndex) => (
-          <View key={rowIndex} style={styles.suggestionRow}>
-            {row.map((word, wordIndex) => {
-              const isUsed = seedPhrases.includes(word);
-              return (
-                <TouchableOpacity
-                  key={`${rowIndex}-${wordIndex}`}
-                  style={[
-                    styles.suggestionChip,
-                    isUsed && styles.suggestionChipUsed,
-                  ]}
-                  onPress={() => handleWordSelect(word)}
-                  activeOpacity={0.6}
-                >
-                  <Text
-                    style={[
-                      styles.suggestionText,
-                      isUsed && styles.suggestionTextUsed,
-                    ]}
-                  >
-                    {word}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-        ))}
-      </View>
     </SafeAreaView>
   );
 }
@@ -232,17 +184,11 @@ const styles = StyleSheet.create({
     color: '#000000',
   },
   subtitle: {
-    fontWeight: '500',
-    fontSize: 18,
-    lineHeight: 25,
+    fontWeight: '400',
+    fontSize: 16,
+    lineHeight: 22,
     textAlign: 'center',
     color: '#323333',
-  },
-  progress: {
-    fontSize: 14,
-    color: '#0F6EC0',
-    fontWeight: '500',
-    marginTop: 5,
   },
   scrollContainer: {
     flex: 1,
@@ -250,7 +196,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: 30,
     paddingTop: 20,
-    paddingBottom: 20,
+    paddingBottom: 40,
   },
   seedGrid: {
     gap: 16,
@@ -265,7 +211,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
     borderColor: '#D2D6E1',
-    borderStyle: 'dashed',
     borderRadius: 15,
     flexDirection: 'row',
     alignItems: 'center',
@@ -275,10 +220,8 @@ const styles = StyleSheet.create({
   seedSlotActive: {
     borderColor: '#0F6EC0',
     borderWidth: 2,
-    borderStyle: 'dashed',
   },
   seedSlotFilled: {
-    borderStyle: 'solid',
     borderColor: '#0F6EC0',
     backgroundColor: 'rgba(15, 114, 199, 0.05)',
   },
@@ -297,16 +240,12 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     textAlign: 'center',
   },
-  seedWord: {
+  seedInput: {
+    flex: 1,
     fontSize: 14,
     color: '#000000',
     fontWeight: '500',
-    flex: 1,
-  },
-  cursor: {
-    width: 2,
-    height: 20,
-    backgroundColor: '#0F6EC0',
+    padding: 0,
   },
   verifyButton: {
     height: 55,
@@ -314,7 +253,7 @@ const styles = StyleSheet.create({
     borderRadius: 15,
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 25,
+    marginTop: 30,
   },
   verifyButtonActive: {
     backgroundColor: '#0F6EC0',
@@ -324,55 +263,5 @@ const styles = StyleSheet.create({
     color: '#F5F5F5',
     textAlign: 'center',
     fontWeight: '500',
-  },
-  suggestionsContainer: {
-    paddingHorizontal: 30,
-    paddingBottom: 30,
-    paddingTop: 15,
-    gap: 10,
-    backgroundColor: '#FFFFFF',
-    borderTopWidth: 1,
-    borderTopColor: '#E5E5E5',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 5,
-    elevation: 5,
-  },
-  suggestionsLabel: {
-    fontSize: 13,
-    color: '#666',
-    fontWeight: '500',
-    marginBottom: 2,
-  },
-  suggestionRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 10,
-  },
-  suggestionChip: {
-    backgroundColor: 'rgba(15, 114, 199, 0.2)',
-    borderWidth: 1,
-    borderColor: '#D2D6E1',
-    borderRadius: 7,
-    paddingVertical: 14,
-    paddingHorizontal: 15,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  suggestionChipUsed: {
-    backgroundColor: 'rgba(15, 114, 199, 0.05)',
-    borderColor: '#E5E5E5',
-  },
-  suggestionText: {
-    fontWeight: '500',
-    fontSize: 15,
-    textAlign: 'center',
-    color: '#000000',
-  },
-  suggestionTextUsed: {
-    color: '#999',
   },
 });

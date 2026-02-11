@@ -2,7 +2,6 @@ import { FontAwesome } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
 import React from 'react';
 import { useColorScheme } from 'react-native';
-// import { Colors } from '../../constants/Colors';
 
 function TabBarIcon(props: {
   name: React.ComponentProps<typeof FontAwesome>['name'];
@@ -17,12 +16,21 @@ export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor:    colorScheme === 'dark' ? '#FFA500' : '#FF4500', // Example: Orange for dark, Red for light
+        tabBarActiveTintColor: '#0F6EC0',
+        tabBarInactiveTintColor: '#6D6D6D',
         headerShown: false,
         tabBarStyle: {
-          backgroundColor: '#FFFFFF', 
-          borderTopColor: '#FFA500',
-        }
+          backgroundColor: '#F4F6F5',
+          borderTopColor: '#D2D6E1',
+          borderTopWidth: 0.5,
+          height: 90,
+          paddingTop: 10,
+        },
+        tabBarLabelStyle: {
+          fontFamily: 'SF Pro',
+          fontSize: 10,
+          fontWeight: '400',
+        },
       }}>
       <Tabs.Screen
         name="home"
@@ -32,24 +40,17 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="requests"
+        options={{
+          title: 'Request',
+          tabBarIcon: ({ color }) => <TabBarIcon name="arrow-down" color={color} />,
+        }}
+      />
+      <Tabs.Screen
         name="history"
         options={{
-          title: 'Activity',
+          title: 'History',
           tabBarIcon: ({ color }) => <TabBarIcon name="history" color={color} />,
-        }}
-      />
-      <Tabs.Screen
-        name="pos"
-        options={{
-          title: 'Terminal',
-          tabBarIcon: ({ color }) => <TabBarIcon name="calculator" color={color} />, // or qrcode
-        }}
-      />
-      <Tabs.Screen
-        name="wallet"
-        options={{
-          title: 'Wallet',
-          tabBarIcon: ({ color }) => <TabBarIcon name="google-wallet" color={color} />,
         }}
       />
       <Tabs.Screen
@@ -57,13 +58,6 @@ export default function TabLayout() {
         options={{
           title: 'Settings',
           tabBarIcon: ({ color }) => <TabBarIcon name="cog" color={color} />,
-        }}
-      />
-      {/* Hide other nested routes from tab bar if any */}
-      <Tabs.Screen
-        name="requests"
-        options={{
-          href: null,
         }}
       />
     </Tabs>
