@@ -1,7 +1,7 @@
 import { Stack } from 'expo-router';
 import React from 'react';
 
-export default function StakeLayout() {
+export default function MiscLayout() {
   return (
     <Stack
       screenOptions={{
@@ -10,9 +10,9 @@ export default function StakeLayout() {
         contentStyle: { backgroundColor: '#F5F5F5' },
       }}
     >
-      <Stack.Screen name="index" />
-      <Stack.Screen name="EnterStakeAmount" />
-      <Stack.Screen name="StakePayment" />
+      <Stack.Screen name="notifications/index" />
+      <Stack.Screen name="chat/index" />
+      <Stack.Screen name="chat/[conversationId]" />
     </Stack>
   );
 }

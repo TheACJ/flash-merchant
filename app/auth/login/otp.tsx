@@ -40,7 +40,7 @@ export default function EnterCodeScreen() {
       // Auto-navigate when complete
       if (cleanedText.length === CODE_LENGTH) {
         setTimeout(() => {
-          router.push('/auth/login/seed-phrase');
+          router.push('/auth/login/import-wallet');
         }, 300);
       }
     }
@@ -48,7 +48,7 @@ export default function EnterCodeScreen() {
 
   const handleNext = () => {
     if (code.length === CODE_LENGTH) {
-      router.push('/auth/login/seed-phrase');
+      router.push('/auth/login/import-wallet');
     }
   };
 

@@ -1,0 +1,33 @@
+import { Stack } from 'expo-router';
+import React from 'react';
+
+export default function WalletLayout() {
+  return (
+    <Stack
+      screenOptions={{
+        headerShown: false,
+        animation: 'slide_from_right',
+        contentStyle: { backgroundColor: '#F5F5F5' },
+      }}
+    >
+      {/* Deposit Routes */}
+      <Stack.Screen name="deposit/index" />
+      <Stack.Screen name="deposit/EnterFlashTag" />
+      <Stack.Screen name="deposit/SelectAssetAmount" />
+      <Stack.Screen name="deposit/TransactionSummary" />
+
+      {/* Withdraw Routes */}
+      <Stack.Screen name="withdraw/index" />
+      <Stack.Screen name="withdraw/SelectFlashTagAsset" />
+      <Stack.Screen name="withdraw/EnterAmount" />
+      <Stack.Screen name="withdraw/EnterPin" />
+
+      {/* Stake Routes */}
+      <Stack.Screen name="stake/index" />
+      <Stack.Screen name="stake/EnterStakeAmount" />
+      <Stack.Screen name="stake/StakePayment" />
+
+      <Stack.Screen name="profile" />
+    </Stack>
+  );
+}

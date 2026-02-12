@@ -100,6 +100,21 @@ const router = useRouter();
     router.push('/wallet/stake');
   };
 
+  // Navigate to notifications
+  const handleNotifications = () => {
+    router.push('/misc/notifications');
+  };
+
+  // Navigate to chat list
+  const handleChat = () => {
+    router.push('/misc/chat');
+  };
+
+  // Navigate to profile
+  const handleProfile = () =>  {
+    router.push('/settings/profile')
+  }
+
   const renderBadge = (count: number) => {
     if (count <= 0) return null;
     return (
@@ -121,7 +136,12 @@ const router = useRouter();
       <View style={styles.headerContainer}>
         {/* Top Row - User Info & Actions */}
         <View style={styles.topRow}>
-          <View style={styles.userSection}>
+          <TouchableOpacity 
+            style={styles.userSection}
+            activeOpacity={0.7}
+            accessibilityLabel="User Profile"
+            onPress={handleProfile}
+            >
             <View style={styles.avatar}>
               <User size={24} color="#E7E7E7" strokeWidth={2} />
             </View>
@@ -131,7 +151,7 @@ const router = useRouter();
               </View>
               <Text style={styles.usernameText}>{userName}</Text>
             </View>
-          </View>
+            </TouchableOpacity>
 
           <View style={styles.actionIconsRow}>
             <TouchableOpacity
@@ -139,6 +159,7 @@ const router = useRouter();
               activeOpacity={0.7}
               accessibilityLabel="Messages"
               accessibilityHint={`You have ${messageCount} unread messages`}
+              onPress={handleChat}
             >
               <MessageCircle size={24} color="#DFE0E2" strokeWidth={1.5} />
               {renderBadge(messageCount)}
@@ -149,6 +170,7 @@ const router = useRouter();
               activeOpacity={0.7}
               accessibilityLabel="Notifications"
               accessibilityHint={`You have ${notificationCount} notifications`}
+              onPress={handleNotifications}
             >
               <Bell size={24} color="#DFE0E2" strokeWidth={1.5} />
               {renderBadge(notificationCount)}
@@ -275,7 +297,7 @@ const styles = StyleSheet.create({
   headerContainer: {
     backgroundColor: '#0F6EC0',
     paddingTop: Platform.OS === 'ios' ? 50 : 20,
-    marginTop: 50,
+    // marginTop: 50,
     paddingBottom: 25,
     borderBottomLeftRadius: 30,
     borderBottomRightRadius: 30,

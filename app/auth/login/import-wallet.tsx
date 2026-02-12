@@ -52,7 +52,7 @@ export default function SeedPhraseScreen() {
       Alert.alert('Success', 'Wallet imported successfully!', [
         {
           text: 'Continue',
-          onPress: () => router.replace('/auth/create-wallet/notice'),
+          onPress: () => router.replace('/auth/login/notice'),
         },
       ]);
     } else {

@@ -5,7 +5,7 @@ export default function LoginLayout() {
         <Stack screenOptions={{ headerShown: false }}>
             <Stack.Screen name="index" />
             <Stack.Screen name="otp" />
-            <Stack.Screen name="seed-phrase" />
+            <Stack.Screen name="import-wallet" />
         </Stack>
     );
 }

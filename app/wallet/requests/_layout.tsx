@@ -1,7 +1,7 @@
-import { Stack } from 'expo-router';
 import React from 'react';
+import { Stack } from 'expo-router';
 
-export default function WithdrawLayout() {
+export default function RequestsLayout() {
   return (
     <Stack
       screenOptions={{
@@ -11,9 +11,8 @@ export default function WithdrawLayout() {
       }}
     >
       <Stack.Screen name="index" />
-      <Stack.Screen name="SelectFlashTagAsset" />
-      <Stack.Screen name="EnterAmount" />
-      <Stack.Screen name="EnterPin" />
+      <Stack.Screen name="RequestDetails" />
+      <Stack.Screen name="AwaitingFiat" />
     </Stack>
   );
 }
