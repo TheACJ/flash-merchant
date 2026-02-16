@@ -1,3 +1,4 @@
+import { colors, layout, typography } from '@/constants/theme';
 import { FontAwesome } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
 import React from 'react';
@@ -16,20 +17,20 @@ export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: '#0F6EC0',
+        tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: '#6D6D6D',
         headerShown: false,
         tabBarStyle: {
-          backgroundColor: '#F4F6F5',
-          borderTopColor: '#D2D6E1',
+          backgroundColor: colors.backgroundInput,
+          borderTopColor: colors.border,
           borderTopWidth: 0.5,
-          height: 90,
+          height: layout.buttonHeight,
           paddingTop: 10,
         },
         tabBarLabelStyle: {
-          fontFamily: 'SF Pro',
-          fontSize: 10,
-          fontWeight: '400',
+          fontFamily: typography.fontFamilySF,
+          fontSize: typography.fontSize.xs,
+          fontWeight: typography.fontWeight.regular,
         },
       }}>
       <Tabs.Screen

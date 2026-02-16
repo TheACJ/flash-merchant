@@ -1,9 +1,24 @@
-import { router } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
+// auth/login/otp.tsx
+import { STORAGE_KEYS } from '@/constants/storage';
+import {
+  borderRadius,
+  colors,
+  layout,
+  shadows,
+  spacing,
+  typography,
+} from '@/constants/theme';
+import merchantApi from '@/services/MerchantApiService';
+import { router, useLocalSearchParams } from 'expo-router';
+import * as SecureStore from 'expo-secure-store';
+import { ArrowLeft, ChevronRight, RefreshCw } from 'lucide-react-native';
 import React, { useEffect, useRef, useState } from 'react';
 import {
+  ActivityIndicator,
+  Alert,
   Dimensions,
   SafeAreaView,
+  StatusBar,
   StyleSheet,
   Text,
   TextInput,
@@ -15,12 +30,14 @@ const { width } = Dimensions.get('window');
 const CODE_LENGTH = 6;
 
 export default function EnterCodeScreen() {
+  const params = useLocalSearchParams();
+  const phoneNumber = params.phoneNumber as string;
   const [code, setCode] = useState('');
   const [resendTimer, setResendTimer] = useState(30);
+  const [loading, setLoading] = useState(false);
   const inputRef = useRef<TextInput>(null);
 
   useEffect(() => {
-    // Auto-focus the input on mount
     setTimeout(() => inputRef.current?.focus(), 100);
   }, []);
 
@@ -32,57 +49,87 @@ export default function EnterCodeScreen() {
   }, [resendTimer]);
 
   const handleCodeChange = (text: string) => {
-    // Only allow numbers and limit to CODE_LENGTH
     const cleanedText = text.replace(/[^0-9]/g, '');
     if (cleanedText.length <= CODE_LENGTH) {
       setCode(cleanedText);
 
-      // Auto-navigate when complete
       if (cleanedText.length === CODE_LENGTH) {
-        setTimeout(() => {
-          router.push('/auth/login/import-wallet');
+        setTimeout(async () => {
+          await handleOTPVerified(cleanedText);
         }, 300);
       }
     }
   };
 
-  const handleNext = () => {
-    if (code.length === CODE_LENGTH) {
-      router.push('/auth/login/import-wallet');
+  const handleOTPVerified = async (otp?: string) => {
+    const otpCode = otp || code;
+    setLoading(true);
+    try {
+      const response = await merchantApi.loginComplete({
+        phone_number: phoneNumber,
+        otp: otpCode,
+      });
+
+      if (!response.success) {
+        Alert.alert('Error', response.error || 'Invalid OTP');
+        setCode('');
+        inputRef.current?.focus();
+        setLoading(false);
+        return;
+      }
+
+      const existingMnemonic = await SecureStore.getItemAsync(
+        STORAGE_KEYS.wallet_mnemonic_primary
+      );
+
+      if (existingMnemonic) {
+        router.replace('/(tabs)/home');
+      } else {
+        router.push('/auth/login/import-wallet');
+      }
+    } catch (error) {
+      const err = merchantApi.handleError(error);
+      Alert.alert('Error', err.error);
+      setCode('');
+      inputRef.current?.focus();
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleResend = () => {
-    if (resendTimer === 0) {
-      setResendTimer(30);
-      setCode('');
-      inputRef.current?.focus();
+  const handleNext = () => {
+    if (code.length === CODE_LENGTH) {
+      handleOTPVerified();
     }
   };
+
+  const handleResend = async () => {
+    if (resendTimer > 0) return;
+    try {
+      const response = await merchantApi.resendOTP(phoneNumber);
+      if (response.success) {
+        setResendTimer(30);
+        setCode('');
+        inputRef.current?.focus();
+        Alert.alert('Success', 'OTP resent successfully');
+      } else {
+        Alert.alert('Error', response.error || 'Failed to resend OTP');
+      }
+    } catch (error) {
+      const err = merchantApi.handleError(error);
+      Alert.alert('Error', err.error);
+    }
+  };
+
+  const maskedPhone = phoneNumber
+    ? `${phoneNumber.slice(0, 4)}****${phoneNumber.slice(-3)}`
+    : '';
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar style="dark" />
+      <StatusBar barStyle="dark-content" backgroundColor={colors.background} />
 
-      {/* Back Button */}
-      <TouchableOpacity
-        style={styles.backButton}
-        onPress={() => router.back()}
-        activeOpacity={0.7}
-      >
-        <Text style={styles.backArrow}>‹</Text>
-      </TouchableOpacity>
-
-      {/* Header */}
-      <View style={styles.headerContainer}>
-        <Text style={styles.title}>Enter code</Text>
-        <Text style={styles.subtitle}>
-          We've sent a 6-digit verification code to your number. Enter it below
-          to continue
-        </Text>
-      </View>
-
-      {/* Hidden TextInput for keyboard input */}
+      {/* Hidden Input */}
       <TextInput
         ref={inputRef}
         style={styles.hiddenInput}
@@ -94,78 +141,121 @@ export default function EnterCodeScreen() {
         caretHidden
       />
 
-      {/* Code Display Boxes */}
-      <View style={styles.codeContainer}>
-        {Array.from({ length: CODE_LENGTH }).map((_, index) => {
-          const isFilled = index < code.length;
-          const isActive = index === code.length;
-
-          return (
-            <TouchableOpacity
-              key={index}
-              style={[
-                styles.codeBox,
-                isActive && styles.codeBoxActive,
-                isFilled && styles.codeBoxFilled,
-              ]}
-              onPress={() => inputRef.current?.focus()}
-              activeOpacity={0.8}
-            >
-              {isFilled ? (
-                <Text style={styles.codeDigit}>{code[index]}</Text>
-              ) : isActive ? (
-                <View style={styles.cursor} />
-              ) : null}
-            </TouchableOpacity>
-          );
-        })}
+      {/* Header */}
+      <View style={styles.header}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => router.back()}
+          activeOpacity={0.7}
+        >
+          <ArrowLeft
+            size={layout.iconSize.md}
+            color={colors.textPrimary}
+            strokeWidth={2}
+          />
+        </TouchableOpacity>
       </View>
 
-      {/* Tap to enter code hint */}
-      <TouchableOpacity
-        style={styles.hintContainer}
-        onPress={() => inputRef.current?.focus()}
-        activeOpacity={0.8}
-      >
-        <Text style={styles.hintText}>Tap boxes to enter code</Text>
-      </TouchableOpacity>
+      {/* Content */}
+      <View style={styles.content}>
+        <View style={styles.headerSection}>
+          <Text style={styles.title}>Verification</Text>
+          <Text style={styles.subtitle}>
+            Enter the 6-digit code sent to{'\n'}
+            <Text style={styles.phoneHighlight}>{maskedPhone}</Text>
+          </Text>
+        </View>
 
-      {/* Resend */}
-      <TouchableOpacity
-        style={styles.resendContainer}
-        onPress={handleResend}
-        disabled={resendTimer > 0}
-      >
-        <Text style={styles.resendText}>
-          {resendTimer > 0
-            ? `Resend code in ${resendTimer}s`
-            : 'Resend code'}
-        </Text>
-      </TouchableOpacity>
+        {/* Code Boxes */}
+        <TouchableOpacity
+          style={styles.codeContainer}
+          onPress={() => inputRef.current?.focus()}
+          activeOpacity={1}
+        >
+          {Array.from({ length: CODE_LENGTH }).map((_, index) => {
+            const isFilled = index < code.length;
+            const isActive = index === code.length;
 
-      {/* Next Button */}
-      <TouchableOpacity
-        style={[
-          styles.nextButton,
-          code.length === CODE_LENGTH && styles.nextButtonActive,
-        ]}
-        onPress={handleNext}
-        activeOpacity={0.8}
-        disabled={code.length !== CODE_LENGTH}
-      >
-        <Text style={styles.nextButtonText}>Next</Text>
-      </TouchableOpacity>
+            return (
+              <View
+                key={index}
+                style={[
+                  styles.codeBox,
+                  isActive && styles.codeBoxActive,
+                  isFilled && styles.codeBoxFilled,
+                ]}
+              >
+                {isFilled ? (
+                  <Text style={styles.codeDigit}>{code[index]}</Text>
+                ) : isActive ? (
+                  <View style={styles.cursor} />
+                ) : null}
+              </View>
+            );
+          })}
+        </TouchableOpacity>
 
+        {/* Resend */}
+        <TouchableOpacity
+          style={styles.resendContainer}
+          onPress={handleResend}
+          disabled={resendTimer > 0}
+          activeOpacity={0.7}
+        >
+          <RefreshCw
+            size={layout.iconSize.xs}
+            color={resendTimer > 0 ? colors.textMuted : colors.primary}
+            strokeWidth={2}
+          />
+          <Text
+            style={[
+              styles.resendText,
+              resendTimer > 0 && styles.resendTextDisabled,
+            ]}
+          >
+            {resendTimer > 0
+              ? `Resend code in ${resendTimer}s`
+              : 'Resend code'}
+          </Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Bottom */}
+      <View style={styles.bottomSection}>
+        <TouchableOpacity
+          style={[
+            styles.nextButton,
+            (code.length !== CODE_LENGTH || loading) && styles.buttonDisabled,
+          ]}
+          onPress={handleNext}
+          activeOpacity={0.85}
+          disabled={code.length !== CODE_LENGTH || loading}
+        >
+          {loading ? (
+            <ActivityIndicator size="small" color={colors.textWhite} />
+          ) : null}
+          <Text style={styles.nextButtonText}>
+            {loading ? 'Verifying…' : 'Verify & Continue'}
+          </Text>
+          {!loading && (
+            <ChevronRight
+              size={layout.iconSize.sm}
+              color={colors.textWhite}
+              strokeWidth={2.5}
+            />
+          )}
+        </TouchableOpacity>
+      </View>
     </SafeAreaView>
   );
 }
 
-const codeBoxSize = Math.min((width - 60 - 50) / CODE_LENGTH, 50);
+const codeBoxSize = Math.min((width - 48 - 50) / CODE_LENGTH, 52);
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F5F5',
+    backgroundColor: colors.background,
   },
   hiddenInput: {
     position: 'absolute',
@@ -173,114 +263,119 @@ const styles = StyleSheet.create({
     width: 1,
     height: 1,
   },
+  header: {
+    height: layout.headerHeight,
+    paddingHorizontal: layout.screenPaddingHorizontal,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
   backButton: {
-    position: 'absolute',
-    top: 50,
-    left: 15,
-    zIndex: 10,
-    width: 40,
-    height: 40,
+    width: layout.minTouchTarget,
+    height: layout.minTouchTarget,
+    backgroundColor: colors.backgroundInput,
+    borderRadius: borderRadius.full,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  backArrow: {
-    fontSize: 36,
-    color: '#000000',
-    fontWeight: '300',
-    marginTop: -4,
+  content: {
+    flex: 1,
+    paddingHorizontal: layout.screenPaddingHorizontal,
   },
-  headerContainer: {
+  headerSection: {
     alignItems: 'center',
-    paddingTop: 60,
-    paddingHorizontal: 30,
-    gap: 15,
+    marginTop: spacing.xl,
+    marginBottom: spacing['2xl'],
   },
   title: {
-    fontWeight: '600',
-    fontSize: 25,
-    lineHeight: 25,
+    fontSize: typography.fontSize['4xl'],
+    fontWeight: typography.fontWeight.bold,
     textAlign: 'center',
-    color: '#000000',
+    color: colors.textPrimary,
+    marginBottom: spacing.sm,
+    letterSpacing: typography.letterSpacing.tight,
   },
   subtitle: {
-    fontWeight: '400',
-    fontSize: 16,
-    lineHeight: 22,
+    fontSize: typography.fontSize.base,
+    fontWeight: typography.fontWeight.regular,
+    lineHeight: typography.fontSize.base * typography.lineHeight.normal,
     textAlign: 'center',
-    color: '#323333',
-    paddingHorizontal: 10,
+    color: colors.textTertiary,
+  },
+  phoneHighlight: {
+    color: colors.primary,
+    fontWeight: typography.fontWeight.semibold,
   },
   codeContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
-    gap: 10,
-    marginTop: 40,
-    paddingHorizontal: 30,
+    gap: spacing.sm,
+    marginBottom: spacing['2xl'],
   },
   codeBox: {
     width: codeBoxSize,
-    height: codeBoxSize + 15,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 8,
+    height: codeBoxSize + 8,
+    backgroundColor: colors.backgroundCard,
+    borderRadius: borderRadius.md,
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#E8E8E8',
+    borderWidth: 1.5,
+    borderColor: colors.borderLight,
   },
   codeBoxActive: {
+    borderColor: colors.primary,
     borderWidth: 2,
-    borderColor: '#0F6EC0',
+    ...shadows.sm,
   },
   codeBoxFilled: {
-    borderColor: '#0F6EC0',
-    borderWidth: 1,
-    backgroundColor: '#FFFFFF',
+    borderColor: colors.primary,
+    backgroundColor: colors.primaryLight,
   },
   codeDigit: {
-    fontWeight: '500',
-    fontSize: 20,
+    fontSize: typography.fontSize.xl,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.textPrimary,
     textAlign: 'center',
-    color: '#000000',
   },
   cursor: {
     width: 2,
     height: 24,
-    backgroundColor: '#0F6EC0',
-  },
-  hintContainer: {
-    alignItems: 'center',
-    marginTop: 15,
-  },
-  hintText: {
-    fontSize: 14,
-    color: '#999',
-    fontWeight: '400',
+    backgroundColor: colors.primary,
+    borderRadius: borderRadius.full,
   },
   resendContainer: {
+    flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 20,
+    justifyContent: 'center',
+    gap: spacing.sm,
   },
   resendText: {
-    fontSize: 14,
-    color: '#0F6EC0',
-    fontWeight: '500',
+    fontSize: typography.fontSize.base,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.primary,
+  },
+  resendTextDisabled: {
+    color: colors.textMuted,
+  },
+  bottomSection: {
+    paddingHorizontal: layout.screenPaddingHorizontal,
+    paddingBottom: spacing['2xl'],
   },
   nextButton: {
-    marginHorizontal: 30,
-    marginTop: 30,
-    height: 55,
-    backgroundColor: 'rgba(15, 114, 199, 0.4)',
-    borderRadius: 15,
+    height: layout.buttonHeight,
+    backgroundColor: colors.primary,
+    borderRadius: borderRadius.lg,
     justifyContent: 'center',
     alignItems: 'center',
+    flexDirection: 'row',
+    gap: spacing.sm,
+    ...shadows.button,
   },
-  nextButtonActive: {
-    backgroundColor: '#0F6EC0',
+  buttonDisabled: {
+    opacity: 0.45,
   },
   nextButtonText: {
-    fontSize: 16,
-    color: '#F5F5F5',
-    textAlign: 'center',
-    fontWeight: '400',
-  }
+    fontSize: typography.fontSize.md,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.textWhite,
+  },
 });

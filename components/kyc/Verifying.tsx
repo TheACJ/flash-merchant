@@ -9,6 +9,7 @@ import {
   Text,
   View,
 } from "react-native";
+import { colors, typography } from '@/constants/theme';
 
 interface VerifyingProps {
   title?: string;
@@ -57,7 +58,7 @@ export default function Verifying({ title, message }: VerifyingProps) {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="dark-content" backgroundColor="#F5F5F5" />
+      <StatusBar barStyle="dark-content" backgroundColor={colors.background} />
       <View style={styles.container}>
         <Animated.View
           style={[styles.spinner, { transform: [{ rotate: spin }]}]}
@@ -96,7 +97,7 @@ const DOT_SIZE = 12;
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: "#F5F5F5",
+    backgroundColor: colors.background,
   },
   container: {
     flex: 1,
@@ -108,14 +109,14 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   title: {
-    fontSize: 20,
-    fontWeight: "600",
-    color: "#000000",
+    fontSize: typography.fontSize.xl,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.textPrimary,
     marginBottom: 8,
   },
   message: {
-    fontSize: 14,
-    color: "#657084",
+    fontSize: typography.fontSize.base,
+    color: colors.textTertiary,
     textAlign: "center",
   },
   spinner: {
@@ -130,7 +131,7 @@ const styles = StyleSheet.create({
     borderRadius: DOT_SIZE / 2,
   },
   arcPrimary: {
-    backgroundColor: "#0F6EC0",
+    backgroundColor: colors.primary,
   },
   arcGray: {
     backgroundColor: "#AFAFB0",

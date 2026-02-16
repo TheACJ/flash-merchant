@@ -1,14 +1,15 @@
+import { borderRadius, colors, layout, typography } from '@/constants/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
-    StyleSheet,
-    Text,
-    TextInput,
-    TextStyle,
-    TouchableOpacity,
-    View,
-    ViewStyle,
+  StyleSheet,
+  Text,
+  TextInput,
+  TextStyle,
+  TouchableOpacity,
+  View,
+  ViewStyle,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -30,7 +31,7 @@ export default function BankDetailsScreen() {
           onPress={() => router.back()}
           activeOpacity={0.7}
         >
-          <Ionicons name="chevron-back" size={24} color="#000000" />
+          <Ionicons name="chevron-back" size={24} color={colors.textPrimary} />
         </TouchableOpacity>
         <Text style={styles.headerTitle as TextStyle}>Account details</Text>
         <View style={styles.placeholder as ViewStyle} />
@@ -46,7 +47,7 @@ export default function BankDetailsScreen() {
             activeOpacity={0.7}
           >
             <Text style={styles.placeholderText as TextStyle}>Select bank</Text>
-            <Ionicons name="chevron-down" size={20} color="#323333" />
+            <Ionicons name="chevron-down" size={20} color={colors.textSecondary} />
           </TouchableOpacity>
         </View>
 
@@ -59,7 +60,7 @@ export default function BankDetailsScreen() {
               value={accountNumber}
               onChangeText={setAccountNumber}
               placeholder="Account number"
-              placeholderTextColor="#657084"
+              placeholderTextColor={colors.textTertiary}
               keyboardType="numeric"
               maxLength={10}
             />
@@ -75,7 +76,7 @@ export default function BankDetailsScreen() {
               value={accountName}
               onChangeText={setAccountName}
               placeholder="Account name"
-              placeholderTextColor="#657084"
+              placeholderTextColor={colors.textTertiary}
             />
           </View>
         </View>
@@ -98,7 +99,7 @@ export default function BankDetailsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F5F5',
+    backgroundColor: colors.background,
   },
   header: {
     flexDirection: 'row',
@@ -111,9 +112,9 @@ const styles = StyleSheet.create({
     padding: 4,
   },
   headerTitle: {
-    fontSize: 25,
-    fontWeight: '600',
-    color: '#000000',
+    fontSize: typography.fontSize['4xl'],
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.textPrimary,
   },
   placeholder: {
     width: 40,
@@ -127,29 +128,29 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   label: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#000000',
+    fontSize: typography.fontSize.md,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.textPrimary,
     marginBottom: 8,
   },
   inputContainer: {
-    height: 60,
-    backgroundColor: '#F4F6F5',
-    borderRadius: 15,
+    height: layout.inputHeight,
+    backgroundColor: colors.backgroundInput,
+    borderRadius: borderRadius.lg,
     borderWidth: 1,
-    borderColor: '#D2D6E1',
+    borderColor: colors.border,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 20,
   },
   placeholderText: {
-    fontSize: 16,
-    color: '#657084',
+    fontSize: typography.fontSize.md,
+    color: colors.textTertiary,
   },
   input: {
-    fontSize: 16,
-    color: '#000000',
+    fontSize: typography.fontSize.md,
+    color: colors.textPrimary,
     flex: 1,
   },
   buttonContainer: {
@@ -157,15 +158,15 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
   nextButton: {
-    height: 60,
-    backgroundColor: '#0F6EC0',
-    borderRadius: 15,
+    height: layout.buttonHeight,
+    backgroundColor: colors.primary,
+    borderRadius: borderRadius.lg,
     justifyContent: 'center',
     alignItems: 'center',
   },
   nextButtonText: {
-    fontSize: 16,
-    color: '#F5F5F5',
-    fontWeight: '400',
+    fontSize: typography.fontSize.md,
+    color: colors.textLight,
+    fontWeight: typography.fontWeight.regular,
   },
 });

@@ -1,11 +1,27 @@
+// auth/login/import-wallet.tsx
+import {
+  borderRadius,
+  colors,
+  layout,
+  shadows,
+  spacing,
+  typography,
+} from '@/constants/theme';
+import * as Clipboard from 'expo-clipboard';
 import { router } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
+import {
+  ArrowLeft,
+  ChevronRight,
+  ClipboardPaste,
+  KeyRound,
+} from 'lucide-react-native';
 import React, { useRef, useState } from 'react';
 import {
   Alert,
   Dimensions,
   SafeAreaView,
   ScrollView,
+  StatusBar,
   StyleSheet,
   Text,
   TextInput,
@@ -16,112 +32,169 @@ import {
 const { width } = Dimensions.get('window');
 const TOTAL_PHRASES = 12;
 
-export default function SeedPhraseScreen() {
+export default function ImportWalletScreen() {
+  const [inputText, setInputText] = useState('');
   const [seedPhrases, setSeedPhrases] = useState<string[]>(
     Array(TOTAL_PHRASES).fill('')
   );
-  const [activeIndex, setActiveIndex] = useState(0);
-  const inputRefs = useRef<(TextInput | null)[]>([]);
+  const inputRef = useRef<TextInput>(null);
 
-  const handleCodeChange = (text: string, index: number) => {
-    const updated = [...seedPhrases];
-    updated[index] = text.trim();
-    setSeedPhrases(updated);
+  const handleTextChange = (text: string) => {
+    setInputText(text);
+    const words = text
+      .trim()
+      .split(/\s+/)
+      .filter((w) => w.length > 0);
+    const newPhrases = Array(TOTAL_PHRASES).fill('');
+    words.forEach((word, index) => {
+      if (index < TOTAL_PHRASES) {
+        newPhrases[index] = word.toLowerCase();
+      }
+    });
+    setSeedPhrases(newPhrases);
+  };
 
-    // Move to next slot if text is entered
-    if (text.length > 0 && index < TOTAL_PHRASES - 1) {
-      inputRefs.current[index + 1]?.focus();
+  const handlePaste = async () => {
+    try {
+      const text = await Clipboard.getStringAsync();
+      if (text) {
+        handleTextChange(text);
+      }
+    } catch {
+      // Clipboard access failed
     }
   };
 
-  const handleKeyPress = (e: any, index: number) => {
-    // Handle backspace to go to previous slot
-    if (e.nativeEvent.key === 'Backspace' && seedPhrases[index] === '' && index > 0) {
-      inputRefs.current[index - 1]?.focus();
-    }
-  };
-
-  const handleVerify = () => {
-    const allFilled = seedPhrases.every((phrase) => phrase.trim() !== '');
+  const handleImport = async () => {
     const filledCount = seedPhrases.filter((p) => p.trim() !== '').length;
 
-    if (allFilled) {
-      // Log the seed phrase for verification
-      console.log('Seed phrases entered:', seedPhrases.join(' '));
-      
-      Alert.alert('Success', 'Wallet imported successfully!', [
-        {
-          text: 'Continue',
-          onPress: () => router.replace('/auth/login/notice'),
-        },
-      ]);
-    } else {
+    if (filledCount !== TOTAL_PHRASES) {
       Alert.alert(
         'Incomplete',
-        `Please fill in all ${TOTAL_PHRASES} seed phrase slots (${filledCount}/${TOTAL_PHRASES} filled)`
+        `Please enter all ${TOTAL_PHRASES} words (${filledCount}/${TOTAL_PHRASES} entered)`
       );
+      return;
     }
+
+    const mnemonic = seedPhrases.join(' ');
+    router.push({
+      pathname: '/auth/login/loading',
+      params: { mnemonic },
+    });
   };
 
+  const filledCount = seedPhrases.filter((p) => p.trim() !== '').length;
+  const allFilled = filledCount === TOTAL_PHRASES;
+
   const renderSeedSlot = (index: number) => {
-    const isActive = activeIndex === index;
-    const isFilled = seedPhrases[index].trim() !== '';
+    const word = seedPhrases[index];
+    const isFilled = word.trim() !== '';
 
     return (
       <View
         key={index}
-        style={[
-          styles.seedSlot,
-          isActive && styles.seedSlotActive,
-          isFilled && styles.seedSlotFilled,
-        ]}
+        style={[styles.seedSlot, isFilled && styles.seedSlotFilled]}
       >
         <View style={styles.seedNumber}>
           <Text style={styles.seedNumberText}>{index + 1}</Text>
         </View>
-        <TextInput
-          ref={(ref) => { inputRefs.current[index] = ref; }}
-          style={styles.seedInput}
-          value={seedPhrases[index]}
-          onChangeText={(text) => handleCodeChange(text, index)}
-          onKeyPress={(e) => handleKeyPress(e, index)}
-          onFocus={() => setActiveIndex(index)}
-         /*  placeholder={`Word ${index + 1}`}
-          placeholderTextColor="#999" */
-          autoCapitalize="none"
-          autoCorrect={false}
-        />
+        <Text
+          style={[styles.seedWord, !isFilled && styles.seedWordEmpty]}
+        >
+          {word || '—'}
+        </Text>
       </View>
     );
   };
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar style="dark" />
-
-      {/* Back Button */}
-      <TouchableOpacity
-        style={styles.backButton}
-        onPress={() => router.back()}
-        activeOpacity={0.7}
-      >
-        <Text style={styles.backArrow}>‹</Text>
-      </TouchableOpacity>
+      <StatusBar barStyle="dark-content" backgroundColor={colors.background} />
 
       {/* Header */}
-      <View style={styles.headerContainer}>
-        <Text style={styles.title}>Import Wallet</Text>
-        <Text style={styles.subtitle}>
-          Enter your 12-word seed phrase in order
-        </Text>
+      <View style={styles.header}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => router.back()}
+          activeOpacity={0.7}
+        >
+          <ArrowLeft
+            size={layout.iconSize.md}
+            color={colors.textPrimary}
+            strokeWidth={2}
+          />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Import Wallet</Text>
+        <View style={{ width: layout.minTouchTarget }} />
       </View>
 
-      {/* Seed Phrase Grid */}
       <ScrollView
         style={styles.scrollContainer}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
       >
+        {/* Subtitle */}
+        <View style={styles.subtitleSection}>
+          <View style={styles.subtitleIcon}>
+            <KeyRound
+              size={layout.iconSize.lg}
+              color={colors.primary}
+              strokeWidth={1.8}
+            />
+          </View>
+          <Text style={styles.subtitle}>
+            Enter or paste your 12-word recovery phrase to restore your wallet
+          </Text>
+        </View>
+
+        {/* Input Field */}
+        <TouchableOpacity
+          style={styles.inputContainer}
+          onPress={() => inputRef.current?.focus()}
+          activeOpacity={0.95}
+        >
+          <TextInput
+            ref={inputRef}
+            style={styles.textArea}
+            value={inputText}
+            onChangeText={handleTextChange}
+            placeholder="Type or paste your recovery phrase here…"
+            placeholderTextColor={colors.textPlaceholder}
+            multiline
+            autoCapitalize="none"
+            autoCorrect={false}
+          />
+          <TouchableOpacity
+            style={styles.pasteButton}
+            onPress={handlePaste}
+            activeOpacity={0.7}
+          >
+            <ClipboardPaste
+              size={layout.iconSize.xs}
+              color={colors.primary}
+              strokeWidth={2}
+            />
+            <Text style={styles.pasteButtonText}>Paste</Text>
+          </TouchableOpacity>
+        </TouchableOpacity>
+
+        {/* Progress */}
+        <View style={styles.progressRow}>
+          <Text style={styles.progressLabel}>
+            {filledCount} of {TOTAL_PHRASES} words
+          </Text>
+          <View style={styles.progressBar}>
+            <View
+              style={[
+                styles.progressFill,
+                { width: `${(filledCount / TOTAL_PHRASES) * 100}%` },
+              ]}
+            />
+          </View>
+        </View>
+
+        {/* Seed Phrase Grid */}
         <View style={styles.seedGrid}>
           {Array.from({ length: TOTAL_PHRASES / 2 }).map((_, rowIndex) => (
             <View key={rowIndex} style={styles.seedRow}>
@@ -131,137 +204,204 @@ export default function SeedPhraseScreen() {
           ))}
         </View>
 
-        {/* Verify Button */}
+        {/* Import Button */}
         <TouchableOpacity
           style={[
-            styles.verifyButton,
-            seedPhrases.every((p) => p.trim() !== '') && styles.verifyButtonActive,
+            styles.importButton,
+            allFilled && styles.importButtonActive,
           ]}
-          onPress={handleVerify}
-          activeOpacity={0.8}
+          onPress={handleImport}
+          activeOpacity={0.85}
+          disabled={!allFilled}
         >
-          <Text style={styles.verifyButtonText}>Import Wallet</Text>
+          <Text style={styles.importButtonText}>Import Wallet</Text>
+          <ChevronRight
+            size={layout.iconSize.sm}
+            color={colors.textWhite}
+            strokeWidth={2.5}
+          />
         </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
   );
 }
 
-const slotWidth = (width - 60 - 24) / 2;
+const SLOT_WIDTH = (width - layout.screenPaddingHorizontal * 2 - spacing.sm) / 2;
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F5F5',
+    backgroundColor: colors.background,
+  },
+  header: {
+    height: layout.headerHeight,
+    paddingHorizontal: layout.screenPaddingHorizontal,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
   backButton: {
-    position: 'absolute',
-    top: 50,
-    left: 15,
-    zIndex: 10,
-    width: 40,
-    height: 40,
+    width: layout.minTouchTarget,
+    height: layout.minTouchTarget,
+    backgroundColor: colors.backgroundInput,
+    borderRadius: borderRadius.full,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  backArrow: {
-    fontSize: 36,
-    color: '#000000',
-    fontWeight: '300',
-    marginTop: -4,
-  },
-  headerContainer: {
-    alignItems: 'center',
-    paddingTop: 60,
-    paddingHorizontal: 30,
-    gap: 10,
-  },
-  title: {
-    fontWeight: '600',
-    fontSize: 25,
-    lineHeight: 25,
-    textAlign: 'center',
-    color: '#000000',
-  },
-  subtitle: {
-    fontWeight: '400',
-    fontSize: 16,
-    lineHeight: 22,
-    textAlign: 'center',
-    color: '#323333',
+  headerTitle: {
+    fontSize: typography.fontSize.lg,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.textPrimary,
+    letterSpacing: typography.letterSpacing.tight,
   },
   scrollContainer: {
     flex: 1,
   },
   scrollContent: {
-    paddingHorizontal: 30,
-    paddingTop: 20,
-    paddingBottom: 40,
+    paddingHorizontal: layout.screenPaddingHorizontal,
+    paddingTop: spacing.lg,
+    paddingBottom: spacing['3xl'],
+  },
+  subtitleSection: {
+    alignItems: 'center',
+    gap: spacing.md,
+    marginBottom: spacing.xl,
+  },
+  subtitleIcon: {
+    width: 52,
+    height: 52,
+    borderRadius: borderRadius.full,
+    backgroundColor: colors.primaryLight,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  subtitle: {
+    fontSize: typography.fontSize.base,
+    fontWeight: typography.fontWeight.regular,
+    lineHeight: typography.fontSize.base * typography.lineHeight.normal,
+    textAlign: 'center',
+    color: colors.textTertiary,
+    paddingHorizontal: spacing.lg,
+  },
+  inputContainer: {
+    backgroundColor: colors.backgroundCard,
+    borderWidth: 2,
+    borderColor: colors.primaryMedium,
+    borderRadius: borderRadius.lg,
+    padding: spacing.base,
+    marginBottom: spacing.lg,
+    minHeight: 100,
+  },
+  textArea: {
+    fontSize: typography.fontSize.base,
+    fontWeight: typography.fontWeight.regular,
+    color: colors.textPrimary,
+    minHeight: 60,
+    textAlignVertical: 'top',
+    lineHeight: typography.fontSize.base * typography.lineHeight.relaxed,
+  },
+  pasteButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-end',
+    gap: spacing.xs,
+    paddingVertical: spacing.xs,
+    paddingHorizontal: spacing.md,
+    backgroundColor: colors.primaryLight,
+    borderRadius: borderRadius.full,
+    marginTop: spacing.sm,
+  },
+  pasteButtonText: {
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.primary,
+  },
+  progressRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    marginBottom: spacing.lg,
+  },
+  progressLabel: {
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.textTertiary,
+    minWidth: 100,
+  },
+  progressBar: {
+    flex: 1,
+    height: 4,
+    backgroundColor: colors.borderLight,
+    borderRadius: borderRadius.full,
+    overflow: 'hidden',
+  },
+  progressFill: {
+    height: '100%',
+    backgroundColor: colors.primary,
+    borderRadius: borderRadius.full,
   },
   seedGrid: {
-    gap: 16,
+    gap: spacing.sm,
+    marginBottom: spacing.xl,
   },
   seedRow: {
     flexDirection: 'row',
-    gap: 24,
+    gap: spacing.sm,
   },
   seedSlot: {
-    width: slotWidth,
+    flex: 1,
     height: 48,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.backgroundCard,
     borderWidth: 1,
-    borderColor: '#D2D6E1',
-    borderRadius: 15,
+    borderColor: colors.borderLight,
+    borderRadius: borderRadius.md,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingLeft: 10,
-    paddingRight: 10,
-  },
-  seedSlotActive: {
-    borderColor: '#0F6EC0',
-    borderWidth: 2,
+    paddingLeft: spacing.md,
+    gap: spacing.sm,
   },
   seedSlotFilled: {
-    borderColor: '#0F6EC0',
-    backgroundColor: 'rgba(15, 114, 199, 0.05)',
+    borderColor: colors.primary,
+    backgroundColor: colors.primaryLight,
   },
   seedNumber: {
-    width: 24,
-    height: 24,
-    backgroundColor: '#0F6EC0',
-    borderRadius: 12,
+    width: 22,
+    height: 22,
+    backgroundColor: colors.primary,
+    borderRadius: borderRadius.full,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 8,
   },
   seedNumberText: {
-    fontSize: 12,
-    color: '#FFFFFF',
-    fontWeight: '500',
-    textAlign: 'center',
+    fontSize: typography.fontSize.xs,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.textWhite,
   },
-  seedInput: {
+  seedWord: {
     flex: 1,
-    fontSize: 14,
-    color: '#000000',
-    fontWeight: '500',
-    padding: 0,
+    fontSize: typography.fontSize.base,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.textPrimary,
   },
-  verifyButton: {
-    height: 55,
-    backgroundColor: 'rgba(15, 114, 199, 0.4)',
-    borderRadius: 15,
+  seedWordEmpty: {
+    color: colors.textPlaceholder,
+  },
+  importButton: {
+    height: layout.buttonHeight,
+    backgroundColor: colors.primaryDisabled,
+    borderRadius: borderRadius.lg,
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 30,
+    flexDirection: 'row',
+    gap: spacing.sm,
   },
-  verifyButtonActive: {
-    backgroundColor: '#0F6EC0',
+  importButtonActive: {
+    backgroundColor: colors.primary,
+    ...shadows.button,
   },
-  verifyButtonText: {
-    fontSize: 16,
-    color: '#F5F5F5',
-    textAlign: 'center',
-    fontWeight: '500',
+  importButtonText: {
+    fontSize: typography.fontSize.md,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.textWhite,
   },
 });

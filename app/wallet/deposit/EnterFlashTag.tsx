@@ -1,17 +1,18 @@
 import { ArrowLeft, AtSign } from 'lucide-react-native';
 import React, { useRef, useState } from 'react';
 import {
-    Keyboard,
-    KeyboardAvoidingView,
-    Platform,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    TouchableWithoutFeedback,
-    View,
+  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  TouchableWithoutFeedback,
+  View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { borderRadius, colors, layout, typography } from '@/constants/theme';
 
 interface EnterFlashTagProps {
   initialValue?: string;
@@ -77,7 +78,7 @@ export default function EnterFlashTag({
               accessibilityLabel="Go back"
               accessibilityRole="button"
             >
-              <ArrowLeft size={24} color="#000000" strokeWidth={2} />
+              <ArrowLeft size={24} color={colors.textPrimary} strokeWidth={2} />
             </TouchableOpacity>
             <Text style={styles.headerTitle}>Physical deposit</Text>
             <View style={styles.headerSpacer} />
@@ -95,7 +96,7 @@ export default function EnterFlashTag({
                 ]}
               >
                 <View style={styles.inputPrefix}>
-                  <AtSign size={20} color="#657084" strokeWidth={2} />
+                  <AtSign size={20} color={colors.textTertiary} strokeWidth={2} />
                 </View>
                 <TextInput
                   ref={inputRef}
@@ -103,7 +104,7 @@ export default function EnterFlashTag({
                   value={flashTag.replace('@', '')}
                   onChangeText={handleChangeText}
                   placeholder="username"
-                  placeholderTextColor="#AFAFB0"
+                  placeholderTextColor={colors.textPlaceholder}
                   autoCapitalize="none"
                   autoCorrect={false}
                   returnKeyType="next"
@@ -152,7 +153,7 @@ export default function EnterFlashTag({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F5F5',
+    backgroundColor: colors.background,
   },
   keyboardView: {
     flex: 1,
@@ -168,14 +169,14 @@ const styles = StyleSheet.create({
     width: 50,
     height: 50,
     borderRadius: 25,
-    backgroundColor: '#F4F6F5',
+    backgroundColor: colors.backgroundInput,
     justifyContent: 'center',
     alignItems: 'center',
   },
   headerTitle: {
-    fontSize: 25,
-    fontWeight: '600',
-    color: '#000000',
+    fontSize: typography.fontSize['4xl'],
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.textPrimary,
     textAlign: 'center',
   },
   headerSpacer: {
@@ -190,67 +191,67 @@ const styles = StyleSheet.create({
     gap: 15,
   },
   inputLabel: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#000000',
-    lineHeight: 22,
+    fontSize: typography.fontSize.md,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.textPrimary,
+    lineHeight: typography.lineHeight.normal,
   },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F4F6F5',
+    backgroundColor: colors.backgroundInput,
     borderWidth: 1,
-    borderColor: '#D2D6E1',
-    borderRadius: 15,
-    height: 60,
+    borderColor: colors.border,
+    borderRadius: borderRadius.lg,
+    height: layout.inputHeight,
     paddingHorizontal: 16,
   },
   inputContainerFocused: {
-    borderColor: '#0F6EC0',
+    borderColor: colors.borderActive,
     borderWidth: 2,
   },
   inputContainerError: {
-    borderColor: '#C31D1E',
+    borderColor: colors.error,
   },
   inputPrefix: {
     marginRight: 10,
   },
   input: {
     flex: 1,
-    fontSize: 16,
-    color: '#000000',
+    fontSize: typography.fontSize.md,
+    color: colors.textPrimary,
     height: '100%',
   },
   errorText: {
-    fontSize: 14,
-    color: '#C31D1E',
+    fontSize: typography.fontSize.base,
+    color: colors.error,
     marginTop: -5,
   },
   helperText: {
-    fontSize: 14,
-    color: '#657084',
-    lineHeight: 20,
+    fontSize: typography.fontSize.base,
+    color: colors.textTertiary,
+    lineHeight: typography.lineHeight.relaxed,
   },
   bottomContainer: {
     paddingHorizontal: 52,
     paddingBottom: Platform.OS === 'ios' ? 40 : 30,
   },
   nextButton: {
-    backgroundColor: '#0F6EC0',
-    borderRadius: 15,
-    height: 60,
+    backgroundColor: colors.primary,
+    borderRadius: borderRadius.lg,
+    height: layout.buttonHeight,
     justifyContent: 'center',
     alignItems: 'center',
   },
   nextButtonDisabled: {
-    backgroundColor: '#DCDCDD',
+    backgroundColor: colors.borderLight,
   },
   nextButtonText: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#F5F5F5',
+    fontSize: typography.fontSize.md,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.textLight,
   },
   nextButtonTextDisabled: {
-    color: '#AFAFB0',
+    color: colors.textPlaceholder,
   },
 });

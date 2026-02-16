@@ -1,12 +1,12 @@
 import { ArrowLeft, Delete, User } from 'lucide-react-native';
 import React, { useCallback, useState } from 'react';
 import {
-    Platform,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    Vibration,
-    View,
+  Platform,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  Vibration,
+  View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Asset, CustomerInfo } from './types';
@@ -28,6 +28,8 @@ const KEYPAD_KEYS = [
 
 const MAX_AMOUNT = 100000;
 const MAX_DECIMALS = 2;
+
+import { borderRadius, colors, layout, spacing, typography } from '@/constants/theme';
 
 export default function EnterAmount({
   customer,
@@ -132,7 +134,7 @@ export default function EnterAmount({
           activeOpacity={0.7}
           accessibilityLabel="Go back"
         >
-          <ArrowLeft size={24} color="#000000" strokeWidth={2} />
+          <ArrowLeft size={24} color={colors.textPrimary} strokeWidth={2} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Physical withdrawal</Text>
         <View style={styles.headerSpacer} />
@@ -144,7 +146,7 @@ export default function EnterAmount({
         <View style={styles.customerInfo}>
           <View style={styles.avatarContainer}>
             <View style={styles.avatar}>
-              <User size={20} color="#657084" strokeWidth={2} />
+              <User size={20} color={colors.textTertiary} strokeWidth={2} />
             </View>
           </View>
           <View style={styles.customerDetails}>
@@ -212,7 +214,7 @@ export default function EnterAmount({
                 }
               >
                 {key === 'delete' ? (
-                  <Delete size={24} color="#000000" strokeWidth={2} />
+                  <Delete size={24} color={colors.textPrimary} strokeWidth={2} />
                 ) : (
                   <Text style={styles.keypadKeyText}>{key}</Text>
                 )}
@@ -228,7 +230,7 @@ export default function EnterAmount({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F5F5',
+    backgroundColor: colors.background,
   },
   header: {
     flexDirection: 'row',
@@ -240,32 +242,32 @@ const styles = StyleSheet.create({
   backButton: {
     width: 50,
     height: 50,
-    borderRadius: 25,
-    backgroundColor: '#F4F6F5',
+    borderRadius: borderRadius.full,
+    backgroundColor: colors.backgroundInput,
     justifyContent: 'center',
     alignItems: 'center',
   },
   headerTitle: {
-    fontSize: 25,
-    fontWeight: '600',
-    color: '#000000',
+    fontSize: typography.fontSize['4xl'],
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.textPrimary,
     textAlign: 'center',
   },
   headerSpacer: {
     width: 50,
   },
   customerCard: {
-    marginHorizontal: 52,
-    marginTop: 30,
-    padding: 20,
-    backgroundColor: '#F4F6F5',
-    borderRadius: 10,
+    marginHorizontal: spacing['3xl'],
+    marginTop: spacing.xl,
+    padding: spacing.lg,
+    backgroundColor: colors.backgroundInput,
+    borderRadius: borderRadius.md,
   },
   cardLabel: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#000000',
-    marginBottom: 10,
+    fontSize: typography.fontSize.md,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.textPrimary,
+    marginBottom: spacing.sm,
   },
   customerInfo: {
     flexDirection: 'row',
@@ -273,18 +275,18 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   avatarContainer: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: '#F5F5F5',
+    width: layout.avatarSize.md,
+    height: layout.avatarSize.md,
+    borderRadius: borderRadius.full,
+    backgroundColor: colors.background,
     justifyContent: 'center',
     alignItems: 'center',
   },
   avatar: {
     width: 30,
     height: 30,
-    borderRadius: 15,
-    backgroundColor: '#657084',
+    borderRadius: borderRadius.full,
+    backgroundColor: colors.textTertiary,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -293,86 +295,86 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   customerName: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#000000',
+    fontSize: typography.fontSize.md,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.textPrimary,
   },
   customerAddress: {
-    fontSize: 14,
-    color: '#323333',
+    fontSize: typography.fontSize.base,
+    color: colors.textSecondary,
   },
   amountContainer: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 40,
-    paddingHorizontal: 52,
+    paddingVertical: spacing['3xl'],
+    paddingHorizontal: spacing['3xl'],
   },
   amountText: {
     fontSize: 50,
-    fontWeight: '700',
-    color: '#AFAFB0',
+    fontWeight: typography.fontWeight.bold,
+    color: colors.textTertiary,
     textAlign: 'center',
   },
   amountTextActive: {
-    color: '#000000',
+    color: colors.textPrimary,
   },
   errorText: {
-    fontSize: 14,
-    color: '#C31D1E',
-    marginTop: 10,
+    fontSize: typography.fontSize.base,
+    color: colors.error,
+    marginTop: spacing.sm,
     textAlign: 'center',
   },
   continueButtonContainer: {
-    paddingHorizontal: 52,
-    marginBottom: 20,
+    paddingHorizontal: spacing['3xl'],
+    marginBottom: spacing.md,
   },
   continueButton: {
-    backgroundColor: '#0F6EC0',
-    borderRadius: 15,
-    height: 60,
+    backgroundColor: colors.primary,
+    borderRadius: borderRadius.lg,
+    height: layout.buttonHeight,
     justifyContent: 'center',
     alignItems: 'center',
   },
   continueButtonDisabled: {
-    backgroundColor: 'rgba(15, 114, 199, 0.3)',
+    backgroundColor: colors.primaryDisabled,
   },
   continueButtonText: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#F5F5F5',
+    fontSize: typography.fontSize.md,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.textLight,
   },
   continueButtonTextDisabled: {
-    color: '#F5F5F5',
+    color: colors.textLight,
     opacity: 0.7,
   },
   keypadContainer: {
     flex: 1,
     justifyContent: 'flex-end',
-    paddingHorizontal: 52,
-    paddingBottom: Platform.OS === 'ios' ? 40 : 30,
-    gap: 18,
+    paddingHorizontal: spacing['3xl'],
+    paddingBottom: Platform.OS === 'ios' ? spacing.xl : spacing.md,
+    gap: spacing.md,
   },
   keypadRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    gap: 18,
+    gap: spacing.md,
   },
   keypadKey: {
     flex: 1,
     height: 58,
-    backgroundColor: 'rgba(15, 114, 199, 0.07)',
+    backgroundColor: colors.primaryLight,
     borderWidth: 1,
-    borderColor: '#D2D6E1',
-    borderRadius: 5,
+    borderColor: colors.border,
+    borderRadius: borderRadius.sm,
     justifyContent: 'center',
     alignItems: 'center',
   },
   keypadKeyDelete: {
-    backgroundColor: 'rgba(15, 114, 199, 0.07)',
+    backgroundColor: colors.primaryLight,
   },
   keypadKeyText: {
-    fontSize: 18,
-    fontWeight: '500',
-    color: '#000000',
+    fontSize: typography.fontSize.lg,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.textPrimary,
   },
 });

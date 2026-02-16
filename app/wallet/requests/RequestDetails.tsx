@@ -1,24 +1,22 @@
+import * as Clipboard from 'expo-clipboard';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import {
+  AlertTriangle,
+  ArrowLeft,
+  Copy,
+  Star
+} from 'lucide-react-native';
 import React, { useState } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  ScrollView,
   Platform,
-  Alert,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import {
-  ArrowLeft,
-  ArrowDownToLine,
-  ArrowUpFromLine,
-  Star,
-  AlertTriangle,
-  Copy,
-} from 'lucide-react-native';
-import { useRouter, useLocalSearchParams } from 'expo-router';
-import * as Clipboard from 'expo-clipboard';
+import { borderRadius, colors, layout, spacing, typography } from '@/constants/theme';
 import { MOCK_REQUEST, Request } from './types';
 
 interface DetailRowProps {
@@ -28,7 +26,7 @@ interface DetailRowProps {
   showCopy?: boolean;
 }
 
-function DetailRow({ label, value, valueColor = '#000000', showCopy }: DetailRowProps) {
+function DetailRow({ label, value, valueColor = colors.textPrimary, showCopy }: DetailRowProps) {
   const handleCopy = async () => {
     await Clipboard.setStringAsync(value);
   };
@@ -40,7 +38,7 @@ function DetailRow({ label, value, valueColor = '#000000', showCopy }: DetailRow
         <Text style={[styles.detailValue, { color: valueColor }]}>{value}</Text>
         {showCopy && (
           <TouchableOpacity onPress={handleCopy} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-            <Copy size={16} color="#0F6EC0" />
+            <Copy size={16} color={colors.primary} />
           </TouchableOpacity>
         )}
       </View>
@@ -68,7 +66,7 @@ export default function RequestDetails() {
           onPress={() => router.back()}
           activeOpacity={0.7}
         >
-          <ArrowLeft size={24} color="#000000" strokeWidth={2} />
+          <ArrowLeft size={24} color={colors.textPrimary} strokeWidth={2} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>
           {isDeposit ? 'Remote deposit' : 'Remote withdrawal'}
@@ -94,9 +92,9 @@ export default function RequestDetails() {
               <Text style={styles.detailLabel}>Ratings</Text>
               <View style={styles.ratingContainer}>
                 {[1, 2, 3, 4].map((i) => (
-                  <Star key={i} size={14} color="#FF9934" fill="#FF9934" />
+                  <Star key={i} size={14} color={colors.warning} fill={colors.warning} />
                 ))}
-                <Star size={14} color="#FF9934" />
+                <Star size={14} color={colors.warning} />
                 <Text style={styles.ratingText}>{request.ratings?.toFixed(1)}</Text>
               </View>
             </View>
@@ -142,7 +140,7 @@ export default function RequestDetails() {
 
         {/* Warning Banner */}
         <View style={styles.warningBanner}>
-          <AlertTriangle size={20} color="#C31D1E" strokeWidth={2} />
+          <AlertTriangle size={20} color={colors.error} strokeWidth={2} />
           <Text style={styles.warningText}>
             Customer must include reference number above
           </Text>
@@ -166,27 +164,27 @@ export default function RequestDetails() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F5F5',
+    backgroundColor: colors.background,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
   },
   backButton: {
     width: 50,
     height: 50,
-    borderRadius: 25,
-    backgroundColor: '#F4F6F5',
+    borderRadius: borderRadius.full,
+    backgroundColor: colors.backgroundInput,
     justifyContent: 'center',
     alignItems: 'center',
   },
   headerTitle: {
-    fontSize: 25,
-    fontWeight: '600',
-    color: '#000000',
+    fontSize: typography.fontSize['4xl'],
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.textPrimary,
     textAlign: 'center',
   },
   headerSpacer: {
@@ -196,23 +194,23 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingHorizontal: 24,
-    paddingBottom: 40,
-    gap: 30,
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing['2xl'],
+    gap: spacing['2xl'],
   },
   section: {
-    gap: 20,
+    gap: spacing.lg,
   },
   sectionTitle: {
-    fontSize: 22,
-    fontWeight: '600',
-    color: '#000000',
+    fontSize: typography.fontSize['3xl'],
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.textPrimary,
   },
   card: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 10,
-    padding: 20,
-    gap: 20,
+    backgroundColor: colors.backgroundCard,
+    borderRadius: borderRadius.md,
+    padding: spacing.lg,
+    gap: spacing.lg,
   },
   detailRow: {
     flexDirection: 'row',
@@ -220,18 +218,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   detailLabel: {
-    fontSize: 16,
-    color: '#323333',
+    fontSize: typography.fontSize.md,
+    color: colors.textSecondary,
   },
   detailValueContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: spacing.xs,
   },
   detailValue: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#000000',
+    fontSize: typography.fontSize.md,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.textPrimary,
   },
   ratingContainer: {
     flexDirection: 'row',
@@ -239,42 +237,42 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   ratingText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#000000',
-    marginLeft: 4,
+    fontSize: typography.fontSize.md,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.textPrimary,
+    marginLeft: spacing.xs,
   },
   warningBanner: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 10,
+    gap: spacing.sm,
     backgroundColor: 'rgba(195, 29, 30, 0.15)',
-    borderRadius: 10,
-    padding: 12,
+    borderRadius: borderRadius.md,
+    padding: spacing.sm,
   },
   warningText: {
-    fontSize: 14,
-    color: '#C31D1E',
-    fontWeight: '500',
+    fontSize: typography.fontSize.base,
+    color: colors.error,
+    fontWeight: typography.fontWeight.medium,
     flex: 1,
     textAlign: 'center',
   },
   footer: {
-    padding: 24,
-    paddingBottom: Platform.OS === 'ios' ? 40 : 24,
-    backgroundColor: '#F5F5F5',
+    padding: spacing.lg,
+    paddingBottom: Platform.OS === 'ios' ? spacing.xl : spacing.md,
+    backgroundColor: colors.background,
   },
   primaryButton: {
-    backgroundColor: '#0F6EC0',
-    borderRadius: 15,
-    height: 60,
+    backgroundColor: colors.primary,
+    borderRadius: borderRadius.lg,
+    height: layout.buttonHeight,
     justifyContent: 'center',
     alignItems: 'center',
   },
   primaryButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#F5F5F5',
+    fontSize: typography.fontSize.md,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.textLight,
   },
 });

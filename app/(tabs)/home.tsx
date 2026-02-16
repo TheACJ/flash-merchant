@@ -10,7 +10,8 @@ import {
   Star,
   Timer,
   TrendingUp,
-  User
+  User,
+  Wallet
 } from 'lucide-react-native';
 import React, { useState } from 'react';
 import {
@@ -25,6 +26,9 @@ import {
 } from 'react-native';
 
 import { useRouter } from 'expo-router';
+import { useSelector } from 'react-redux';
+import { RootState } from '../../store';
+import { useTheme } from '../../hooks/useTheme';
 
 
 const { width } = Dimensions.get('window');
@@ -49,11 +53,16 @@ interface BottomTab {
 }
 
 const HomeScreen: React.FC = () => {
+  const theme = useTheme();
   const [balanceVisible, setBalanceVisible] = useState<boolean>(true);
   const [activeTab, setActiveTab] = useState<string>('home');
   const [selectedCurrency, setSelectedCurrency] = useState<string>('USD');
-  // In your component
-const router = useRouter();
+  const router = useRouter();
+  
+  // Get wallets from Redux
+  const wallets = useSelector((state: RootState) => state.merchantWallet.wallets);
+  
+  console.log('Wallets loaded in home:', wallets.length);
 
 
   const walletBalance = 50000;
@@ -252,6 +261,27 @@ const router = useRouter();
         showsVerticalScrollIndicator={false}
         bounces={true}
       >
+        {/* Wallets Section */}
+        {wallets.length > 0 && (
+          <View style={styles.walletsSection}>
+            <Text style={styles.sectionTitle}>My Wallets ({wallets.length})</Text>
+            <View style={styles.walletsGrid}>
+              {wallets.map((wallet) => (
+                <View key={wallet.id} style={styles.walletCard}>
+                  <View style={styles.walletHeader}>
+                    <Wallet size={20} color="#0F6EC0" />
+                    <Text style={styles.walletType}>{wallet.type.toUpperCase()}</Text>
+                  </View>
+                  <Text style={styles.walletAddress} numberOfLines={1}>
+                    {wallet.address.slice(0, 8)}...{wallet.address.slice(-6)}
+                  </Text>
+                  <Text style={styles.walletNetwork}>{wallet.network}</Text>
+                </View>
+              ))}
+            </View>
+          </View>
+        )}
+
         {/* Summary Cards Section */}
         <View style={styles.summarySection}>
           <Text style={styles.sectionTitle}>Summary card</Text>
@@ -290,37 +320,36 @@ const router = useRouter();
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F5F5',
+    backgroundColor: theme.colors.background,
   },
   
   // Header Styles
   headerContainer: {
-    backgroundColor: '#0F6EC0',
+    backgroundColor: theme.colors.primary,
     paddingTop: Platform.OS === 'ios' ? 50 : 20,
-    // marginTop: 50,
     paddingBottom: 25,
-    borderBottomLeftRadius: 30,
-    borderBottomRightRadius: 30,
+    borderBottomLeftRadius: theme.borderRadius['3xl'],
+    borderBottomRightRadius: theme.borderRadius['3xl'],
   },
   topRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 24,
-    marginBottom: 30,
+    paddingHorizontal: theme.layout.containerPadding,
+    marginBottom: theme.spacing['2xl'],
   },
   userSection: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   avatar: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
+    width: theme.layout.avatarSize.md,
+    height: theme.layout.avatarSize.md,
+    borderRadius: theme.borderRadius.full,
     backgroundColor: '#657084',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12,
+    marginRight: theme.spacing.md,
   },
   greetingContainer: {
     justifyContent: 'center',
@@ -330,14 +359,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   helloText: {
-    fontSize: 20,
-    fontWeight: '500',
-    color: '#F5F5F5',
+    fontSize: theme.typography.fontSize.xl,
+    fontWeight: theme.typography.fontWeight.medium,
+    color: theme.colors.textLight,
     letterSpacing: 0.3,
   },
   usernameText: {
-    fontSize: 16,
-    color: '#F4F6F5',
+    fontSize: theme.typography.fontSize.md,
+    color: theme.colors.textLight,
     opacity: 0.9,
     marginTop: 2,
   },
@@ -346,9 +375,9 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   actionIconButton: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
+    width: theme.layout.avatarSize.md,
+    height: theme.layout.avatarSize.md,
+    borderRadius: theme.borderRadius.full,
     backgroundColor: 'rgba(255, 255, 255, 0.15)',
     justifyContent: 'center',
     alignItems: 'center',
@@ -359,18 +388,18 @@ const styles = StyleSheet.create({
     right: 2,
     minWidth: 18,
     height: 18,
-    borderRadius: 9,
-    backgroundColor: '#C31D1E',
+    borderRadius: theme.borderRadius.full,
+    backgroundColor: theme.colors.error,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: '#0F6EC0',
+    borderColor: theme.colors.primary,
     paddingHorizontal: 4,
   },
   badgeText: {
-    color: '#FFFFFF',
-    fontSize: 10,
-    fontWeight: '600',
+    color: theme.colors.textWhite,
+    fontSize: theme.typography.fontSize.xs,
+    fontWeight: theme.typography.fontWeight.semibold,
   },
 
   // Balance Styles
@@ -535,6 +564,43 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontWeight: '700',
     color: '#000000',
+  },
+  walletsSection: {
+    marginBottom: 30,
+  },
+  walletsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  walletCard: {
+    width: (width - 64) / 2,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: '#E7E7E7',
+  },
+  walletHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 8,
+  },
+  walletType: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#0F6EC0',
+  },
+  walletAddress: {
+    fontSize: 11,
+    color: '#657084',
+    marginBottom: 4,
+  },
+  walletNetwork: {
+    fontSize: 10,
+    color: '#999',
+    textTransform: 'capitalize',
   },
   bottomSpacer: {
     height: 100,

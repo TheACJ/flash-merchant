@@ -1,3 +1,4 @@
+import { borderRadius, colors, typography } from '@/constants/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
@@ -30,7 +31,7 @@ export default function SecurityScreen() {
     >
       <View style={styles.itemLeft as ViewStyle}>
         <View style={styles.iconContainer as ViewStyle}>
-          <Ionicons name={icon as any} size={20} color="#323333" />
+          <Ionicons name={icon as any} size={20} color={colors.textSecondary} />
         </View>
         <View style={styles.textContainer as ViewStyle}>
           <Text style={styles.itemTitle as TextStyle}>{title}</Text>
@@ -39,7 +40,7 @@ export default function SecurityScreen() {
       </View>
       <View style={styles.itemRight as ViewStyle}>
         {showChevron && (
-          <Ionicons name="chevron-forward" size={20} color="#000000" />
+          <Ionicons name="chevron-forward" size={20} color={colors.textPrimary} />
         )}
       </View>
     </TouchableOpacity>
@@ -53,7 +54,7 @@ export default function SecurityScreen() {
           onPress={() => router.back()}
           activeOpacity={0.7}
         >
-          <Ionicons name="chevron-back" size={24} color="#000000" />
+          <Ionicons name="chevron-back" size={24} color={colors.textPrimary} />
         </TouchableOpacity>
         <Text style={styles.headerTitle as TextStyle}>Security</Text>
         <View style={styles.placeholder as ViewStyle} />
@@ -67,7 +68,7 @@ export default function SecurityScreen() {
         >
           <View style={styles.itemLeft as ViewStyle}>
             <View style={styles.iconContainer as ViewStyle}>
-              <Ionicons name="finger-print-outline" size={20} color="#323333" />
+              <Ionicons name="finger-print-outline" size={20} color={colors.textSecondary} />
             </View>
             <View style={styles.textContainer as ViewStyle}>
               <Text style={styles.itemTitle as TextStyle}>Fingerprint</Text>
@@ -77,8 +78,8 @@ export default function SecurityScreen() {
           <Switch
             value={biometricEnabled}
             onValueChange={setBiometricEnabled}
-            trackColor={{ false: '#D2D6E1', true: '#0F6EC0' }}
-            thumbColor="#F4F6F5"
+            trackColor={{ false: colors.border, true: colors.primary }}
+            thumbColor={colors.backgroundInput}
           />
         </TouchableOpacity>
 
@@ -107,7 +108,7 @@ export default function SecurityScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F5F5',
+    backgroundColor: colors.background,
   },
   header: {
     flexDirection: 'row',
@@ -120,16 +121,16 @@ const styles = StyleSheet.create({
     padding: 4,
   },
   headerTitle: {
-    fontSize: 25,
-    fontWeight: '600',
-    color: '#000000',
+    fontSize: typography.fontSize['4xl'],
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.textPrimary,
   },
   placeholder: {
     width: 40,
   },
   section: {
-    backgroundColor: '#F4F6F5',
-    borderRadius: 10,
+    backgroundColor: colors.backgroundInput,
+    borderRadius: borderRadius.sm,
     marginHorizontal: 20,
     marginTop: 20,
     paddingVertical: 4,
@@ -150,7 +151,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 30,
-    backgroundColor: '#F5F5F5',
+    backgroundColor: colors.background,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
@@ -159,13 +160,13 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   itemTitle: {
-    fontSize: 16,
-    color: '#000000',
-    fontWeight: '400',
+    fontSize: typography.fontSize.md,
+    color: colors.textPrimary,
+    fontWeight: typography.fontWeight.regular,
   },
   itemSubtitle: {
-    fontSize: 14,
-    color: '#323333',
+    fontSize: typography.fontSize.base,
+    color: colors.textSecondary,
     marginTop: 4,
   },
   itemRight: {
@@ -173,7 +174,7 @@ const styles = StyleSheet.create({
   },
   divider: {
     height: 1,
-    backgroundColor: 'rgba(195, 29, 30, 0.1)',
+    backgroundColor: colors.divider,
     marginLeft: 68,
   },
 });

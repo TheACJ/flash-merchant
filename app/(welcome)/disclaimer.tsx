@@ -1,4 +1,22 @@
+// welcome/disclaimer.tsx
+import { ONBOARDING_STEPS } from '@/constants/storage';
+import {
+  borderRadius,
+  colors,
+  layout,
+  shadows,
+  spacing,
+  typography,
+  animation,
+} from '@/constants/theme';
 import { useRouter } from 'expo-router';
+import {
+  ArrowLeft,
+  Check,
+  ChevronRight,
+  Shield,
+  ShieldCheck,
+} from 'lucide-react-native';
 import React, { useCallback, useRef, useState } from 'react';
 import {
   Animated,
@@ -11,44 +29,62 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { Path, Svg } from 'react-native-svg';
+import { setOnboardingStep } from '../../utils/onboarding';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
-// ─── Icons ───────────────────────────────────────────────────────────────────
+// ─── Reusable Checkbox Component ────────────────────────────────────────────
 
-const CheckIcon = () => (
-  <Svg width={14} height={14} viewBox="0 0 14 14" fill="none">
-    <Path
-      d="M2.5 7.5L5.5 10.5L11.5 3.5"
-      stroke="#FFFFFF"
-      strokeWidth={2}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-  </Svg>
-);
+interface CheckboxProps {
+  checked: boolean;
+  onToggle: () => void;
+  label: string;
+  size?: 'sm' | 'md';
+}
 
-const ArrowLeftIcon = ({ color = '#000000' }: { color?: string }) => (
-  <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
-    <Path
-      d="M15 18L9 12L15 6"
-      stroke={color}
-      strokeWidth={2}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-  </Svg>
-);
+const Checkbox: React.FC<CheckboxProps> = ({
+  checked,
+  onToggle,
+  label,
+  size = 'md',
+}) => {
+  const boxSize = size === 'sm' ? 20 : 24;
+  const iconSize = size === 'sm' ? 12 : 14;
+
+  return (
+    <TouchableOpacity
+      style={[
+        styles.checkboxRow,
+        checked && styles.checkboxRowActive,
+      ]}
+      onPress={onToggle}
+      activeOpacity={0.7}
+    >
+      <View
+        style={[
+          styles.checkbox,
+          { width: boxSize, height: boxSize },
+          checked && styles.checkboxChecked,
+        ]}
+      >
+        {checked && (
+          <Check size={iconSize} color={colors.textWhite} strokeWidth={3} />
+        )}
+      </View>
+      <Text style={styles.checkboxLabel}>{label}</Text>
+    </TouchableOpacity>
+  );
+};
 
 // ─── Disclaimer Screen ──────────────────────────────────────────────────────
 
 interface DisclaimerScreenProps {
-  onNext: () => void;
   onPrivacyPolicy: () => void;
 }
 
-const DisclaimerScreen: React.FC<DisclaimerScreenProps> = ({ onNext, onPrivacyPolicy }) => {
+const DisclaimerScreen: React.FC<DisclaimerScreenProps> = ({
+  onPrivacyPolicy,
+}) => {
   const [checks, setChecks] = useState([false, false, false]);
 
   const toggleCheck = useCallback((index: number) => {
@@ -69,31 +105,35 @@ const DisclaimerScreen: React.FC<DisclaimerScreenProps> = ({ onNext, onPrivacyPo
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#F5F5F5" />
+      <StatusBar barStyle="dark-content" backgroundColor={colors.background} />
 
       <View style={styles.disclaimerContent}>
-        {/* Title */}
-        <Text style={styles.disclaimerTitle}>Disclaimer</Text>
+        {/* Header Icon */}
+        <View style={styles.disclaimerIconContainer}>
+          <View style={styles.disclaimerIconCircle}>
+            <Shield
+              size={layout.iconSize.xl}
+              color={colors.primary}
+              strokeWidth={1.8}
+            />
+          </View>
+        </View>
+
+        {/* Title & Subtitle */}
+        <Text style={styles.disclaimerTitle}>Before you begin</Text>
+        <Text style={styles.disclaimerSubtitle}>
+          Please review and acknowledge the following to continue
+        </Text>
 
         {/* Checkbox Items */}
         <View style={styles.checkboxGroup}>
           {disclaimerItems.map((item, index) => (
-            <TouchableOpacity
+            <Checkbox
               key={index}
-              style={styles.checkboxRow}
-              onPress={() => toggleCheck(index)}
-              activeOpacity={0.7}
-            >
-              <View
-                style={[
-                  styles.checkbox,
-                  checks[index] && styles.checkboxChecked,
-                ]}
-              >
-                {checks[index] && <CheckIcon />}
-              </View>
-              <Text style={styles.checkboxLabel}>{item}</Text>
-            </TouchableOpacity>
+              checked={checks[index]}
+              onToggle={() => toggleCheck(index)}
+              label={item}
+            />
           ))}
         </View>
 
@@ -102,12 +142,17 @@ const DisclaimerScreen: React.FC<DisclaimerScreenProps> = ({ onNext, onPrivacyPo
 
         {/* Next Button */}
         <TouchableOpacity
-          style={[styles.nextButton, !allChecked && styles.nextButtonDisabled]}
+          style={[styles.primaryButton, !allChecked && styles.buttonDisabled]}
           onPress={onPrivacyPolicy}
-          activeOpacity={allChecked ? 0.8 : 1}
+          activeOpacity={allChecked ? 0.85 : 1}
           disabled={!allChecked}
         >
-          <Text style={styles.nextButtonText}>Next</Text>
+          <Text style={styles.primaryButtonText}>Continue</Text>
+          <ChevronRight
+            size={layout.iconSize.sm}
+            color={colors.textWhite}
+            strokeWidth={2.5}
+          />
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -122,7 +167,11 @@ interface PrivacyPolicyScreenProps {
   onLogin?: () => void;
 }
 
-const PrivacyPolicyScreen: React.FC<PrivacyPolicyScreenProps> = ({ onBack, onSignUp, onLogin }) => {
+const PrivacyPolicyScreen: React.FC<PrivacyPolicyScreenProps> = ({
+  onBack,
+  onSignUp,
+  onLogin,
+}) => {
   const [privacyChecked, setPrivacyChecked] = useState(false);
 
   const togglePrivacyCheck = useCallback(() => {
@@ -150,20 +199,23 @@ const PrivacyPolicyScreen: React.FC<PrivacyPolicyScreenProps> = ({ onBack, onSig
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#F5F5F5" />
+      <StatusBar barStyle="dark-content" backgroundColor={colors.background} />
 
       {/* Header */}
-      <View style={styles.privacyHeader}>
+      <View style={styles.header}>
         <TouchableOpacity
           style={styles.backButton}
           onPress={onBack}
           activeOpacity={0.7}
         >
-          <ArrowLeftIcon />
+          <ArrowLeft
+            size={layout.iconSize.md}
+            color={colors.textPrimary}
+            strokeWidth={2}
+          />
         </TouchableOpacity>
-        <Text style={styles.privacyHeaderTitle}>Privacy Policy</Text>
-        {/* Spacer for centering */}
-        <View style={{ width: 50 }} />
+        <Text style={styles.headerTitle}>Privacy Policy</Text>
+        <View style={{ width: layout.minTouchTarget }} />
       </View>
 
       {/* Content */}
@@ -174,47 +226,49 @@ const PrivacyPolicyScreen: React.FC<PrivacyPolicyScreenProps> = ({ onBack, onSig
       >
         {sections.map((section, index) => (
           <View key={index} style={styles.policySection}>
-            <Text style={styles.policySectionTitle}>{section.title}</Text>
+            <View style={styles.policySectionHeader}>
+              <View style={styles.policySectionDot} />
+              <Text style={styles.policySectionTitle}>{section.title}</Text>
+            </View>
             <Text style={styles.policySectionBody}>{section.body}</Text>
           </View>
         ))}
       </ScrollView>
 
-      {/* Privacy Agreement Checkbox */}
-      <View style={styles.privacyCheckboxContainer}>
-        <TouchableOpacity
-          style={styles.checkboxRow}
-          onPress={togglePrivacyCheck}
-          activeOpacity={0.7}
-        >
-          <View
-            style={[
-              styles.checkbox,
-              privacyChecked && styles.checkboxChecked,
-            ]}
-          >
-            {privacyChecked && <CheckIcon />}
-          </View>
-          <Text style={styles.checkboxLabel}>I agree to the Privacy Policy</Text>
-        </TouchableOpacity>
+      {/* Privacy Agreement & Buttons */}
+      <View style={styles.privacyFooter}>
+        <Checkbox
+          checked={privacyChecked}
+          onToggle={togglePrivacyCheck}
+          label="I have read and agree to the Privacy Policy"
+          size="sm"
+        />
 
-        {/* Sign Up and Login Buttons */}
         <View style={styles.buttonGroup}>
           <TouchableOpacity
-            style={[styles.signUpButton, !privacyChecked && styles.buttonDisabled]}
+            style={[
+              styles.primaryButton,
+              styles.buttonFlex,
+              !privacyChecked && styles.buttonDisabled,
+            ]}
             onPress={onSignUp}
-            activeOpacity={privacyChecked ? 0.8 : 1}
+            activeOpacity={privacyChecked ? 0.85 : 1}
             disabled={!privacyChecked}
           >
-            <Text style={styles.signUpButtonText}>Sign Up</Text>
+            <Text style={styles.primaryButtonText}>Sign Up</Text>
           </TouchableOpacity>
+
           <TouchableOpacity
-            style={[styles.loginButton, !privacyChecked && styles.buttonDisabled]}
+            style={[
+              styles.secondaryButton,
+              styles.buttonFlex,
+              !privacyChecked && styles.buttonDisabled,
+            ]}
             onPress={onLogin}
-            activeOpacity={privacyChecked ? 0.8 : 1}
+            activeOpacity={privacyChecked ? 0.85 : 1}
             disabled={!privacyChecked}
           >
-            <Text style={styles.loginButtonText}>Login</Text>
+            <Text style={styles.secondaryButtonText}>Login</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -226,52 +280,51 @@ const PrivacyPolicyScreen: React.FC<PrivacyPolicyScreenProps> = ({ onBack, onSig
 
 const DisclaimerAndPrivacy: React.FC = () => {
   const router = useRouter();
-  const [currentScreen, setCurrentScreen] = useState<'disclaimer' | 'privacy'>('disclaimer');
+  const [currentScreen, setCurrentScreen] = useState<
+    'disclaimer' | 'privacy'
+  >('disclaimer');
   const fadeAnim = useRef(new Animated.Value(1)).current;
 
-  // Navigation handlers with error handling
-  const handleSignUp = useCallback(() => {
+  const handleSignUp = useCallback(async () => {
     try {
-      router.push('/auth/signup' as const);
+      await setOnboardingStep(ONBOARDING_STEPS.create_wallet);
+      router.push('/auth/create-wallet');
     } catch (error) {
       console.error('Navigation to signup failed:', error);
     }
   }, [router]);
 
-  const handleLogin = useCallback(() => {
+  const handleLogin = useCallback(async () => {
     try {
+      await setOnboardingStep(ONBOARDING_STEPS.import_wallet);
       router.push('/auth/login');
     } catch (error) {
       console.error('Navigation to login failed:', error);
     }
   }, [router]);
 
-  const handleDisclaimerAccepted = useCallback(() => {
-    console.log('Disclaimer accepted');
-  }, []);
-
-  const navigateTo = useCallback((screen: 'disclaimer' | 'privacy') => {
-    Animated.timing(fadeAnim, {
-      toValue: 0,
-      duration: 150,
-      useNativeDriver: true,
-    }).start(() => {
-      setCurrentScreen(screen);
+  const navigateTo = useCallback(
+    (screen: 'disclaimer' | 'privacy') => {
       Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 200,
+        toValue: 0,
+        duration: animation.duration.fast,
         useNativeDriver: true,
-      }).start();
-    });
-  }, [fadeAnim]);
+      }).start(() => {
+        setCurrentScreen(screen);
+        Animated.timing(fadeAnim, {
+          toValue: 1,
+          duration: animation.duration.normal,
+          useNativeDriver: true,
+        }).start();
+      });
+    },
+    [fadeAnim]
+  );
 
   return (
     <Animated.View style={[{ flex: 1 }, { opacity: fadeAnim }]}>
       {currentScreen === 'disclaimer' ? (
-        <DisclaimerScreen
-          onNext={handleDisclaimerAccepted}
-          onPrivacyPolicy={() => navigateTo('privacy')}
-        />
+        <DisclaimerScreen onPrivacyPolicy={() => navigateTo('privacy')} />
       ) : (
         <PrivacyPolicyScreen
           onBack={() => navigateTo('disclaimer')}
@@ -288,182 +341,188 @@ const DisclaimerAndPrivacy: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F5F5',
+    backgroundColor: colors.background,
+  },
+
+  // ── Header ──────────────────────────────────────────
+  header: {
+    height: layout.headerHeight,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: layout.screenPaddingHorizontal,
+  },
+  backButton: {
+    width: layout.minTouchTarget,
+    height: layout.minTouchTarget,
+    backgroundColor: colors.backgroundInput,
+    borderRadius: borderRadius.full,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  headerTitle: {
+    fontSize: typography.fontSize.lg,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.textPrimary,
+    letterSpacing: typography.letterSpacing.tight,
   },
 
   // ── Disclaimer ──────────────────────────────────────
   disclaimerContent: {
     flex: 1,
-    paddingHorizontal: 28,
-    paddingTop: 40,
-    paddingBottom: 30,
+    paddingHorizontal: layout.screenPaddingHorizontal,
+    paddingTop: spacing['3xl'],
+    paddingBottom: spacing.xl,
+  },
+  disclaimerIconContainer: {
+    alignItems: 'center',
+    marginBottom: spacing.xl,
+  },
+  disclaimerIconCircle: {
+    width: 72,
+    height: 72,
+    borderRadius: borderRadius.full,
+    backgroundColor: colors.primaryLight,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   disclaimerTitle: {
-    fontFamily: 'System',
-    fontWeight: '600',
-    fontSize: 25,
-    lineHeight: 25,
+    fontSize: typography.fontSize['4xl'],
+    fontWeight: typography.fontWeight.bold,
     textAlign: 'center',
-    color: '#000000',
-    marginBottom: 40,
+    color: colors.textPrimary,
+    marginBottom: spacing.sm,
+    letterSpacing: typography.letterSpacing.tight,
+  },
+  disclaimerSubtitle: {
+    fontSize: typography.fontSize.base,
+    fontWeight: typography.fontWeight.regular,
+    textAlign: 'center',
+    color: colors.textTertiary,
+    lineHeight: typography.fontSize.base * typography.lineHeight.normal,
+    marginBottom: spacing['2xl'],
+    paddingHorizontal: spacing.lg,
   },
   checkboxGroup: {
-    gap: 14,
+    gap: spacing.md,
   },
   checkboxRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    backgroundColor: '#F4F6F5',
-    borderRadius: 15,
-    paddingVertical: 20,
-    paddingHorizontal: 17,
-    gap: 8,
+    backgroundColor: colors.backgroundCard,
+    borderRadius: borderRadius.lg,
+    paddingVertical: spacing.base,
+    paddingHorizontal: spacing.base,
+    gap: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
+  },
+  checkboxRowActive: {
+    borderColor: colors.primaryMedium,
+    backgroundColor: colors.primaryLight,
   },
   checkbox: {
-    width: 24,
-    height: 24,
-    borderRadius: 20,
-    backgroundColor: '#E7E7E7',
+    borderRadius: borderRadius.full,
+    backgroundColor: colors.borderLight,
     justifyContent: 'center',
     alignItems: 'center',
+    marginTop: 2,
   },
   checkboxChecked: {
-    backgroundColor: '#0F72C7',
+    backgroundColor: colors.primary,
   },
   checkboxLabel: {
     flex: 1,
-    fontFamily: 'System',
-    fontWeight: '500',
-    fontSize: 16,
-    lineHeight: 22,
-    color: '#000000',
+    fontSize: typography.fontSize.base,
+    fontWeight: typography.fontWeight.medium,
+    lineHeight: typography.fontSize.base * typography.lineHeight.normal,
+    color: colors.textSecondary,
   },
-  nextButton: {
-    backgroundColor: '#0F6EC0',
-    borderRadius: 15,
-    height: 60,
+
+  // ── Buttons ─────────────────────────────────────────
+  primaryButton: {
+    backgroundColor: colors.primary,
+    borderRadius: borderRadius.lg,
+    height: layout.buttonHeight,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 16,
+    flexDirection: 'row',
+    gap: spacing.sm,
+    ...shadows.button,
   },
-  nextButtonDisabled: {
-    opacity: 0.5,
+  primaryButtonText: {
+    fontSize: typography.fontSize.md,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.textWhite,
   },
-  nextButtonText: {
-    fontFamily: 'System',
-    fontWeight: '400',
-    fontSize: 16,
-    lineHeight: 16,
-    textAlign: 'center',
-    color: '#F5F5F5',
-  },
-  privacyLinkContainer: {
+  secondaryButton: {
+    backgroundColor: colors.backgroundCard,
+    borderRadius: borderRadius.lg,
+    height: layout.buttonHeight,
+    justifyContent: 'center',
     alignItems: 'center',
+    borderWidth: 1.5,
+    borderColor: colors.primary,
   },
-  privacyLinkText: {
-    fontFamily: 'System',
-    fontWeight: '500',
-    fontSize: 16,
-    lineHeight: 22,
-    color: '#0F6EC0',
+  secondaryButtonText: {
+    fontSize: typography.fontSize.md,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.primary,
+  },
+  buttonDisabled: {
+    opacity: 0.45,
+  },
+  buttonFlex: {
+    flex: 1,
+  },
+  buttonGroup: {
+    flexDirection: 'row',
+    gap: spacing.md,
   },
 
   // ── Privacy Policy ──────────────────────────────────
-  privacyHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 28,
-    paddingTop: 20,
-    paddingBottom: 16,
-  },
-  backButton: {
-    width: 50,
-    height: 50,
-    backgroundColor: '#F4F6F5',
-    borderRadius: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  privacyHeaderTitle: {
-    fontFamily: 'System',
-    fontWeight: '600',
-    fontSize: 25,
-    lineHeight: 25,
-    textAlign: 'center',
-    color: '#000000',
-  },
   privacyScrollView: {
     flex: 1,
   },
   privacyScrollContent: {
-    paddingHorizontal: 28,
-    paddingTop: 10,
-    paddingBottom: 40,
-    gap: 20,
+    paddingHorizontal: layout.screenPaddingHorizontal,
+    paddingTop: spacing.base,
+    paddingBottom: spacing['2xl'],
+    gap: spacing.xl,
   },
   policySection: {
-    gap: 15,
+    gap: spacing.sm,
+  },
+  policySectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  policySectionDot: {
+    width: 6,
+    height: 6,
+    borderRadius: borderRadius.full,
+    backgroundColor: colors.primary,
   },
   policySectionTitle: {
-    fontFamily: 'System',
-    fontWeight: '500',
-    fontSize: 20,
-    lineHeight: 25,
-    color: '#0F6EC0',
+    fontSize: typography.fontSize.md,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.primary,
   },
   policySectionBody: {
-    fontFamily: 'System',
-    fontWeight: '400',
-    fontSize: 16,
-    lineHeight: 25,
-    color: '#323333',
+    fontSize: typography.fontSize.base,
+    fontWeight: typography.fontWeight.regular,
+    lineHeight: typography.fontSize.base * typography.lineHeight.relaxed,
+    color: colors.textSecondary,
+    paddingLeft: spacing.base,
   },
-  privacyCheckboxContainer: {
-    paddingHorizontal: 28,
-    paddingBottom: 30,
-    gap: 16,
-  },
-  buttonGroup: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  signUpButton: {
-    flex: 1,
-    backgroundColor: '#0F6EC0',
-    borderRadius: 15,
-    height: 60,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  loginButton: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 15,
-    height: 60,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: '#0F6EC0',
-  },
-  signUpButtonText: {
-    fontFamily: 'System',
-    fontWeight: '400',
-    fontSize: 16,
-    lineHeight: 16,
-    textAlign: 'center',
-    color: '#F5F5F5',
-  },
-  loginButtonText: {
-    fontFamily: 'System',
-    fontWeight: '400',
-    fontSize: 16,
-    lineHeight: 16,
-    textAlign: 'center',
-    color: '#0F6EC0',
-  },
-  buttonDisabled: {
-    opacity: 0.5,
+  privacyFooter: {
+    paddingHorizontal: layout.screenPaddingHorizontal,
+    paddingBottom: spacing.xl,
+    paddingTop: spacing.base,
+    gap: spacing.base,
+    borderTopWidth: 1,
+    borderTopColor: colors.divider,
   },
 });
 

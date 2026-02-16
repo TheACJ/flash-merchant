@@ -1,285 +1,278 @@
-import { useRouter } from "expo-router";
-import React, { useMemo, useState } from "react";
+// auth/create-wallet/verify_seed_phrase.tsx
+import { STORAGE_KEYS } from '@/constants/storage';
 import {
+  borderRadius,
+  colors,
+  layout,
+  shadows,
+  spacing,
+  typography,
+} from '@/constants/theme';
+import { completeOnboarding } from '@/utils/onboarding';
+import { router } from 'expo-router';
+import * as SecureStore from 'expo-secure-store';
+import {
+  ArrowLeft,
+  CheckCircle2,
+  RotateCcw,
+  ShieldCheck,
+  X,
+} from 'lucide-react-native';
+import React, { useEffect, useState } from 'react';
+import {
+  ActivityIndicator,
   Alert,
   SafeAreaView,
-  ScrollView,
   StatusBar,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
-} from "react-native";
-
-const CORRECT_ORDER = [
-  "arrogant",
-  "pride",
-  "announce",
-  "regard",
-  "report",
-  "appear",
-  "abandon",
-  "account",
-  "accident",
-  "account",
-  "able",
-  "absent",
-];
-
-const WORD_BANK = [
-  "able",
-  "absent",
-  "account",
-  "accident",
-  "account",
-  "abandon",
-  "report",
-  "appear",
-  "regard",
-  "announce",
-  "arrogant",
-  "pride",
-];
-
-interface SeedSlotProps {
-  number: number;
-  word: string | null;
-  onRemove: () => void;
-}
-
-const SeedSlot: React.FC<SeedSlotProps> = ({ number, word, onRemove }) => (
-  <TouchableOpacity
-    style={[styles.seedSlot, word && styles.seedSlotFilled]}
-    onPress={word ? onRemove : undefined}
-    activeOpacity={word ? 0.7 : 1}
-    disabled={!word}
-  >
-    <View style={styles.numberBadge}>
-      <Text style={styles.numberText}>{number}</Text>
-    </View>
-    {word && <Text style={styles.slotWord}>{word}</Text>}
-  </TouchableOpacity>
-);
-
-interface WordChipProps {
-  word: string;
-  disabled: boolean;
-  onPress: () => void;
-}
-
-const WordChip: React.FC<WordChipProps> = ({ word, disabled, onPress }) => (
-  <TouchableOpacity
-    style={[styles.wordChip, disabled && styles.wordChipDisabled]}
-    onPress={onPress}
-    disabled={disabled}
-    activeOpacity={0.7}
-  >
-    <Text style={[styles.wordChipText, disabled && styles.wordChipTextDisabled]}>
-      {word}
-    </Text>
-  </TouchableOpacity>
-);
+} from 'react-native';
 
 export default function VerifySeedPhrase() {
-  const router = useRouter();
+  const [seedWords, setSeedWords] = useState<string[]>([]);
+  const [shuffledWords, setShuffledWords] = useState<string[]>([]);
+  const [selectedWords, setSelectedWords] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [usedIndices, setUsedIndices] = useState<Set<number>>(new Set());
 
-  // Track which slots have been filled and with what word
-  const [filledSlots, setFilledSlots] = useState<(string | null)[]>(
-    Array(12).fill(null)
-  );
+  useEffect(() => {
+    loadAndShuffleMnemonic();
+  }, []);
 
-  // Track which word bank items have been used (by index)
-  const [usedBankIndices, setUsedBankIndices] = useState<Set<number>>(
-    new Set()
-  );
-
-  const nextEmptySlot = filledSlots.findIndex((slot) => slot === null);
-  const allFilled = filledSlots.every((slot) => slot !== null);
-
-  const handleWordSelect = (word: string, bankIndex: number) => {
-    if (nextEmptySlot === -1) return;
-
-    setFilledSlots((prev) => {
-      const newSlots = [...prev];
-      newSlots[nextEmptySlot] = word;
-      return newSlots;
-    });
-
-    setUsedBankIndices((prev) => {
-      const newSet = new Set(prev);
-      newSet.add(bankIndex);
-      return newSet;
-    });
-  };
-
-  const handleRemoveWord = (slotIndex: number) => {
-    const word = filledSlots[slotIndex];
-    if (!word) return;
-
-    // Find the corresponding bank index to re-enable it
-    const bankIndex = WORD_BANK.findIndex(
-      (w, i) => w === word && usedBankIndices.has(i)
-    );
-
-    setFilledSlots((prev) => {
-      const newSlots = [...prev];
-      // Shift words after the removed slot up
-      for (let i = slotIndex; i < 11; i++) {
-        newSlots[i] = newSlots[i + 1];
+  const loadAndShuffleMnemonic = async () => {
+    try {
+      const mnemonic = await SecureStore.getItemAsync(
+        STORAGE_KEYS.wallet_mnemonic_primary
+      );
+      if (mnemonic) {
+        const words = mnemonic.split(' ');
+        setSeedWords(words);
+        setShuffledWords([...words].sort(() => Math.random() - 0.5));
+      } else {
+        Alert.alert('Error', 'Seed phrase not found');
       }
-      newSlots[11] = null;
-      return newSlots;
-    });
-
-    if (bankIndex !== -1) {
-      setUsedBankIndices((prev) => {
-        const newSet = new Set(prev);
-        newSet.delete(bankIndex);
-        return newSet;
-      });
+    } catch (error) {
+      console.error('Failed to load mnemonic:', error);
+      Alert.alert('Error', 'Failed to load seed phrase');
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleContinue = () => {
-    // Verify the order
-    const isCorrect = filledSlots.every(
-      (word, index) => word === CORRECT_ORDER[index]
+  const handleWordPress = (word: string, shuffledIndex: number) => {
+    if (selectedWords.length < seedWords.length && !usedIndices.has(shuffledIndex)) {
+      setSelectedWords([...selectedWords, word]);
+      setUsedIndices(new Set([...usedIndices, shuffledIndex]));
+    }
+  };
+
+  const handleRemoveWord = (index: number) => {
+    const removedWord = selectedWords[index];
+    // Find the corresponding shuffled index
+    const shuffledIndex = shuffledWords.findIndex(
+      (w, i) => w === removedWord && usedIndices.has(i)
     );
+
+    const newSelected = selectedWords.filter((_, i) => i !== index);
+    const newUsed = new Set(usedIndices);
+    if (shuffledIndex >= 0) newUsed.delete(shuffledIndex);
+
+    setSelectedWords(newSelected);
+    setUsedIndices(newUsed);
+  };
+
+  const handleReset = () => {
+    setSelectedWords([]);
+    setUsedIndices(new Set());
+  };
+
+  const handleVerify = async () => {
+    const isCorrect = selectedWords.join(' ') === seedWords.join(' ');
 
     if (isCorrect) {
-      // Navigate to notice screen
-      Alert.alert(
-        "Success!",
-        "Your seed phrase has been verified.",
-        [
-          {
-            text: "OK",
-            onPress: () => {
-              router.push('/auth/create-wallet/notice');
+      try {
+        await completeOnboarding();
+        Alert.alert(
+          'Wallet Secured',
+          'Your recovery phrase has been verified successfully.',
+          [
+            {
+              text: 'Continue',
+              onPress: () => router.replace('/(tabs)/home'),
             },
-          },
-        ]
-      );
+          ]
+        );
+      } catch (error) {
+        console.error('Failed to complete onboarding:', error);
+        Alert.alert('Error', 'Failed to complete setup. Please try again.');
+      }
     } else {
       Alert.alert(
-        "Incorrect",
-        "The seed phrase order is incorrect. Please try again.",
-        [
-          {
-            text: "Try Again",
-            onPress: () => {
-              setFilledSlots(Array(12).fill(null));
-              setUsedBankIndices(new Set());
-            },
-          },
-        ]
+        'Incorrect Order',
+        'The words are not in the correct order. Please try again.'
       );
+      handleReset();
     }
   };
 
-  const handleGoBack = () => {
-    router.back();
-  };
+  const allSelected = selectedWords.length === seedWords.length;
 
-  // Create pairs for 2-column layout
-  const slotPairs: [number, number][] = [];
-  for (let i = 0; i < 12; i += 2) {
-    slotPairs.push([i, i + 1]);
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={colors.primary} />
+        </View>
+      </SafeAreaView>
+    );
   }
-
-  // Split word bank into rows for display
-  const wordBankRows = useMemo(() => {
-    const rows: { word: string; index: number }[][] = [[], [], []];
-    // Row 1: indices 0-4
-    for (let i = 0; i <= 4; i++) {
-      rows[0].push({ word: WORD_BANK[i], index: i });
-    }
-    // Row 2: indices 5-9
-    for (let i = 5; i <= 9; i++) {
-      rows[1].push({ word: WORD_BANK[i], index: i });
-    }
-    // Row 3: indices 10-11
-    for (let i = 10; i <= 11; i++) {
-      rows[2].push({ word: WORD_BANK[i], index: i });
-    }
-    return rows;
-  }, []);
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="dark-content" backgroundColor="#F5F5F5" />
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        <View style={styles.container}>
-          {/* Header */}
+      <StatusBar barStyle="dark-content" backgroundColor={colors.background} />
+      <View style={styles.container}>
+        {/* Header */}
+        <View style={styles.header}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => router.back()}
+            activeOpacity={0.7}
+          >
+            <ArrowLeft
+              size={layout.iconSize.md}
+              color={colors.textPrimary}
+              strokeWidth={2}
+            />
+          </TouchableOpacity>
+
+          {selectedWords.length > 0 && (
+            <TouchableOpacity
+              style={styles.resetButton}
+              onPress={handleReset}
+              activeOpacity={0.7}
+            >
+              <RotateCcw
+                size={layout.iconSize.sm}
+                color={colors.textTertiary}
+                strokeWidth={1.8}
+              />
+              <Text style={styles.resetButtonText}>Reset</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+
+        {/* Content */}
+        <View style={styles.contentSection}>
           <View style={styles.headerSection}>
-            <Text style={styles.title}>Enter your seed phrase</Text>
+            <View style={styles.titleIconContainer}>
+              <ShieldCheck
+                size={layout.iconSize.lg}
+                color={colors.primary}
+                strokeWidth={1.8}
+              />
+            </View>
+            <Text style={styles.title}>Verify Recovery Phrase</Text>
             <Text style={styles.subtitle}>
-              Enter the correct seed phrase for each number
+              Tap the words in the correct order to confirm you saved your
+              recovery phrase
             </Text>
           </View>
 
-          {/* Seed Phrase Grid */}
-          <View style={styles.gridSection}>
-            {slotPairs.map(([leftIdx, rightIdx]) => (
-              <View key={leftIdx} style={styles.slotRow}>
-                <SeedSlot
-                  number={leftIdx + 1}
-                  word={filledSlots[leftIdx]}
-                  onRemove={() => handleRemoveWord(leftIdx)}
-                />
-                <SeedSlot
-                  number={rightIdx + 1}
-                  word={filledSlots[rightIdx]}
-                  onRemove={() => handleRemoveWord(rightIdx)}
-                />
-              </View>
-            ))}
+          {/* Progress Indicator */}
+          <View style={styles.progressRow}>
+            <Text style={styles.progressLabel}>
+              {selectedWords.length} of {seedWords.length} words
+            </Text>
+            <View style={styles.progressBarSmall}>
+              <View
+                style={[
+                  styles.progressFillSmall,
+                  {
+                    width: `${
+                      (selectedWords.length / seedWords.length) * 100
+                    }%`,
+                  },
+                ]}
+              />
+            </View>
           </View>
 
-          {/* Word Bank */}
-          <View style={styles.wordBankSection}>
-            {wordBankRows.map((row, rowIndex) => (
-              <View key={rowIndex} style={styles.wordBankRow}>
-                {row.map(({ word, index }) => (
-                  <WordChip
-                    key={`${index}-${word}`}
-                    word={word}
-                    disabled={usedBankIndices.has(index)}
-                    onPress={() => handleWordSelect(word, index)}
-                  />
-                ))}
-              </View>
-            ))}
+          {/* Selected Words Area */}
+          <View style={styles.selectedArea}>
+            {selectedWords.length === 0 ? (
+              <Text style={styles.selectedPlaceholder}>
+                Tap words below in the correct order
+              </Text>
+            ) : (
+              selectedWords.map((word, index) => (
+                <TouchableOpacity
+                  key={`selected-${index}`}
+                  style={styles.selectedWord}
+                  onPress={() => handleRemoveWord(index)}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.selectedWordNumber}>{index + 1}</Text>
+                  <Text style={styles.selectedWordText}>{word}</Text>
+                  <X size={12} color={colors.textWhite} strokeWidth={2.5} />
+                </TouchableOpacity>
+              ))
+            )}
           </View>
 
-          {/* Bottom Buttons */}
-          <View style={styles.bottomSection}>
-            <TouchableOpacity
-              style={[
-                styles.continueButton,
-                !allFilled && styles.continueButtonDisabled,
-              ]}
-              onPress={handleContinue}
-              disabled={!allFilled}
-              activeOpacity={0.8}
-            >
-              <Text style={styles.continueButtonText}>Continue</Text>
-            </TouchableOpacity>
+          {/* Available Words */}
+          <View style={styles.wordsGrid}>
+            {shuffledWords.map((word, index) => {
+              const isUsed = usedIndices.has(index);
 
-            <TouchableOpacity
-              style={styles.goBackButton}
-              onPress={handleGoBack}
-              activeOpacity={0.8}
-            >
-              <Text style={styles.goBackButtonText}>Go back</Text>
-            </TouchableOpacity>
+              return (
+                <TouchableOpacity
+                  key={`word-${index}`}
+                  style={[
+                    styles.wordButton,
+                    isUsed && styles.wordButtonUsed,
+                  ]}
+                  onPress={() => !isUsed && handleWordPress(word, index)}
+                  activeOpacity={isUsed ? 1 : 0.7}
+                  disabled={isUsed}
+                >
+                  <Text
+                    style={[
+                      styles.wordButtonText,
+                      isUsed && styles.wordButtonTextUsed,
+                    ]}
+                  >
+                    {word}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
           </View>
         </View>
-      </ScrollView>
+
+        {/* Bottom Button */}
+        <View style={styles.bottomSection}>
+          <TouchableOpacity
+            style={[
+              styles.verifyButton,
+              allSelected && styles.verifyButtonActive,
+            ]}
+            onPress={handleVerify}
+            disabled={!allSelected}
+            activeOpacity={0.85}
+          >
+            {allSelected && (
+              <CheckCircle2
+                size={layout.iconSize.sm}
+                color={colors.textWhite}
+                strokeWidth={2}
+              />
+            )}
+            <Text style={styles.verifyButtonText}>Verify Recovery Phrase</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
     </SafeAreaView>
   );
 }
@@ -287,159 +280,204 @@ export default function VerifySeedPhrase() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: "#F5F5F5",
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    flexGrow: 1,
+    backgroundColor: colors.background,
   },
   container: {
     flex: 1,
-    paddingHorizontal: 24,
-    paddingBottom: 40,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  // Header
+  header: {
+    height: layout.headerHeight,
+    paddingHorizontal: layout.screenPaddingHorizontal,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  backButton: {
+    width: layout.minTouchTarget,
+    height: layout.minTouchTarget,
+    backgroundColor: colors.backgroundInput,
+    borderRadius: borderRadius.full,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  resetButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    backgroundColor: colors.backgroundInput,
+    borderRadius: borderRadius.full,
+  },
+  resetButtonText: {
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.textTertiary,
+  },
+
+  // Content
+  contentSection: {
+    flex: 1,
+    paddingHorizontal: layout.screenPaddingHorizontal,
   },
   headerSection: {
-    alignItems: "center",
-    gap: 15,
-    marginTop: 40,
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginTop: spacing.sm,
+  },
+  titleIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: borderRadius.full,
+    backgroundColor: colors.primaryLight,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: spacing.xs,
   },
   title: {
-    fontFamily: "System",
-    fontWeight: "600",
-    fontSize: 25,
-    lineHeight: 25,
-    textAlign: "center",
-    color: "#000000",
+    fontSize: typography.fontSize['3xl'],
+    fontWeight: typography.fontWeight.bold,
+    textAlign: 'center',
+    color: colors.textPrimary,
+    letterSpacing: typography.letterSpacing.tight,
   },
   subtitle: {
-    fontFamily: "System",
-    fontWeight: "500",
-    fontSize: 18,
-    lineHeight: 25,
-    textAlign: "center",
-    color: "#323333",
+    fontSize: typography.fontSize.base,
+    fontWeight: typography.fontWeight.regular,
+    textAlign: 'center',
+    color: colors.textTertiary,
+    lineHeight: typography.fontSize.base * typography.lineHeight.normal,
+    paddingHorizontal: spacing.sm,
   },
-  gridSection: {
-    marginTop: 30,
-    gap: 24,
+
+  // Progress
+  progressRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    marginTop: spacing.xl,
+    marginBottom: spacing.base,
   },
-  slotRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 24,
+  progressLabel: {
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.textTertiary,
+    minWidth: 100,
   },
-  seedSlot: {
+  progressBarSmall: {
     flex: 1,
-    height: 50,
-    backgroundColor: "#F4F6F5",
+    height: 4,
+    backgroundColor: colors.borderLight,
+    borderRadius: borderRadius.full,
+    overflow: 'hidden',
+  },
+  progressFillSmall: {
+    height: '100%',
+    backgroundColor: colors.primary,
+    borderRadius: borderRadius.full,
+  },
+
+  // Selected Area
+  selectedArea: {
+    minHeight: 100,
+    backgroundColor: colors.backgroundCard,
+    borderRadius: borderRadius.lg,
+    padding: spacing.base,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
+    borderWidth: 1.5,
+    borderColor: colors.primaryMedium,
+    borderStyle: 'dashed',
+    marginBottom: spacing.xl,
+  },
+  selectedPlaceholder: {
+    fontSize: typography.fontSize.base,
+    color: colors.textPlaceholder,
+    fontWeight: typography.fontWeight.regular,
+    fontStyle: 'italic',
+  },
+  selectedWord: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.primary,
+    borderRadius: borderRadius.full,
+    paddingVertical: spacing.sm,
+    paddingLeft: spacing.md,
+    paddingRight: spacing.sm,
+    gap: spacing.xs,
+  },
+  selectedWordNumber: {
+    fontSize: typography.fontSize.xs,
+    color: colors.textWhite,
+    fontWeight: typography.fontWeight.bold,
+    opacity: 0.7,
+  },
+  selectedWordText: {
+    fontSize: typography.fontSize.sm,
+    color: colors.textWhite,
+    fontWeight: typography.fontWeight.semibold,
+  },
+
+  // Word Buttons
+  wordsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
+  },
+  wordButton: {
+    backgroundColor: colors.backgroundCard,
+    borderRadius: borderRadius.full,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.base,
     borderWidth: 1,
-    borderStyle: "dashed",
-    borderColor: "#D2D6E1",
-    borderRadius: 15,
-    flexDirection: "row",
-    alignItems: "center",
-    paddingLeft: 12,
+    borderColor: colors.border,
+    ...shadows.xs,
   },
-  seedSlotFilled: {
-    borderStyle: "solid",
-    borderColor: "#0F6EC0",
-    backgroundColor: "rgba(15, 114, 199, 0.05)",
+  wordButtonUsed: {
+    backgroundColor: colors.backgroundInput,
+    borderColor: colors.borderLight,
+    opacity: 0.4,
+    ...({ elevation: 0 } as any),
+    shadowOpacity: 0,
   },
-  numberBadge: {
-    width: 25,
-    height: 25,
-    backgroundColor: "#0F6EC0",
-    borderRadius: 30,
-    alignItems: "center",
-    justifyContent: "center",
+  wordButtonText: {
+    fontSize: typography.fontSize.base,
+    color: colors.textPrimary,
+    fontWeight: typography.fontWeight.medium,
   },
-  numberText: {
-    fontFamily: "System",
-    fontWeight: "400",
-    fontSize: 14,
-    lineHeight: 16,
-    textAlign: "center",
-    color: "#F4F6F5",
+  wordButtonTextUsed: {
+    color: colors.textPlaceholder,
   },
-  slotWord: {
-    fontFamily: "System",
-    fontWeight: "500",
-    fontSize: 16,
-    lineHeight: 16,
-    color: "#000000",
-    marginLeft: 12,
-  },
-  wordBankSection: {
-    marginTop: 40,
-    gap: 10,
-  },
-  wordBankRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 16,
-  },
-  wordChip: {
-    backgroundColor: "rgba(15, 114, 199, 0.2)",
-    borderWidth: 1,
-    borderColor: "#D2D6E1",
-    borderRadius: 7,
-    paddingVertical: 18,
-    paddingHorizontal: 15,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  wordChipDisabled: {
-    opacity: 0.3,
-    backgroundColor: "rgba(15, 114, 199, 0.05)",
-  },
-  wordChipText: {
-    fontFamily: "System",
-    fontWeight: "500",
-    fontSize: 16,
-    lineHeight: 16,
-    textAlign: "center",
-    color: "#000000",
-  },
-  wordChipTextDisabled: {
-    color: "#999999",
-  },
+
+  // Bottom
   bottomSection: {
-    marginTop: 40,
-    gap: 15,
+    paddingHorizontal: layout.screenPaddingHorizontal,
+    paddingBottom: spacing['2xl'],
   },
-  continueButton: {
-    backgroundColor: "#0F6EC0",
-    borderRadius: 15,
-    height: 60,
-    alignItems: "center",
-    justifyContent: "center",
+  verifyButton: {
+    backgroundColor: colors.primaryDisabled,
+    borderRadius: borderRadius.lg,
+    height: layout.buttonHeight,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'row',
+    gap: spacing.sm,
   },
-  continueButtonDisabled: {
-    opacity: 0.5,
+  verifyButtonActive: {
+    backgroundColor: colors.primary,
+    ...shadows.button,
   },
-  continueButtonText: {
-    fontFamily: "System",
-    fontWeight: "400",
-    fontSize: 16,
-    lineHeight: 16,
-    textAlign: "center",
-    color: "#F5F5F5",
-  },
-  goBackButton: {
-    backgroundColor: "rgba(15, 114, 199, 0.1)",
-    borderRadius: 15,
-    height: 60,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  goBackButtonText: {
-    fontFamily: "System",
-    fontWeight: "400",
-    fontSize: 16,
-    lineHeight: 16,
-    textAlign: "center",
-    color: "#000000",
+  verifyButtonText: {
+    fontWeight: typography.fontWeight.semibold,
+    fontSize: typography.fontSize.md,
+    color: colors.textWhite,
   },
 });

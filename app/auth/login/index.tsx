@@ -1,10 +1,23 @@
-import { router } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
-import React, { useState } from 'react';
+// auth/login/index.tsx
 import {
+  borderRadius,
+  colors,
+  layout,
+  shadows,
+  spacing,
+  typography,
+} from '@/constants/theme';
+import merchantApi from '@/services/MerchantApiService';
+import { router } from 'expo-router';
+import { ArrowLeft, ChevronRight, Phone, Zap } from 'lucide-react-native';
+import React, { useRef, useState } from 'react';
+import {
+  ActivityIndicator,
+  Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  StatusBar,
   StyleSheet,
   Text,
   TextInput,
@@ -14,10 +27,30 @@ import {
 
 export default function LoginScreen() {
   const [phoneNumber, setPhoneNumber] = useState('');
+  const [loading, setLoading] = useState(false);
+  const inputRef = useRef<TextInput>(null);
 
-  const handleContinue = () => {
-    if (phoneNumber.length > 0) {
-      router.push('/auth/login/otp');
+  const handleContinue = async () => {
+    if (phoneNumber.length === 0) return;
+    setLoading(true);
+    try {
+      const response = await merchantApi.loginInitiate({
+        phone_number: phoneNumber,
+      });
+
+      if (response.success) {
+        router.push({
+          pathname: '/auth/login/otp',
+          params: { phoneNumber },
+        });
+      } else {
+        Alert.alert('Error', response.error || 'Login failed');
+      }
+    } catch (error) {
+      const err = merchantApi.handleError(error);
+      Alert.alert('Error', err.error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -26,43 +59,100 @@ export default function LoginScreen() {
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      <StatusBar style="dark" />
+      <StatusBar barStyle="dark-content" backgroundColor={colors.background} />
 
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
       >
+        {/* Logo / Brand Mark */}
+        <View style={styles.brandContainer}>
+          <View style={styles.brandCircle}>
+            <Zap
+              size={layout.iconSize.xl}
+              color={colors.primary}
+              strokeWidth={1.8}
+              fill={colors.primaryLight}
+            />
+          </View>
+        </View>
+
+        {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.title}>Sign in to Flash</Text>
-          <Text style={styles.subtitle}>Enter your mobile number to continue</Text>
+          <Text style={styles.title}>Welcome back</Text>
+          <Text style={styles.subtitle}>
+            Sign in with your registered mobile number
+          </Text>
         </View>
 
+        {/* Form */}
         <View style={styles.formContainer}>
-          <Text style={styles.label}>Mobile Number</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="+234"
-            placeholderTextColor="#999"
-            value={phoneNumber}
-            onChangeText={setPhoneNumber}
-            keyboardType="phone-pad"
-          />
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Mobile Number</Text>
+            <TouchableOpacity
+              style={[
+                styles.inputWrapper,
+                phoneNumber.length > 0 && styles.inputWrapperActive,
+              ]}
+              onPress={() => inputRef.current?.focus()}
+              activeOpacity={1}
+            >
+              <View style={styles.inputIcon}>
+                <Phone
+                  size={layout.iconSize.sm}
+                  color={
+                    phoneNumber.length > 0
+                      ? colors.primary
+                      : colors.textTertiary
+                  }
+                  strokeWidth={1.8}
+                />
+              </View>
+              <TextInput
+                ref={inputRef}
+                style={styles.input}
+                placeholder="+234 800 000 0000"
+                placeholderTextColor={colors.textPlaceholder}
+                value={phoneNumber}
+                onChangeText={setPhoneNumber}
+                keyboardType="phone-pad"
+              />
+            </TouchableOpacity>
+          </View>
         </View>
 
+        {/* Actions */}
         <View style={styles.bottomContainer}>
           <TouchableOpacity
             style={[
-              styles.button,
-              !phoneNumber && styles.buttonDisabled,
+              styles.continueButton,
+              (!phoneNumber || loading) && styles.buttonDisabled,
             ]}
             onPress={handleContinue}
-            disabled={!phoneNumber}
-            activeOpacity={0.8}
+            disabled={!phoneNumber || loading}
+            activeOpacity={0.85}
           >
-            <Text style={styles.buttonText}>Continue</Text>
+            {loading ? (
+              <ActivityIndicator size="small" color={colors.textWhite} />
+            ) : null}
+            <Text style={styles.continueButtonText}>
+              {loading ? 'Sending OTP…' : 'Continue'}
+            </Text>
+            {!loading && (
+              <ChevronRight
+                size={layout.iconSize.sm}
+                color={colors.textWhite}
+                strokeWidth={2.5}
+              />
+            )}
           </TouchableOpacity>
 
-          <TouchableOpacity onPress={() => router.push('/auth/signup')}>
+          <TouchableOpacity
+            onPress={() => router.push('/auth/create-wallet' as any)}
+            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+            style={styles.footerLink}
+          >
             <Text style={styles.footerText}>
               Don't have an account?{' '}
               <Text style={styles.linkText}>Sign up</Text>
@@ -77,96 +167,121 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F5F5',
+    backgroundColor: colors.background,
   },
   scrollContent: {
-    paddingTop: 80,
-    paddingHorizontal: 52,
-    paddingBottom: 40,
+    paddingTop: spacing['5xl'],
+    paddingHorizontal: layout.screenPaddingHorizontal,
+    paddingBottom: spacing['2xl'],
+    flexGrow: 1,
+  },
+  brandContainer: {
+    alignItems: 'center',
+    marginBottom: spacing['2xl'],
+  },
+  brandCircle: {
+    width: 72,
+    height: 72,
+    borderRadius: borderRadius.full,
+    backgroundColor: colors.primaryLight,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1.5,
+    borderColor: colors.primaryMedium,
   },
   header: {
     alignItems: 'center',
-    marginBottom: 50,
+    marginBottom: spacing['3xl'],
   },
   title: {
-    fontFamily: 'SF Pro',
-    fontWeight: '600',
-    fontSize: 25,
-    lineHeight: 25,
+    fontSize: typography.fontSize['4xl'],
+    fontWeight: typography.fontWeight.bold,
     textAlign: 'center',
-    color: '#000000',
-    marginBottom: 15,
+    color: colors.textPrimary,
+    marginBottom: spacing.sm,
+    letterSpacing: typography.letterSpacing.tight,
   },
   subtitle: {
-    fontFamily: 'SF Pro',
-    fontWeight: '500',
-    fontSize: 18,
-    lineHeight: 25,
+    fontSize: typography.fontSize.base,
+    fontWeight: typography.fontWeight.regular,
+    lineHeight: typography.fontSize.base * typography.lineHeight.normal,
     textAlign: 'center',
-    color: '#323333',
+    color: colors.textTertiary,
   },
   formContainer: {
-    gap: 15,
-    marginBottom: 50,
+    marginBottom: spacing['3xl'],
+  },
+  inputGroup: {
+    gap: spacing.sm,
   },
   label: {
-    fontFamily: 'SF Pro',
-    fontWeight: '500',
-    fontSize: 16,
-    lineHeight: 22,
-    color: '#000000',
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.textTertiary,
+    textTransform: 'uppercase',
+    letterSpacing: typography.letterSpacing.wide,
+  },
+  inputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    height: layout.inputHeight,
+    backgroundColor: colors.backgroundCard,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
+    borderRadius: borderRadius.md,
+    paddingHorizontal: spacing.base,
+    gap: spacing.md,
+  },
+  inputWrapperActive: {
+    borderColor: colors.borderActive,
+    backgroundColor: colors.backgroundCard,
+  },
+  inputIcon: {
+    width: layout.iconSize.md,
+    alignItems: 'center',
   },
   input: {
-    height: 60,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#D2D6E1',
-    borderRadius: 15,
-    paddingHorizontal: 20,
-    fontFamily: 'SF Pro',
-    fontSize: 16,
-    color: '#000000',
+    flex: 1,
+    fontSize: typography.fontSize.md,
+    fontWeight: typography.fontWeight.regular,
+    color: colors.textPrimary,
+    height: '100%',
   },
   bottomContainer: {
-    gap: 20,
-    marginBottom: 40,
+    gap: spacing.lg,
+    marginTop: 'auto',
+    paddingBottom: spacing.lg,
   },
-  button: {
-    height: 60,
-    backgroundColor: 'rgba(15, 114, 199, 0.7)',
-    borderRadius: 15,
+  continueButton: {
+    height: layout.buttonHeight,
+    backgroundColor: colors.primary,
+    borderRadius: borderRadius.lg,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#0F6EC0',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 3,
+    flexDirection: 'row',
+    gap: spacing.sm,
+    ...shadows.button,
   },
   buttonDisabled: {
-    opacity: 0.5,
+    opacity: 0.45,
   },
-  buttonText: {
-    fontFamily: 'SF Pro',
-    fontWeight: '400',
-    fontSize: 16,
-    lineHeight: 16,
-    textAlign: 'center',
-    color: '#F5F5F5',
+  continueButtonText: {
+    fontSize: typography.fontSize.md,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.textWhite,
+  },
+  footerLink: {
+    alignItems: 'center',
+    paddingVertical: spacing.sm,
   },
   footerText: {
-    fontFamily: 'SF Pro',
-    fontWeight: '400',
-    fontSize: 16,
-    lineHeight: 16,
-    textAlign: 'center',
-    color: '#323333',
+    fontSize: typography.fontSize.base,
+    fontWeight: typography.fontWeight.regular,
+    color: colors.textTertiary,
   },
   linkText: {
-    color: '#0F6EC0',
+    color: colors.primary,
+    fontWeight: typography.fontWeight.semibold,
     textDecorationLine: 'underline',
   },
 });

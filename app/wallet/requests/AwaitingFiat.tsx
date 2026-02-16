@@ -1,16 +1,17 @@
+import { useRouter } from 'expo-router';
+import { Clock } from 'lucide-react-native';
 import React, { useEffect } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
   Animated,
   Easing,
   Platform,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Clock } from 'lucide-react-native';
-import { useRouter } from 'expo-router';
+import { borderRadius, colors, layout, spacing, typography } from '@/constants/theme';
 
 export default function AwaitingFiat() {
   const router = useRouter();
@@ -47,7 +48,7 @@ export default function AwaitingFiat() {
         <View style={styles.timerContainer}>
           <View style={styles.timerCircle}>
             <Animated.View style={{ transform: [{ rotate: spin }] }}>
-              <Clock size={90} color="#FF9934" strokeWidth={1.5} />
+              <Clock size={90} color={colors.warning} strokeWidth={1.5} />
             </Animated.View>
           </View>
           <Text style={styles.statusText}>Awaiting Fiat Receipt...</Text>
@@ -78,7 +79,7 @@ export default function AwaitingFiat() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F5F5',
+    backgroundColor: colors.background,
   },
   content: {
     flex: 1,
@@ -87,48 +88,48 @@ const styles = StyleSheet.create({
   },
   timerContainer: {
     alignItems: 'center',
-    gap: 30,
+    gap: spacing['2xl'],
   },
   timerCircle: {
     width: 150,
     height: 150,
-    borderRadius: 75,
+    borderRadius: borderRadius.full,
     backgroundColor: 'rgba(255, 164, 85, 0.2)',
     justifyContent: 'center',
     alignItems: 'center',
   },
   statusText: {
-    fontSize: 18,
-    fontWeight: '500',
-    color: '#FF9934',
+    fontSize: typography.fontSize.lg,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.warning,
   },
   footer: {
-    padding: 24,
-    paddingBottom: Platform.OS === 'ios' ? 40 : 24,
-    gap: 20,
+    padding: spacing.lg,
+    paddingBottom: Platform.OS === 'ios' ? spacing.xl : spacing.md,
+    gap: spacing.md,
   },
   confirmButton: {
-    backgroundColor: '#0F6EC0',
-    borderRadius: 15,
-    height: 60,
+    backgroundColor: colors.primary,
+    borderRadius: borderRadius.lg,
+    height: layout.buttonHeight,
     justifyContent: 'center',
     alignItems: 'center',
   },
   confirmButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#F5F5F5',
+    fontSize: typography.fontSize.md,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.textLight,
   },
   cancelButton: {
-    backgroundColor: 'rgba(15, 114, 199, 0.1)',
-    borderRadius: 15,
-    height: 60,
+    backgroundColor: colors.primaryLight,
+    borderRadius: borderRadius.lg,
+    height: layout.buttonHeight,
     justifyContent: 'center',
     alignItems: 'center',
   },
   cancelButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#000000',
+    fontSize: typography.fontSize.md,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.textPrimary,
   },
 });

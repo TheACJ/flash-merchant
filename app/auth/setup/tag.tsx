@@ -1,7 +1,27 @@
-import { useRouter } from "expo-router";
-import React, { useCallback, useRef, useState } from "react";
+// auth/setup/tag.tsx
+import {
+  borderRadius,
+  colors,
+  layout,
+  shadows,
+  spacing,
+  typography,
+} from '@/constants/theme';
+import merchantApi from '@/services/MerchantApiService';
+import { completeOnboarding } from '@/utils/onboarding';
+import { useRouter } from 'expo-router';
+import {
+  ArrowLeft,
+  AtSign,
+  CheckCircle2,
+  ChevronRight,
+  Loader2,
+  XCircle,
+} from 'lucide-react-native';
+import React, { useCallback, useRef, useState } from 'react';
 import {
   ActivityIndicator,
+  Alert,
   Keyboard,
   SafeAreaView,
   StatusBar,
@@ -11,153 +31,158 @@ import {
   TouchableOpacity,
   TouchableWithoutFeedback,
   View,
-} from "react-native";
-import { Path, Svg } from "react-native-svg";
+} from 'react-native';
 
-// --- Icons ---
+const TAKEN_TAGS = ['admin', 'flash', 'merchant', 'test', 'user'];
 
-const CheckCircleIcon = () => (
-  <Svg width={25} height={25} viewBox="0 0 25 25" fill="none">
-    <Path
-      d="M12.5 2.34375C6.8916 2.34375 2.34375 6.8916 2.34375 12.5C2.34375 18.1084 6.8916 22.6562 12.5 22.6562C18.1084 22.6562 22.6562 18.1084 22.6562 12.5C22.6562 6.8916 18.1084 2.34375 12.5 2.34375Z"
-      fill="#128807"
-    />
-    <Path
-      d="M17.1875 9.375L10.9375 15.625L7.8125 12.5"
-      stroke="white"
-      strokeWidth={1.8}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-  </Svg>
-);
-
-const XCircleIcon = () => (
-  <Svg width={25} height={25} viewBox="0 0 25 25" fill="none">
-    <Path
-      d="M12.5 2.34375C6.8916 2.34375 2.34375 6.8916 2.34375 12.5C2.34375 18.1084 6.8916 22.6562 12.5 22.6562C18.1084 22.6562 22.6562 18.1084 22.6562 12.5C22.6562 6.8916 18.1084 2.34375 12.5 2.34375Z"
-      fill="#C31D1E"
-    />
-    <Path
-      d="M15.625 9.375L9.375 15.625"
-      stroke="white"
-      strokeWidth={1.8}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-    <Path
-      d="M9.375 9.375L15.625 15.625"
-      stroke="white"
-      strokeWidth={1.8}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-  </Svg>
-);
-
-// Simulated taken tags for demo
-const TAKEN_TAGS = ["admin", "flash", "merchant", "test", "user"];
-
-type TagStatus = "idle" | "checking" | "available" | "taken";
+type TagStatus = 'idle' | 'checking' | 'available' | 'taken';
 
 export default function CreateTag() {
   const router = useRouter();
-  const [tag, setTag] = useState("");
-  const [tagStatus, setTagStatus] = useState<TagStatus>("idle");
+  const [tag, setTag] = useState('');
+  const [tagStatus, setTagStatus] = useState<TagStatus>('idle');
+  const [loading, setLoading] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const checkTagAvailability = useCallback((value: string) => {
+  const checkTagAvailability = useCallback(async (value: string) => {
     if (debounceRef.current) {
       clearTimeout(debounceRef.current);
     }
 
-    if (value.trim().length === 0) {
-      setTagStatus("idle");
-      return;
-    }
-
     if (value.trim().length < 3) {
-      setTagStatus("idle");
+      setTagStatus('idle');
       return;
     }
 
-    setTagStatus("checking");
+    setTagStatus('checking');
 
-    debounceRef.current = setTimeout(() => {
-      const isTaken = TAKEN_TAGS.includes(value.trim().toLowerCase());
-      setTagStatus(isTaken ? "taken" : "available");
+    debounceRef.current = setTimeout(async () => {
+      try {
+        const response = await merchantApi.checkTagAvailability(value.trim());
+        if (response.success && response.data) {
+          setTagStatus(response.data.available ? 'available' : 'taken');
+        } else {
+          const isTaken = TAKEN_TAGS.includes(value.trim().toLowerCase());
+          setTagStatus(isTaken ? 'taken' : 'available');
+        }
+      } catch {
+        const isTaken = TAKEN_TAGS.includes(value.trim().toLowerCase());
+        setTagStatus(isTaken ? 'taken' : 'available');
+      }
     }, 800);
   }, []);
 
   const handleTagChange = (value: string) => {
-    // Only allow alphanumeric and underscore
-    const sanitized = value.replace(/[^a-zA-Z0-9_]/g, "");
+    const sanitized = value.replace(/[^a-zA-Z0-9_]/g, '');
     setTag(sanitized);
     checkTagAvailability(sanitized);
   };
 
-  const handleNext = () => {
-    if (tagStatus === "available") {
-      router.push("/auth/setup/bank_setup");
-    }
-  };
+  const handleNext = async () => {
+    if (tagStatus !== 'available') return;
+    setLoading(true);
+    try {
+      const response = await merchantApi.addMerchantTag({ tag: tag.trim() });
 
-  const handleGoBack = () => {
-    router.back();
+      if (response.success) {
+        await completeOnboarding();
+        Alert.alert('Success', 'Merchant tag created successfully!', [
+          {
+            text: 'Continue',
+            onPress: () => router.replace('/(tabs)/home'),
+          },
+        ]);
+      } else {
+        Alert.alert('Error', response.error || 'Failed to create tag');
+      }
+    } catch (error) {
+      const err = merchantApi.handleError(error);
+      Alert.alert('Error', err.error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const getInputBorderColor = () => {
     switch (tagStatus) {
-      case "available":
-        return "#128807";
-      case "taken":
-        return "#C31D1E";
+      case 'available':
+        return colors.success;
+      case 'taken':
+        return colors.error;
       default:
-        return "#D2D6E1";
+        return colors.borderLight;
     }
   };
 
-  const getStatusMessage = () => {
+  const getStatusConfig = () => {
     switch (tagStatus) {
-      case "available":
-        return { text: "Tag is available!", color: "#128807" };
-      case "taken":
-        return { text: "Tag is already taken", color: "#C31D1E" };
+      case 'available':
+        return { text: 'Tag is available!', color: colors.success };
+      case 'taken':
+        return { text: 'Tag is already taken', color: colors.error };
       default:
         return null;
     }
   };
 
-  const statusMessage = getStatusMessage();
+  const statusConfig = getStatusConfig();
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="dark-content" backgroundColor="#F5F5F5" />
+      <StatusBar barStyle="dark-content" backgroundColor={colors.background} />
+
+      {/* Header */}
+      <View style={styles.header}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => router.back()}
+          activeOpacity={0.7}
+        >
+          <ArrowLeft
+            size={layout.iconSize.md}
+            color={colors.textPrimary}
+            strokeWidth={2}
+          />
+        </TouchableOpacity>
+      </View>
+
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <View style={styles.container}>
-          {/* Header */}
+          {/* Title */}
           <View style={styles.headerSection}>
-            <Text style={styles.title}>Create tag</Text>
+            <View style={styles.titleIconContainer}>
+              <AtSign
+                size={layout.iconSize.xl}
+                color={colors.primary}
+                strokeWidth={1.8}
+              />
+            </View>
+            <Text style={styles.title}>Create Merchant Tag</Text>
             <Text style={styles.subtitle}>
-              Create a merchant identity tag
+              Choose a unique identity tag for your merchant account
             </Text>
           </View>
 
           {/* Tag Input */}
           <View style={styles.inputSection}>
-            <Text style={styles.inputLabel}>Enter your tag</Text>
+            <Text style={styles.inputLabel}>Merchant Tag</Text>
             <View
               style={[
                 styles.inputContainer,
                 { borderColor: getInputBorderColor() },
+                tagStatus === 'available' && styles.inputContainerSuccess,
+                tagStatus === 'taken' && styles.inputContainerError,
               ]}
             >
+              <View style={styles.inputPrefix}>
+                <Text style={styles.inputPrefixText}>@</Text>
+              </View>
               <TextInput
                 style={styles.textInput}
                 value={tag}
                 onChangeText={handleTagChange}
-                placeholder="e.g. Cryptoguru"
-                placeholderTextColor="#657084"
+                placeholder="yourmerchantname"
+                placeholderTextColor={colors.textPlaceholder}
                 autoCapitalize="none"
                 autoCorrect={false}
                 returnKeyType="done"
@@ -165,41 +190,93 @@ export default function CreateTag() {
 
               {/* Status Icon */}
               <View style={styles.statusIconContainer}>
-                {tagStatus === "checking" && (
-                  <ActivityIndicator size="small" color="#0F6EC0" />
+                {tagStatus === 'checking' && (
+                  <Loader2
+                    size={layout.iconSize.md}
+                    color={colors.primary}
+                    strokeWidth={2}
+                  />
                 )}
-                {tagStatus === "available" && <CheckCircleIcon />}
-                {tagStatus === "taken" && <XCircleIcon />}
+                {tagStatus === 'available' && (
+                  <CheckCircle2
+                    size={layout.iconSize.md}
+                    color={colors.success}
+                    strokeWidth={2}
+                  />
+                )}
+                {tagStatus === 'taken' && (
+                  <XCircle
+                    size={layout.iconSize.md}
+                    color={colors.error}
+                    strokeWidth={2}
+                  />
+                )}
               </View>
             </View>
 
             {/* Status Message */}
-            {statusMessage && (
-              <Text
-                style={[styles.statusMessage, { color: statusMessage.color }]}
-              >
-                {statusMessage.text}
+            {statusConfig && (
+              <View style={styles.statusRow}>
+                {tagStatus === 'available' ? (
+                  <CheckCircle2
+                    size={14}
+                    color={statusConfig.color}
+                    strokeWidth={2.5}
+                  />
+                ) : (
+                  <XCircle
+                    size={14}
+                    color={statusConfig.color}
+                    strokeWidth={2.5}
+                  />
+                )}
+                <Text style={[styles.statusMessage, { color: statusConfig.color }]}>
+                  {statusConfig.text}
+                </Text>
+              </View>
+            )}
+
+            {/* Hint */}
+            {tag.length > 0 && tag.length < 3 && (
+              <Text style={styles.hintText}>
+                Tag must be at least 3 characters
               </Text>
             )}
           </View>
+
+          {/* Spacer */}
+          <View style={{ flex: 1 }} />
 
           {/* Bottom Buttons */}
           <View style={styles.bottomSection}>
             <TouchableOpacity
               style={[
                 styles.nextButton,
-                tagStatus !== "available" && styles.nextButtonDisabled,
+                (tagStatus !== 'available' || loading) &&
+                  styles.buttonDisabled,
               ]}
               onPress={handleNext}
-              disabled={tagStatus !== "available"}
-              activeOpacity={0.8}
+              disabled={tagStatus !== 'available' || loading}
+              activeOpacity={0.85}
             >
-              <Text style={styles.nextButtonText}>Next</Text>
+              {loading ? (
+                <ActivityIndicator size="small" color={colors.textWhite} />
+              ) : null}
+              <Text style={styles.nextButtonText}>
+                {loading ? 'Creating…' : 'Create Tag'}
+              </Text>
+              {!loading && (
+                <ChevronRight
+                  size={layout.iconSize.sm}
+                  color={colors.textWhite}
+                  strokeWidth={2.5}
+                />
+              )}
             </TouchableOpacity>
 
             <TouchableOpacity
               style={styles.goBackButton}
-              onPress={handleGoBack}
+              onPress={() => router.back()}
               activeOpacity={0.8}
             >
               <Text style={styles.goBackButtonText}>Go back</Text>
@@ -214,114 +291,157 @@ export default function CreateTag() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: "#F5F5F5",
+    backgroundColor: colors.background,
+  },
+  header: {
+    height: layout.headerHeight,
+    paddingHorizontal: layout.screenPaddingHorizontal,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  backButton: {
+    width: layout.minTouchTarget,
+    height: layout.minTouchTarget,
+    backgroundColor: colors.backgroundInput,
+    borderRadius: borderRadius.full,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   container: {
     flex: 1,
-    paddingHorizontal: 24,
+    paddingHorizontal: layout.screenPaddingHorizontal,
   },
   headerSection: {
-    alignItems: "center",
-    gap: 15,
-    marginTop: 50,
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginTop: spacing.lg,
+    marginBottom: spacing['2xl'],
+  },
+  titleIconContainer: {
+    width: 64,
+    height: 64,
+    borderRadius: borderRadius.full,
+    backgroundColor: colors.primaryLight,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: spacing.sm,
   },
   title: {
-    fontFamily: "System",
-    fontWeight: "600",
-    fontSize: 25,
-    lineHeight: 25,
-    textAlign: "center",
-    color: "#000000",
+    fontSize: typography.fontSize['3xl'],
+    fontWeight: typography.fontWeight.bold,
+    textAlign: 'center',
+    color: colors.textPrimary,
+    letterSpacing: typography.letterSpacing.tight,
   },
   subtitle: {
-    fontFamily: "System",
-    fontWeight: "500",
-    fontSize: 20,
-    lineHeight: 25,
-    textAlign: "center",
-    color: "#323333",
+    fontSize: typography.fontSize.base,
+    fontWeight: typography.fontWeight.regular,
+    lineHeight: typography.fontSize.base * typography.lineHeight.normal,
+    textAlign: 'center',
+    color: colors.textTertiary,
+    paddingHorizontal: spacing.lg,
   },
   inputSection: {
-    marginTop: 40,
-    gap: 15,
+    gap: spacing.sm,
   },
   inputLabel: {
-    fontFamily: "System",
-    fontWeight: "500",
-    fontSize: 16,
-    lineHeight: 22,
-    color: "#000000",
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.textTertiary,
+    textTransform: 'uppercase',
+    letterSpacing: typography.letterSpacing.wide,
   },
   inputContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    height: 60,
-    backgroundColor: "#F4F6F5",
-    borderWidth: 1,
-    borderColor: "#D2D6E1",
-    borderRadius: 15,
-    paddingHorizontal: 18,
+    flexDirection: 'row',
+    alignItems: 'center',
+    height: layout.inputHeight,
+    backgroundColor: colors.backgroundCard,
+    borderWidth: 1.5,
+    borderColor: colors.borderLight,
+    borderRadius: borderRadius.md,
+    paddingRight: spacing.base,
+    overflow: 'hidden',
+  },
+  inputContainerSuccess: {
+    backgroundColor: colors.successLight,
+  },
+  inputContainerError: {
+    backgroundColor: colors.errorLight,
+  },
+  inputPrefix: {
+    height: '100%',
+    paddingHorizontal: spacing.base,
+    backgroundColor: colors.backgroundInput,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRightWidth: 1,
+    borderRightColor: colors.borderLight,
+  },
+  inputPrefixText: {
+    fontSize: typography.fontSize.lg,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.primary,
   },
   textInput: {
     flex: 1,
-    fontFamily: "System",
-    fontWeight: "400",
-    fontSize: 16,
-    lineHeight: 19,
-    color: "#000000",
-    height: "100%",
+    fontSize: typography.fontSize.md,
+    fontWeight: typography.fontWeight.regular,
+    color: colors.textPrimary,
+    height: '100%',
+    paddingHorizontal: spacing.md,
   },
   statusIconContainer: {
-    width: 25,
-    height: 25,
-    alignItems: "center",
-    justifyContent: "center",
+    width: layout.iconSize.lg,
+    height: layout.iconSize.lg,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  statusRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
   },
   statusMessage: {
-    fontFamily: "System",
-    fontWeight: "400",
-    fontSize: 14,
-    lineHeight: 18,
-    marginTop: -5,
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.medium,
+  },
+  hintText: {
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.regular,
+    color: colors.textMuted,
   },
   bottomSection: {
-    position: "absolute",
-    bottom: 60,
-    left: 24,
-    right: 24,
-    gap: 20,
+    gap: spacing.md,
+    paddingBottom: spacing['2xl'],
   },
   nextButton: {
-    backgroundColor: "#0F6EC0",
-    borderRadius: 15,
-    height: 60,
-    alignItems: "center",
-    justifyContent: "center",
+    backgroundColor: colors.primary,
+    borderRadius: borderRadius.lg,
+    height: layout.buttonHeight,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'row',
+    gap: spacing.sm,
+    ...shadows.button,
   },
-  nextButtonDisabled: {
-    opacity: 0.5,
+  buttonDisabled: {
+    opacity: 0.45,
   },
   nextButtonText: {
-    fontFamily: "System",
-    fontWeight: "400",
-    fontSize: 16,
-    lineHeight: 16,
-    textAlign: "center",
-    color: "#F5F5F5",
+    fontSize: typography.fontSize.md,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.textWhite,
   },
   goBackButton: {
-    backgroundColor: "rgba(15, 114, 199, 0.1)",
-    borderRadius: 15,
-    height: 60,
-    alignItems: "center",
-    justifyContent: "center",
+    backgroundColor: colors.backgroundInput,
+    borderRadius: borderRadius.lg,
+    height: layout.buttonHeight,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   goBackButtonText: {
-    fontFamily: "System",
-    fontWeight: "400",
-    fontSize: 16,
-    lineHeight: 16,
-    textAlign: "center",
-    color: "#000000",
+    fontSize: typography.fontSize.md,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.textSecondary,
   },
 });

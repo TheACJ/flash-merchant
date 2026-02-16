@@ -1,13 +1,14 @@
+import { borderRadius, colors, layout, spacing, typography } from '@/constants/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React from 'react';
 import {
-    StyleSheet,
-    Text,
-    TextStyle,
-    TouchableOpacity,
-    View,
-    ViewStyle,
+  StyleSheet,
+  Text,
+  TextStyle,
+  TouchableOpacity,
+  View,
+  ViewStyle,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -54,14 +55,14 @@ export default function ExchangeRateScreen() {
           onPress={() => router.back()}
           activeOpacity={0.7}
         >
-          <Ionicons name="chevron-back" size={24} color="#000000" />
+          <Ionicons name="chevron-back" size={24} color={colors.textPrimary} />
         </TouchableOpacity>
         <Text style={styles.headerTitle as TextStyle}>Exchange rate</Text>
         <View style={styles.placeholder as ViewStyle} />
       </View>
 
       <View style={styles.content as ViewStyle}>
-        {cryptos.map((crypto, index) => (
+        {cryptos.map((crypto) => (
           <View key={crypto.name} style={styles.cryptoCard as ViewStyle}>
             <View style={styles.cryptoInfo as ViewStyle}>
               <View style={styles.cryptoIconBg as ViewStyle}>
@@ -99,80 +100,80 @@ export default function ExchangeRateScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F5F5',
+    backgroundColor: colors.background,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
   },
   backButton: {
     padding: 4,
   },
   headerTitle: {
-    fontSize: 25,
-    fontWeight: '600',
-    color: '#000000',
+    fontSize: typography.fontSize['4xl'],
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.textPrimary,
   },
   placeholder: {
     width: 40,
   },
   content: {
     flex: 1,
-    paddingHorizontal: 20,
-    paddingTop: 10,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.sm,
   },
   cryptoCard: {
-    backgroundColor: '#F4F6F5',
-    borderRadius: 8,
-    marginBottom: 15,
-    padding: 15,
+    backgroundColor: colors.backgroundInput,
+    borderRadius: borderRadius.sm,
+    marginBottom: spacing.md,
+    padding: spacing.md,
   },
   cryptoInfo: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 10,
+    marginBottom: spacing.sm,
   },
   cryptoIconBg: {
     width: 40,
     height: 40,
-    borderRadius: 20,
-    backgroundColor: '#232428',
+    borderRadius: borderRadius.full,
+    backgroundColor: colors.shadow,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12,
+    marginRight: spacing.sm,
   },
   cryptoIconText: {
-    color: '#F4F6F5',
-    fontSize: 18,
-    fontWeight: '600',
+    color: colors.backgroundInput,
+    fontSize: typography.fontSize.lg,
+    fontWeight: typography.fontWeight.semibold,
   },
   cryptoName: {
-    fontSize: 16,
-    color: '#000000',
-    fontWeight: '510',
+    fontSize: typography.fontSize.md,
+    color: colors.textPrimary,
+    fontWeight: typography.fontWeight.medium,
   },
   cryptoRates: {
-    paddingTop: 5,
+    paddingTop: spacing.xs,
   },
   yourRateLabel: {
-    fontSize: 14,
-    color: '#323333',
-    marginBottom: 5,
+    fontSize: typography.fontSize.base,
+    color: colors.textSecondary,
+    marginBottom: spacing.xs,
   },
   rateBox: {
-    backgroundColor: '#F5F5F5',
-    borderRadius: 8,
-    paddingVertical: 10,
-    paddingHorizontal: 15,
-    marginBottom: 8,
+    backgroundColor: colors.background,
+    borderRadius: borderRadius.sm,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    marginBottom: spacing.xs,
   },
   rateText: {
-    fontSize: 16,
-    color: '#128807',
-    fontWeight: '510',
+    fontSize: typography.fontSize.md,
+    color: colors.success,
+    fontWeight: typography.fontWeight.medium,
   },
   marketRow: {
     flexDirection: 'row',
@@ -180,45 +181,45 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   marketLabel: {
-    fontSize: 14,
-    color: '#000000',
-    fontWeight: '510',
+    fontSize: typography.fontSize.base,
+    color: colors.textPrimary,
+    fontWeight: typography.fontWeight.medium,
   },
   marketValue: {
-    fontSize: 14,
-    color: '#128807',
-    fontWeight: '510',
+    fontSize: typography.fontSize.base,
+    color: colors.success,
+    fontWeight: typography.fontWeight.medium,
   },
   cryptoItem: {
-    marginBottom: 20,
+    marginBottom: spacing.lg,
   },
   cryptoHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 10,
+    marginBottom: spacing.sm,
   },
   cryptoIcon: {
     width: 40,
     height: 40,
-    borderRadius: 20,
-    backgroundColor: '#232428',
+    borderRadius: borderRadius.full,
+    backgroundColor: colors.shadow,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12,
+    marginRight: spacing.sm,
   },
   rateContainer: {
-    paddingTop: 5,
+    paddingTop: spacing.xs,
   },
   rateInput: {
-    backgroundColor: '#F5F5F5',
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 8,
+    backgroundColor: colors.background,
+    borderRadius: borderRadius.sm,
+    padding: spacing.sm,
+    marginBottom: spacing.xs,
   },
   rateValue: {
-    fontSize: 16,
-    color: '#128807',
-    fontWeight: '510',
+    fontSize: typography.fontSize.md,
+    color: colors.success,
+    fontWeight: typography.fontWeight.medium,
   },
   marketRateRow: {
     flexDirection: 'row',
@@ -226,29 +227,29 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   marketRateLabel: {
-    fontSize: 14,
-    color: '#000000',
-    fontWeight: '510',
+    fontSize: typography.fontSize.base,
+    color: colors.textPrimary,
+    fontWeight: typography.fontWeight.medium,
   },
   marketRateValue: {
-    fontSize: 14,
-    color: '#128807',
-    fontWeight: '510',
+    fontSize: typography.fontSize.base,
+    color: colors.success,
+    fontWeight: typography.fontWeight.medium,
   },
   buttonContainer: {
-    paddingHorizontal: 20,
-    paddingBottom: 40,
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing['2xl'],
   },
   nextButton: {
-    height: 60,
-    backgroundColor: '#0F6EC0',
-    borderRadius: 15,
+    height: layout.buttonHeight,
+    backgroundColor: colors.primary,
+    borderRadius: borderRadius.lg,
     justifyContent: 'center',
     alignItems: 'center',
   },
   nextButtonText: {
-    fontSize: 16,
-    color: '#F5F5F5',
-    fontWeight: '400',
+    fontSize: typography.fontSize.md,
+    color: colors.textLight,
+    fontWeight: typography.fontWeight.regular,
   },
 });

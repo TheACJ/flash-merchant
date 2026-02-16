@@ -1,15 +1,16 @@
+import { borderRadius, colors, typography } from '@/constants/theme';
 import { Check } from 'lucide-react-native';
 import React, { useEffect, useRef } from 'react';
 import {
-    Animated,
-    Dimensions,
-    Modal,
-    Pressable,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Animated,
+  Dimensions,
+  Modal,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import { AssetIcon } from './SelectAssetAmount';
 import { Asset } from './types';
@@ -140,7 +141,7 @@ export default function AssetSelector({
                   </View>
                   {isSelected && (
                     <View style={styles.checkContainer}>
-                      <Check size={20} color="#0F6EC0" strokeWidth={3} />
+                      <Check size={20} color={colors.primary} strokeWidth={3} />
                     </View>
                   )}
                 </TouchableOpacity>
@@ -172,15 +173,15 @@ const styles = StyleSheet.create({
   },
   backdrop: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: '#000000',
+    backgroundColor: colors.overlay,
   },
   backdropPressable: {
     flex: 1,
   },
   bottomSheet: {
-    backgroundColor: '#F4F6F5',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
+    backgroundColor: colors.backgroundInput,
+    borderTopLeftRadius: borderRadius.xl,
+    borderTopRightRadius: borderRadius.xl,
     maxHeight: MODAL_HEIGHT,
     paddingBottom: 30,
   },
@@ -191,13 +192,13 @@ const styles = StyleSheet.create({
   handle: {
     width: 40,
     height: 4,
-    backgroundColor: '#D2D6E1',
+    backgroundColor: colors.border,
     borderRadius: 2,
   },
   title: {
-    fontSize: 25,
-    fontWeight: '500',
-    color: '#000000',
+    fontSize: typography.fontSize['4xl'],
+    fontWeight: typography.fontWeight.medium,
+    color: colors.textPrimary,
     textAlign: 'center',
     marginBottom: 20,
   },
@@ -209,15 +210,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#F5F5F5',
-    borderRadius: 10,
+    backgroundColor: colors.background,
+    borderRadius: borderRadius.sm,
     padding: 12,
     marginBottom: 16,
   },
   assetItemSelected: {
     backgroundColor: '#E8F4FD',
     borderWidth: 1,
-    borderColor: '#0F6EC0',
+    borderColor: colors.primary,
   },
   assetLeft: {
     flexDirection: 'row',
@@ -228,19 +229,19 @@ const styles = StyleSheet.create({
     gap: 3,
   },
   assetSymbol: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#000000',
+    fontSize: typography.fontSize.md,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.textPrimary,
   },
   assetName: {
-    fontSize: 14,
-    color: '#323333',
+    fontSize: typography.fontSize.base,
+    color: colors.textSecondary,
   },
   checkContainer: {
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: 'rgba(15, 110, 192, 0.1)',
+    backgroundColor: colors.primaryLight,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -249,15 +250,15 @@ const styles = StyleSheet.create({
     paddingTop: 20,
   },
   cancelButton: {
-    backgroundColor: 'rgba(15, 110, 192, 0.1)',
-    borderRadius: 15,
+    backgroundColor: colors.primaryLight,
+    borderRadius: borderRadius.lg,
     height: 60,
     justifyContent: 'center',
     alignItems: 'center',
   },
   cancelButtonText: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#000000',
+    fontSize: typography.fontSize.md,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.textPrimary,
   },
 });

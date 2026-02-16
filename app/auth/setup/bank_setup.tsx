@@ -1,6 +1,26 @@
-import { useRouter } from "expo-router";
-import React, { useMemo, useState } from "react";
+// auth/setup/bank_setup.tsx
 import {
+  borderRadius,
+  colors,
+  layout,
+  shadows,
+  spacing,
+  typography,
+} from '@/constants/theme';
+import { useRouter } from 'expo-router';
+import {
+  ArrowLeft,
+  Building,
+  ChevronDown,
+  ChevronRight,
+  CreditCard,
+  Search,
+  User,
+  X,
+} from 'lucide-react-native';
+import React, { useMemo, useState } from 'react';
+import {
+  ActivityIndicator,
   FlatList,
   Keyboard,
   KeyboardAvoidingView,
@@ -14,81 +34,49 @@ import {
   TouchableOpacity,
   TouchableWithoutFeedback,
   View,
-} from "react-native";
-import { Path, Svg } from "react-native-svg";
+} from 'react-native';
 
-// --- Icons ---
-
-const CaretDownIcon = () => (
-  <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
-    <Path
-      d="M19.5 8.25L12 15.75L4.5 8.25"
-      stroke="#323333"
-      strokeWidth={2}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-  </Svg>
-);
-
-const SearchIcon = () => (
-  <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
-    <Path
-      d="M10.875 18.75C15.2242 18.75 18.75 15.2242 18.75 10.875C18.75 6.52576 15.2242 3 10.875 3C6.52576 3 3 6.52576 3 10.875C3 15.2242 6.52576 18.75 10.875 18.75Z"
-      stroke="#657084"
-      strokeWidth={1.5}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-    <Path
-      d="M16.4431 16.4438L20.9994 21.0001"
-      stroke="#657084"
-      strokeWidth={1.5}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-  </Svg>
-);
-
-// --- Bank List ---
+// ─── Bank List ──────────────────────────────────────────────────────────────
 
 const BANKS = [
-  "Access Bank",
-  "Abbey Mortgage Bank",
-  "Ecobank Nigeria",
-  "Union Bank of Nigeria",
-  "Stanbic IBTC Bank",
-  "Sterling Bank",
-  "First Bank of Nigeria",
-  "Guaranty Trust Bank",
-  "United Bank for Africa",
-  "Zenith Bank",
-  "Fidelity Bank",
-  "Polaris Bank",
-  "Wema Bank",
-  "Keystone Bank",
-  "Heritage Bank",
-  "Providus Bank",
-  "Jaiz Bank",
-  "FCMB",
-  "Citibank Nigeria",
-  "Standard Chartered Bank",
+  'Access Bank',
+  'Abbey Mortgage Bank',
+  'Ecobank Nigeria',
+  'Union Bank of Nigeria',
+  'Stanbic IBTC Bank',
+  'Sterling Bank',
+  'First Bank of Nigeria',
+  'Guaranty Trust Bank',
+  'United Bank for Africa',
+  'Zenith Bank',
+  'Fidelity Bank',
+  'Polaris Bank',
+  'Wema Bank',
+  'Keystone Bank',
+  'Heritage Bank',
+  'Providus Bank',
+  'Jaiz Bank',
+  'FCMB',
+  'Citibank Nigeria',
+  'Standard Chartered Bank',
 ];
 
-// --- Bank Selector Bottom Sheet ---
+// ─── Bank Selector Bottom Sheet ─────────────────────────────────────────────
 
 interface BankSelectorProps {
   visible: boolean;
   onClose: () => void;
   onSelect: (bank: string) => void;
+  selectedBank?: string;
 }
 
 const BankSelector: React.FC<BankSelectorProps> = ({
   visible,
   onClose,
   onSelect,
+  selectedBank,
 }) => {
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState('');
 
   const filteredBanks = useMemo(() => {
     if (!search.trim()) return BANKS;
@@ -98,33 +86,14 @@ const BankSelector: React.FC<BankSelectorProps> = ({
   }, [search]);
 
   const handleSelect = (bank: string) => {
-    setSearch("");
+    setSearch('');
     onSelect(bank);
   };
 
   const handleClose = () => {
-    setSearch("");
+    setSearch('');
     onClose();
   };
-
-  const renderBankItem = ({
-    item,
-    index,
-  }: {
-    item: string;
-    index: number;
-  }) => (
-    <TouchableOpacity
-      style={[
-        styles.bankItem,
-        index === 0 && styles.bankItemFirst,
-      ]}
-      onPress={() => handleSelect(item)}
-      activeOpacity={0.7}
-    >
-      <Text style={styles.bankItemText}>{item}</Text>
-    </TouchableOpacity>
-  );
 
   return (
     <Modal
@@ -134,50 +103,104 @@ const BankSelector: React.FC<BankSelectorProps> = ({
       onRequestClose={handleClose}
     >
       <TouchableWithoutFeedback onPress={handleClose}>
-        <View style={styles.modalOverlay}>
+        <View style={sheetStyles.overlay}>
           <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-            <View style={styles.bottomSheet}>
-              {/* Handle Bar */}
-              <View style={styles.handleBarContainer}>
-                <View style={styles.handleBar} />
+            <View style={sheetStyles.sheet}>
+              {/* Handle */}
+              <View style={sheetStyles.handleContainer}>
+                <View style={sheetStyles.handle} />
               </View>
 
-              {/* Title */}
-              <Text style={styles.sheetTitle}>Select</Text>
+              {/* Header */}
+              <View style={sheetStyles.header}>
+                <Text style={sheetStyles.title}>Select Bank</Text>
+                <TouchableOpacity
+                  style={sheetStyles.closeButton}
+                  onPress={handleClose}
+                  activeOpacity={0.7}
+                >
+                  <X
+                    size={layout.iconSize.sm}
+                    color={colors.textTertiary}
+                    strokeWidth={2}
+                  />
+                </TouchableOpacity>
+              </View>
 
               {/* Search */}
-              <View style={styles.searchContainer}>
-                <SearchIcon />
+              <View style={sheetStyles.searchContainer}>
+                <Search
+                  size={layout.iconSize.sm}
+                  color={colors.textTertiary}
+                  strokeWidth={1.8}
+                />
                 <TextInput
-                  style={styles.searchInput}
+                  style={sheetStyles.searchInput}
                   value={search}
                   onChangeText={setSearch}
-                  placeholder="Search ..."
-                  placeholderTextColor="#657084"
+                  placeholder="Search banks…"
+                  placeholderTextColor={colors.textPlaceholder}
                   autoCorrect={false}
                 />
+                {search.length > 0 && (
+                  <TouchableOpacity
+                    onPress={() => setSearch('')}
+                    activeOpacity={0.7}
+                  >
+                    <X
+                      size={layout.iconSize.xs}
+                      color={colors.textMuted}
+                      strokeWidth={2}
+                    />
+                  </TouchableOpacity>
+                )}
               </View>
 
               {/* Bank List */}
               <FlatList
                 data={filteredBanks}
                 keyExtractor={(item, index) => `${item}-${index}`}
-                renderItem={renderBankItem}
-                style={styles.bankList}
-                contentContainerStyle={styles.bankListContent}
+                renderItem={({ item }) => (
+                  <TouchableOpacity
+                    style={[
+                      sheetStyles.bankItem,
+                      selectedBank === item && sheetStyles.bankItemSelected,
+                    ]}
+                    onPress={() => handleSelect(item)}
+                    activeOpacity={0.7}
+                  >
+                    <Building
+                      size={layout.iconSize.sm}
+                      color={
+                        selectedBank === item
+                          ? colors.primary
+                          : colors.textTertiary
+                      }
+                      strokeWidth={1.8}
+                    />
+                    <Text
+                      style={[
+                        sheetStyles.bankItemText,
+                        selectedBank === item && sheetStyles.bankItemTextSelected,
+                      ]}
+                    >
+                      {item}
+                    </Text>
+                  </TouchableOpacity>
+                )}
+                style={sheetStyles.bankList}
+                contentContainerStyle={sheetStyles.bankListContent}
                 showsVerticalScrollIndicator={false}
                 keyboardShouldPersistTaps="handled"
-                ItemSeparatorComponent={() => <View style={{ height: 20 }} />}
+                ItemSeparatorComponent={() => (
+                  <View style={sheetStyles.separator} />
+                )}
+                ListEmptyComponent={
+                  <View style={sheetStyles.emptyContainer}>
+                    <Text style={sheetStyles.emptyText}>No banks found</Text>
+                  </View>
+                }
               />
-
-              {/* Cancel Button */}
-              <TouchableOpacity
-                style={styles.cancelButton}
-                onPress={handleClose}
-                activeOpacity={0.8}
-              >
-                <Text style={styles.cancelButtonText}>Cancel</Text>
-              </TouchableOpacity>
             </View>
           </TouchableWithoutFeedback>
         </View>
@@ -186,14 +209,149 @@ const BankSelector: React.FC<BankSelectorProps> = ({
   );
 };
 
-// --- Main Screen ---
+const sheetStyles = StyleSheet.create({
+  overlay: {
+    flex: 1,
+    backgroundColor: colors.overlay,
+    justifyContent: 'flex-end',
+  },
+  sheet: {
+    backgroundColor: colors.background,
+    borderTopLeftRadius: borderRadius.xl,
+    borderTopRightRadius: borderRadius.xl,
+    maxHeight: '70%',
+    paddingBottom: spacing['2xl'],
+  },
+  handleContainer: {
+    alignItems: 'center',
+    paddingTop: spacing.md,
+    paddingBottom: spacing.sm,
+  },
+  handle: {
+    width: 40,
+    height: 4,
+    backgroundColor: colors.borderLight,
+    borderRadius: borderRadius.full,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: layout.screenPaddingHorizontal,
+    marginBottom: spacing.base,
+  },
+  title: {
+    fontSize: typography.fontSize.xl,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.textPrimary,
+    letterSpacing: typography.letterSpacing.tight,
+  },
+  closeButton: {
+    width: 36,
+    height: 36,
+    backgroundColor: colors.backgroundInput,
+    borderRadius: borderRadius.full,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    height: layout.inputHeightSmall,
+    backgroundColor: colors.backgroundCard,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
+    borderRadius: borderRadius.md,
+    paddingHorizontal: spacing.base,
+    marginHorizontal: layout.screenPaddingHorizontal,
+    gap: spacing.sm,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: typography.fontSize.base,
+    fontWeight: typography.fontWeight.regular,
+    color: colors.textPrimary,
+    height: '100%',
+  },
+  bankList: {
+    marginTop: spacing.base,
+  },
+  bankListContent: {
+    paddingHorizontal: layout.screenPaddingHorizontal,
+    paddingBottom: spacing.lg,
+  },
+  bankItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.base,
+    borderRadius: borderRadius.md,
+  },
+  bankItemSelected: {
+    backgroundColor: colors.primaryLight,
+  },
+  bankItemText: {
+    flex: 1,
+    fontSize: typography.fontSize.base,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.textPrimary,
+  },
+  bankItemTextSelected: {
+    color: colors.primary,
+    fontWeight: typography.fontWeight.semibold,
+  },
+  separator: {
+    height: 1,
+    backgroundColor: colors.divider,
+  },
+  emptyContainer: {
+    paddingVertical: spacing['2xl'],
+    alignItems: 'center',
+  },
+  emptyText: {
+    fontSize: typography.fontSize.base,
+    color: colors.textMuted,
+  },
+});
+
+// ─── Reusable Form Field ────────────────────────────────────────────────────
+
+interface FormFieldProps {
+  label: string;
+  icon: React.ReactNode;
+  children: React.ReactNode;
+}
+
+const FormField: React.FC<FormFieldProps> = ({ label, icon, children }) => (
+  <View style={formStyles.group}>
+    <Text style={formStyles.label}>{label}</Text>
+    {children}
+  </View>
+);
+
+const formStyles = StyleSheet.create({
+  group: {
+    gap: spacing.sm,
+  },
+  label: {
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.textTertiary,
+    textTransform: 'uppercase',
+    letterSpacing: typography.letterSpacing.wide,
+  },
+});
+
+// ─── Main Screen ────────────────────────────────────────────────────────────
 
 export default function BankSetup() {
   const router = useRouter();
-  const [selectedBank, setSelectedBank] = useState("");
-  const [accountNumber, setAccountNumber] = useState("");
-  const [accountName, setAccountName] = useState("");
+  const [selectedBank, setSelectedBank] = useState('');
+  const [accountNumber, setAccountNumber] = useState('');
+  const [accountName, setAccountName] = useState('');
   const [showBankSelector, setShowBankSelector] = useState(false);
+  const [resolving, setResolving] = useState(false);
 
   const isFormValid =
     selectedBank.length > 0 &&
@@ -205,131 +363,192 @@ export default function BankSetup() {
     setShowBankSelector(false);
   };
 
-  const handleNext = () => {
-    if (isFormValid) {
-      // Navigate to PIN setup
-      router.push('/auth/setup/pin');
+  const handleAccountNumberChange = (value: string) => {
+    const sanitized = value.replace(/[^0-9]/g, '').slice(0, 10);
+    setAccountNumber(sanitized);
+
+    if (sanitized.length === 10 && selectedBank) {
+      setResolving(true);
+      setTimeout(() => {
+        setAccountName('John Doe');
+        setResolving(false);
+      }, 1000);
+    } else {
+      setAccountName('');
     }
   };
 
-  const handleGoBack = () => {
-    router.back();
-  };
-
-  const handleAccountNumberChange = (value: string) => {
-    // Only allow numbers, max 10 digits
-    const sanitized = value.replace(/[^0-9]/g, "").slice(0, 10);
-    setAccountNumber(sanitized);
-
-    // Simulate account name resolution when 10 digits entered
-    if (sanitized.length === 10 && selectedBank) {
-      // In a real app, you'd call an API here
-      setTimeout(() => {
-        setAccountName("John Doe");
-      }, 500);
-    } else {
-      setAccountName("");
+  const handleNext = () => {
+    if (isFormValid) {
+      router.push('/auth/setup/pin');
     }
   };
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="dark-content" backgroundColor="#F5F5F5" />
+      <StatusBar barStyle="dark-content" backgroundColor={colors.background} />
+
+      {/* Header */}
+      <View style={styles.header}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => router.back()}
+          activeOpacity={0.7}
+        >
+          <ArrowLeft
+            size={layout.iconSize.md}
+            color={colors.textPrimary}
+            strokeWidth={2}
+          />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Bank Setup</Text>
+        <View style={{ width: layout.minTouchTarget }} />
+      </View>
+
       <KeyboardAvoidingView
         style={{ flex: 1 }}
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
           <View style={styles.container}>
-            {/* Header */}
-            <View style={styles.headerSection}>
-              <Text style={styles.title}>Bank setup</Text>
-              <Text style={styles.subtitle}>Setup your bank details</Text>
+            {/* Subtitle */}
+            <View style={styles.subtitleSection}>
+              <View style={styles.subtitleIcon}>
+                <CreditCard
+                  size={layout.iconSize.lg}
+                  color={colors.primary}
+                  strokeWidth={1.8}
+                />
+              </View>
+              <Text style={styles.subtitle}>
+                Link your bank account for seamless fiat withdrawals
+              </Text>
             </View>
 
             {/* Form */}
             <View style={styles.formSection}>
               {/* Bank Selector */}
-              <View style={styles.fieldGroup}>
-                <Text style={styles.fieldLabel}>Enter your bank</Text>
+              <FormField label="Bank" icon={null}>
                 <TouchableOpacity
-                  style={styles.selectorContainer}
+                  style={[
+                    styles.selectorContainer,
+                    selectedBank && styles.selectorContainerActive,
+                  ]}
                   onPress={() => setShowBankSelector(true)}
                   activeOpacity={0.7}
                 >
-                  <View style={styles.selectorContent}>
-                    <Text
-                      style={[
-                        styles.selectorText,
-                        !selectedBank && styles.selectorPlaceholder,
-                      ]}
-                    >
-                      {selectedBank || "Select bank"}
-                    </Text>
-                    <CaretDownIcon />
+                  <View style={styles.selectorIcon}>
+                    <Building
+                      size={layout.iconSize.sm}
+                      color={
+                        selectedBank ? colors.primary : colors.textTertiary
+                      }
+                      strokeWidth={1.8}
+                    />
                   </View>
+                  <Text
+                    style={[
+                      styles.selectorText,
+                      !selectedBank && styles.selectorPlaceholder,
+                    ]}
+                  >
+                    {selectedBank || 'Select your bank'}
+                  </Text>
+                  <ChevronDown
+                    size={layout.iconSize.sm}
+                    color={colors.textTertiary}
+                    strokeWidth={1.8}
+                  />
                 </TouchableOpacity>
-              </View>
+              </FormField>
 
               {/* Account Number */}
-              <View style={styles.fieldGroup}>
-                <Text style={styles.fieldLabel}>Enter account number</Text>
-                <View style={styles.inputContainer}>
+              <FormField label="Account Number" icon={null}>
+                <View style={styles.inputWrapper}>
+                  <View style={styles.inputIconContainer}>
+                    <CreditCard
+                      size={layout.iconSize.sm}
+                      color={
+                        accountNumber ? colors.primary : colors.textTertiary
+                      }
+                      strokeWidth={1.8}
+                    />
+                  </View>
                   <TextInput
                     style={styles.textInput}
                     value={accountNumber}
                     onChangeText={handleAccountNumberChange}
-                    placeholder="account number"
-                    placeholderTextColor="#657084"
+                    placeholder="0000000000"
+                    placeholderTextColor={colors.textPlaceholder}
                     keyboardType="number-pad"
                     maxLength={10}
                     returnKeyType="done"
                   />
+                  {resolving && (
+                    <ActivityIndicator size="small" color={colors.primary} />
+                  )}
                 </View>
-              </View>
+              </FormField>
 
               {/* Account Name */}
-              <View style={styles.fieldGroup}>
-                <Text style={styles.fieldLabel}>Enter account name</Text>
+              <FormField label="Account Name" icon={null}>
                 <View
                   style={[
-                    styles.inputContainer,
-                    !accountName && styles.inputDisabled,
+                    styles.inputWrapper,
+                    !accountName && styles.inputWrapperDisabled,
+                    accountName && styles.inputWrapperSuccess,
                   ]}
                 >
+                  <View style={styles.inputIconContainer}>
+                    <User
+                      size={layout.iconSize.sm}
+                      color={
+                        accountName ? colors.success : colors.textTertiary
+                      }
+                      strokeWidth={1.8}
+                    />
+                  </View>
                   <TextInput
                     style={[
                       styles.textInput,
-                      accountName ? styles.resolvedName : {},
+                      accountName && styles.textInputResolved,
                     ]}
                     value={accountName}
                     onChangeText={setAccountName}
-                    placeholder="account name"
-                    placeholderTextColor="#657084"
+                    placeholder="Auto-resolved from account number"
+                    placeholderTextColor={colors.textPlaceholder}
                     editable={accountNumber.length === 10}
                     returnKeyType="done"
                   />
                 </View>
-              </View>
+              </FormField>
             </View>
+
+            {/* Spacer */}
+            <View style={{ flex: 1 }} />
 
             {/* Bottom Buttons */}
             <View style={styles.bottomSection}>
               <TouchableOpacity
                 style={[
                   styles.nextButton,
-                  !isFormValid && styles.nextButtonDisabled,
+                  !isFormValid && styles.buttonDisabled,
                 ]}
                 onPress={handleNext}
                 disabled={!isFormValid}
-                activeOpacity={0.8}
+                activeOpacity={0.85}
               >
-                <Text style={styles.nextButtonText}>Next</Text>
+                <Text style={styles.nextButtonText}>Continue</Text>
+                <ChevronRight
+                  size={layout.iconSize.sm}
+                  color={colors.textWhite}
+                  strokeWidth={2.5}
+                />
               </TouchableOpacity>
 
               <TouchableOpacity
                 style={styles.goBackButton}
-                onPress={handleGoBack}
+                onPress={() => router.back()}
                 activeOpacity={0.8}
               >
                 <Text style={styles.goBackButtonText}>Go back</Text>
@@ -339,256 +558,170 @@ export default function BankSetup() {
         </TouchableWithoutFeedback>
       </KeyboardAvoidingView>
 
-      {/* Bank Selector Bottom Sheet */}
       <BankSelector
         visible={showBankSelector}
         onClose={() => setShowBankSelector(false)}
         onSelect={handleBankSelect}
+        selectedBank={selectedBank}
       />
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  // --- Main Screen ---
   safeArea: {
     flex: 1,
-    backgroundColor: "#F5F5F5",
+    backgroundColor: colors.background,
+  },
+  header: {
+    height: layout.headerHeight,
+    paddingHorizontal: layout.screenPaddingHorizontal,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  backButton: {
+    width: layout.minTouchTarget,
+    height: layout.minTouchTarget,
+    backgroundColor: colors.backgroundInput,
+    borderRadius: borderRadius.full,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  headerTitle: {
+    fontSize: typography.fontSize.lg,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.textPrimary,
+    letterSpacing: typography.letterSpacing.tight,
   },
   container: {
     flex: 1,
-    paddingHorizontal: 24,
+    paddingHorizontal: layout.screenPaddingHorizontal,
   },
-  headerSection: {
-    alignItems: "center",
-    gap: 15,
-    marginTop: 50,
+  subtitleSection: {
+    alignItems: 'center',
+    gap: spacing.md,
+    marginTop: spacing.lg,
+    marginBottom: spacing['2xl'],
   },
-  title: {
-    fontFamily: "System",
-    fontWeight: "600",
-    fontSize: 25,
-    lineHeight: 25,
-    textAlign: "center",
-    color: "#000000",
+  subtitleIcon: {
+    width: 56,
+    height: 56,
+    borderRadius: borderRadius.full,
+    backgroundColor: colors.primaryLight,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   subtitle: {
-    fontFamily: "System",
-    fontWeight: "500",
-    fontSize: 20,
-    lineHeight: 25,
-    textAlign: "center",
-    color: "#323333",
+    fontSize: typography.fontSize.base,
+    fontWeight: typography.fontWeight.regular,
+    lineHeight: typography.fontSize.base * typography.lineHeight.normal,
+    textAlign: 'center',
+    color: colors.textTertiary,
+    paddingHorizontal: spacing.xl,
   },
   formSection: {
-    marginTop: 30,
-    gap: 25,
-  },
-  fieldGroup: {
-    gap: 15,
-  },
-  fieldLabel: {
-    fontFamily: "System",
-    fontWeight: "500",
-    fontSize: 16,
-    lineHeight: 22,
-    color: "#000000",
+    gap: spacing.lg,
   },
 
-  // --- Selector ---
+  // Selector
   selectorContainer: {
-    height: 60,
-    backgroundColor: "#F4F6F5",
+    flexDirection: 'row',
+    alignItems: 'center',
+    height: layout.inputHeight,
+    backgroundColor: colors.backgroundCard,
     borderWidth: 1,
-    borderColor: "#D2D6E1",
-    borderRadius: 15,
-    justifyContent: "center",
-    paddingHorizontal: 20,
+    borderColor: colors.borderLight,
+    borderRadius: borderRadius.md,
+    paddingHorizontal: spacing.base,
+    gap: spacing.md,
   },
-  selectorContent: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+  selectorContainerActive: {
+    borderColor: colors.border,
+  },
+  selectorIcon: {
+    width: layout.iconSize.md,
+    alignItems: 'center',
   },
   selectorText: {
-    fontFamily: "System",
-    fontWeight: "400",
-    fontSize: 16,
-    lineHeight: 22,
-    color: "#000000",
+    flex: 1,
+    fontSize: typography.fontSize.md,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.textPrimary,
   },
   selectorPlaceholder: {
-    color: "#657084",
+    color: colors.textPlaceholder,
+    fontWeight: typography.fontWeight.regular,
   },
 
-  // --- Text Input ---
-  inputContainer: {
-    height: 60,
-    backgroundColor: "#F4F6F5",
+  // Input
+  inputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    height: layout.inputHeight,
+    backgroundColor: colors.backgroundCard,
     borderWidth: 1,
-    borderColor: "#D2D6E1",
-    borderRadius: 15,
-    justifyContent: "center",
-    paddingHorizontal: 20,
+    borderColor: colors.borderLight,
+    borderRadius: borderRadius.md,
+    paddingHorizontal: spacing.base,
+    gap: spacing.md,
   },
-  inputDisabled: {
+  inputWrapperDisabled: {
     opacity: 0.6,
   },
-  textInput: {
-    fontFamily: "System",
-    fontWeight: "400",
-    fontSize: 16,
-    lineHeight: 22,
-    color: "#000000",
-    height: "100%",
+  inputWrapperSuccess: {
+    borderColor: colors.success,
+    backgroundColor: colors.successLight,
   },
-  resolvedName: {
-    color: "#000000",
-    fontWeight: "500",
+  inputIconContainer: {
+    width: layout.iconSize.md,
+    alignItems: 'center',
+  },
+  textInput: {
+    flex: 1,
+    fontSize: typography.fontSize.md,
+    fontWeight: typography.fontWeight.regular,
+    color: colors.textPrimary,
+    height: '100%',
+  },
+  textInputResolved: {
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.success,
   },
 
-  // --- Bottom Buttons ---
+  // Bottom
   bottomSection: {
-    position: "absolute",
-    bottom: 60,
-    left: 24,
-    right: 24,
-    gap: 20,
+    gap: spacing.md,
+    paddingBottom: spacing['2xl'],
   },
   nextButton: {
-    backgroundColor: "#0F6EC0",
-    borderRadius: 15,
-    height: 60,
-    alignItems: "center",
-    justifyContent: "center",
+    backgroundColor: colors.primary,
+    borderRadius: borderRadius.lg,
+    height: layout.buttonHeight,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'row',
+    gap: spacing.sm,
+    ...shadows.button,
   },
-  nextButtonDisabled: {
-    opacity: 0.5,
+  buttonDisabled: {
+    opacity: 0.45,
   },
   nextButtonText: {
-    fontFamily: "System",
-    fontWeight: "400",
-    fontSize: 16,
-    lineHeight: 16,
-    textAlign: "center",
-    color: "#F5F5F5",
+    fontSize: typography.fontSize.md,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.textWhite,
   },
   goBackButton: {
-    backgroundColor: "rgba(15, 114, 199, 0.1)",
-    borderRadius: 15,
-    height: 60,
-    alignItems: "center",
-    justifyContent: "center",
+    backgroundColor: colors.backgroundInput,
+    borderRadius: borderRadius.lg,
+    height: layout.buttonHeight,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   goBackButtonText: {
-    fontFamily: "System",
-    fontWeight: "400",
-    fontSize: 16,
-    lineHeight: 16,
-    textAlign: "center",
-    color: "#000000",
-  },
-
-  // --- Modal / Bottom Sheet ---
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.25)",
-    justifyContent: "flex-end",
-  },
-  bottomSheet: {
-    backgroundColor: "#F5F5F5",
-    borderTopLeftRadius: 15,
-    borderTopRightRadius: 15,
-    maxHeight: "70%",
-    paddingBottom: 40,
-  },
-  handleBarContainer: {
-    alignItems: "center",
-    paddingTop: 12,
-    paddingBottom: 8,
-  },
-  handleBar: {
-    width: 40,
-    height: 4,
-    backgroundColor: "#D2D6E1",
-    borderRadius: 2,
-  },
-  sheetTitle: {
-    fontFamily: "System",
-    fontWeight: "500",
-    fontSize: 25,
-    lineHeight: 22,
-    textAlign: "center",
-    color: "#000000",
-    marginTop: 12,
-    marginBottom: 20,
-  },
-
-  // --- Search ---
-  searchContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    height: 55,
-    borderWidth: 0.5,
-    borderColor: "#657084",
-    borderRadius: 10,
-    paddingHorizontal: 16,
-    marginHorizontal: 24,
-    gap: 10,
-  },
-  searchInput: {
-    flex: 1,
-    fontFamily: "System",
-    fontWeight: "400",
-    fontSize: 12,
-    lineHeight: 15,
-    color: "#000000",
-    height: "100%",
-  },
-
-  // --- Bank List ---
-  bankList: {
-    marginTop: 20,
-    maxHeight: 400,
-  },
-  bankListContent: {
-    paddingHorizontal: 24,
-    paddingBottom: 20,
-  },
-  bankItem: {
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 10,
-    minHeight: 50,
-    justifyContent: "center",
-  },
-  bankItemFirst: {
-    backgroundColor: "#F4F6F5",
-  },
-  bankItemText: {
-    fontFamily: "System",
-    fontWeight: "400",
-    fontSize: 16,
-    lineHeight: 19,
-    color: "#000000",
-  },
-
-  // --- Cancel ---
-  cancelButton: {
-    backgroundColor: "rgba(15, 114, 199, 0.1)",
-    borderRadius: 15,
-    height: 60,
-    alignItems: "center",
-    justifyContent: "center",
-    marginHorizontal: 24,
-    marginTop: 10,
-  },
-  cancelButtonText: {
-    fontFamily: "System",
-    fontWeight: "400",
-    fontSize: 16,
-    lineHeight: 16,
-    textAlign: "center",
-    color: "#000000",
+    fontSize: typography.fontSize.md,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.textSecondary,
   },
 });

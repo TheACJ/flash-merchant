@@ -1,17 +1,18 @@
 import { ArrowLeft, ChevronDown } from 'lucide-react-native';
 import React, { useCallback, useRef, useState } from 'react';
 import {
-    Keyboard,
-    KeyboardAvoidingView,
-    Platform,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    TouchableWithoutFeedback,
-    View,
+  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  TouchableWithoutFeedback,
+  View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { borderRadius, colors, layout, typography } from '@/constants/theme';
 import AssetSelector from './AssetSelector';
 import { Asset, ASSETS } from './types';
 
@@ -107,7 +108,7 @@ export default function SelectAssetAmount({
               activeOpacity={0.7}
               accessibilityLabel="Go back"
             >
-              <ArrowLeft size={24} color="#000000" strokeWidth={2} />
+              <ArrowLeft size={24} color={colors.textPrimary} strokeWidth={2} />
             </TouchableOpacity>
             <Text style={styles.headerTitle}>Physical deposit</Text>
             <View style={styles.headerSpacer} />
@@ -135,7 +136,7 @@ export default function SelectAssetAmount({
                 ) : (
                   <Text style={styles.placeholderText}>Choose an asset</Text>
                 )}
-                <ChevronDown size={24} color="#AFAFB0" strokeWidth={2} />
+                <ChevronDown size={24} color={colors.textPlaceholder} strokeWidth={2} />
               </TouchableOpacity>
             </View>
 
@@ -156,7 +157,7 @@ export default function SelectAssetAmount({
                   value={amount}
                   onChangeText={handleAmountChange}
                   placeholder="0.00"
-                  placeholderTextColor="#AFAFB0"
+                  placeholderTextColor={colors.textPlaceholder}
                   keyboardType="decimal-pad"
                   returnKeyType="done"
                   onFocus={() => setIsAmountFocused(true)}
@@ -236,15 +237,15 @@ function AssetIcon({ asset, size = 40 }: AssetIconProps) {
   const getIconContent = () => {
     switch (asset.iconType) {
       case 'bitcoin':
-        return <Text style={[styles.iconText, { color: '#FFFFFF' }]}>₿</Text>;
+        return <Text style={[styles.iconText, { color: colors.textWhite }]}>₿</Text>;
       case 'ethereum':
-        return <Text style={[styles.iconText, { color: '#657084' }]}>Ξ</Text>;
+        return <Text style={[styles.iconText, { color: colors.textTertiary }]}>Ξ</Text>;
       case 'solana':
         return <Text style={[styles.iconText, { color: '#14F195' }]}>◎</Text>;
       case 'polygon':
         return <Text style={[styles.iconText, { color: '#8247E5' }]}>⬡</Text>;
       case 'zcash':
-        return <Text style={[styles.iconText, { color: '#F4F6F5' }]}>Z</Text>;
+        return <Text style={[styles.iconText, { color: colors.background }]}>Z</Text>;
       default:
         return <Text style={styles.iconText}>{asset.symbol[0]}</Text>;
     }
@@ -258,7 +259,7 @@ export { AssetIcon };
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F5F5',
+    backgroundColor: colors.background,
   },
   keyboardView: {
     flex: 1,
@@ -274,14 +275,14 @@ const styles = StyleSheet.create({
     width: 50,
     height: 50,
     borderRadius: 25,
-    backgroundColor: '#F4F6F5',
+    backgroundColor: colors.backgroundInput,
     justifyContent: 'center',
     alignItems: 'center',
   },
   headerTitle: {
-    fontSize: 25,
-    fontWeight: '600',
-    color: '#000000',
+    fontSize: typography.fontSize['4xl'],
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.textPrimary,
     textAlign: 'center',
   },
   headerSpacer: {
@@ -297,20 +298,20 @@ const styles = StyleSheet.create({
     gap: 15,
   },
   inputLabel: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#000000',
-    lineHeight: 22,
+    fontSize: typography.fontSize.md,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.textPrimary,
+    lineHeight: typography.lineHeight.normal,
   },
   selectorContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#F4F6F5',
+    backgroundColor: colors.backgroundInput,
     borderWidth: 1,
-    borderColor: '#D2D6E1',
-    borderRadius: 15,
-    height: 60,
+    borderColor: colors.border,
+    borderRadius: borderRadius.lg,
+    height: layout.inputHeight,
     paddingHorizontal: 16,
   },
   selectedAsset: {
@@ -322,50 +323,50 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   assetSymbol: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#000000',
+    fontSize: typography.fontSize.md,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.textPrimary,
   },
   assetName: {
-    fontSize: 12,
-    color: '#657084',
+    fontSize: typography.fontSize.sm,
+    color: colors.textTertiary,
   },
   placeholderText: {
-    fontSize: 16,
-    color: '#AFAFB0',
+    fontSize: typography.fontSize.md,
+    color: colors.textPlaceholder,
   },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F4F6F5',
+    backgroundColor: colors.backgroundInput,
     borderWidth: 1,
-    borderColor: '#D2D6E1',
-    borderRadius: 15,
-    height: 60,
+    borderColor: colors.border,
+    borderRadius: borderRadius.lg,
+    height: layout.inputHeight,
     paddingHorizontal: 16,
   },
   inputContainerFocused: {
-    borderColor: '#0F6EC0',
+    borderColor: colors.borderActive,
     borderWidth: 2,
   },
   inputContainerError: {
-    borderColor: '#C31D1E',
+    borderColor: colors.error,
   },
   currencyPrefix: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#000000',
+    fontSize: typography.fontSize.lg,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.textPrimary,
     marginRight: 8,
   },
   amountInput: {
     flex: 1,
-    fontSize: 18,
-    color: '#000000',
+    fontSize: typography.fontSize.lg,
+    color: colors.textPrimary,
     height: '100%',
   },
   errorText: {
-    fontSize: 14,
-    color: '#C31D1E',
+    fontSize: typography.fontSize.base,
+    color: colors.error,
     marginTop: -5,
   },
   bottomContainer: {
@@ -374,37 +375,37 @@ const styles = StyleSheet.create({
     gap: 20,
   },
   nextButton: {
-    backgroundColor: '#0F6EC0',
-    borderRadius: 15,
-    height: 60,
+    backgroundColor: colors.primary,
+    borderRadius: borderRadius.lg,
+    height: layout.buttonHeight,
     justifyContent: 'center',
     alignItems: 'center',
   },
   nextButtonDisabled: {
-    backgroundColor: '#DCDCDD',
+    backgroundColor: colors.borderLight,
   },
   nextButtonText: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#F5F5F5',
+    fontSize: typography.fontSize.md,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.textLight,
   },
   nextButtonTextDisabled: {
-    color: '#AFAFB0',
+    color: colors.textPlaceholder,
   },
   goBackButton: {
-    backgroundColor: '#DCDCDD',
-    borderRadius: 15,
-    height: 60,
+    backgroundColor: colors.borderLight,
+    borderRadius: borderRadius.lg,
+    height: layout.buttonHeight,
     justifyContent: 'center',
     alignItems: 'center',
   },
   goBackButtonText: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#000000',
+    fontSize: typography.fontSize.md,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.textPrimary,
   },
   iconText: {
-    fontSize: 20,
-    fontWeight: '700',
+    fontSize: typography.fontSize.xl,
+    fontWeight: typography.fontWeight.bold,
   },
 });

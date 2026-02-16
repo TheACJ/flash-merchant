@@ -1,14 +1,15 @@
+import { borderRadius, colors, layout, typography } from '@/constants/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
-    StyleSheet,
-    Text,
-    TextInput,
-    TextStyle,
-    TouchableOpacity,
-    View,
-    ViewStyle,
+  StyleSheet,
+  Text,
+  TextInput,
+  TextStyle,
+  TouchableOpacity,
+  View,
+  ViewStyle,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -32,7 +33,7 @@ export default function EditProfileScreen() {
           onPress={() => router.back()}
           activeOpacity={0.7}
         >
-          <Ionicons name="chevron-back" size={24} color="#000000" />
+          <Ionicons name="chevron-back" size={24} color={colors.textPrimary} />
         </TouchableOpacity>
         <Text style={styles.headerTitle as TextStyle}>Edit profile details</Text>
         <View style={styles.placeholder as ViewStyle} />
@@ -48,7 +49,7 @@ export default function EditProfileScreen() {
               value={tag}
               onChangeText={setTag}
               placeholder="Enter your tag"
-              placeholderTextColor="#657084"
+              placeholderTextColor={colors.textTertiary}
             />
           </View>
         </View>
@@ -62,7 +63,7 @@ export default function EditProfileScreen() {
               value={phone}
               onChangeText={setPhone}
               placeholder="Enter your phone number"
-              placeholderTextColor="#657084"
+              placeholderTextColor={colors.textTertiary}
               keyboardType="phone-pad"
             />
           </View>
@@ -77,7 +78,7 @@ export default function EditProfileScreen() {
               value={email}
               onChangeText={setEmail}
               placeholder="Enter your email"
-              placeholderTextColor="#657084"
+              placeholderTextColor={colors.textTertiary}
               keyboardType="email-address"
               autoCapitalize="none"
             />
@@ -93,7 +94,7 @@ export default function EditProfileScreen() {
               value={address}
               onChangeText={setAddress}
               placeholder="Enter your address"
-              placeholderTextColor="#657084"
+              placeholderTextColor={colors.textTertiary}
             />
           </View>
         </View>
@@ -116,7 +117,7 @@ export default function EditProfileScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F5F5',
+    backgroundColor: colors.background,
   },
   header: {
     flexDirection: 'row',
@@ -129,9 +130,9 @@ const styles = StyleSheet.create({
     padding: 4,
   },
   headerTitle: {
-    fontSize: 25,
-    fontWeight: '600',
-    color: '#000000',
+    fontSize: typography.fontSize['4xl'],
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.textPrimary,
   },
   placeholder: {
     width: 40,
@@ -145,23 +146,23 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   label: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#000000',
+    fontSize: typography.fontSize.md,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.textPrimary,
     marginBottom: 8,
   },
   inputContainer: {
-    height: 60,
-    backgroundColor: '#F4F6F5',
-    borderRadius: 15,
+    height: layout.inputHeight,
+    backgroundColor: colors.backgroundInput,
+    borderRadius: borderRadius.lg,
     borderWidth: 1,
-    borderColor: '#D2D6E1',
+    borderColor: colors.border,
     justifyContent: 'center',
     paddingHorizontal: 20,
   },
   input: {
-    fontSize: 16,
-    color: '#000000',
+    fontSize: typography.fontSize.md,
+    color: colors.textPrimary,
     flex: 1,
   },
   buttonContainer: {
@@ -169,15 +170,15 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
   saveButton: {
-    height: 60,
-    backgroundColor: '#0F6EC0',
-    borderRadius: 15,
+    height: layout.buttonHeight,
+    backgroundColor: colors.primary,
+    borderRadius: borderRadius.lg,
     justifyContent: 'center',
     alignItems: 'center',
   },
   saveButtonText: {
-    fontSize: 16,
-    color: '#F5F5F5',
-    fontWeight: '400',
+    fontSize: typography.fontSize.md,
+    color: colors.textLight,
+    fontWeight: typography.fontWeight.regular,
   },
 });

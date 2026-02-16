@@ -1,3 +1,4 @@
+import { colors } from '@/constants/theme';
 import { Stack } from 'expo-router';
 import React from 'react';
 import { StyleSheet } from 'react-native';
@@ -9,7 +10,7 @@ export default function SettingsLayout() {
       <Stack
         screenOptions={{
           headerShown: false,
-          contentStyle: { backgroundColor: '#F5F5F5' },
+          contentStyle: { backgroundColor: colors.background },
         }}
       >
         <Stack.Screen name="profile" />
@@ -30,6 +31,6 @@ export default function SettingsLayout() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F5F5',
+    backgroundColor: colors.background,
   },
 });

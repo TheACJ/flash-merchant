@@ -1,15 +1,16 @@
 import { ArrowLeft, Delete } from 'lucide-react-native';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
-    Animated,
-    Platform,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    Vibration,
-    View,
+  Animated,
+  Platform,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  Vibration,
+  View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { borderRadius, colors, layout, spacing, typography } from '@/constants/theme';
 import { TransactionSummary } from './types';
 
 interface EnterPinProps {
@@ -143,7 +144,7 @@ export default function EnterPin({ summary, onSubmit, onBack }: EnterPinProps) {
           activeOpacity={0.7}
           accessibilityLabel="Go back"
         >
-          <ArrowLeft size={24} color="#000000" strokeWidth={2} />
+          <ArrowLeft size={24} color={colors.textPrimary} strokeWidth={2} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Enter your pin</Text>
         <View style={styles.headerSpacer} />
@@ -205,7 +206,7 @@ export default function EnterPin({ summary, onSubmit, onBack }: EnterPinProps) {
                 }
               >
                 {key === 'delete' ? (
-                  <Delete size={24} color="#000000" strokeWidth={2} />
+                  <Delete size={24} color={colors.textPrimary} strokeWidth={2} />
                 ) : (
                   <Text style={styles.keypadKeyText}>{key}</Text>
                 )}
@@ -221,7 +222,7 @@ export default function EnterPin({ summary, onSubmit, onBack }: EnterPinProps) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F5F5',
+    backgroundColor: colors.background,
   },
   header: {
     flexDirection: 'row',
@@ -233,32 +234,32 @@ const styles = StyleSheet.create({
   backButton: {
     width: 50,
     height: 50,
-    borderRadius: 25,
-    backgroundColor: '#F4F6F5',
+    borderRadius: borderRadius.full,
+    backgroundColor: colors.backgroundInput,
     justifyContent: 'center',
     alignItems: 'center',
   },
   headerTitle: {
-    fontSize: 25,
-    fontWeight: '600',
-    color: '#000000',
+    fontSize: typography.fontSize['4xl'],
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.textPrimary,
     textAlign: 'center',
   },
   headerSpacer: {
     width: 50,
   },
   summaryCard: {
-    marginHorizontal: 52,
-    marginTop: 20,
-    padding: 15,
-    backgroundColor: '#F4F6F5',
-    borderRadius: 10,
-    gap: 15,
+    marginHorizontal: spacing['3xl'],
+    marginTop: spacing.lg,
+    padding: spacing.md,
+    backgroundColor: colors.backgroundInput,
+    borderRadius: borderRadius.md,
+    gap: spacing.md,
   },
   summaryTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#323333',
+    fontSize: typography.fontSize.md,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.textSecondary,
   },
   summaryRow: {
     flexDirection: 'row',
@@ -266,100 +267,100 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   summaryLabel: {
-    fontSize: 16,
-    color: '#323333',
-    fontWeight: '400',
+    fontSize: typography.fontSize.md,
+    color: colors.textSecondary,
+    fontWeight: typography.fontWeight.regular,
   },
   summaryValue: {
-    fontSize: 16,
-    color: '#000000',
-    fontWeight: '500',
+    fontSize: typography.fontSize.md,
+    color: colors.textPrimary,
+    fontWeight: typography.fontWeight.medium,
   },
   pinContainer: {
     alignItems: 'center',
-    paddingVertical: 30,
-    paddingHorizontal: 52,
+    paddingVertical: spacing['2xl'],
+    paddingHorizontal: spacing['3xl'],
   },
   pinBoxesContainer: {
     flexDirection: 'row',
-    gap: 10,
+    gap: spacing.sm,
   },
   pinBox: {
     width: 70,
     height: 70,
-    backgroundColor: '#F4F6F5',
-    borderRadius: 10,
+    backgroundColor: colors.backgroundInput,
+    borderRadius: borderRadius.md,
     justifyContent: 'center',
     alignItems: 'center',
   },
   pinBoxFilled: {
-    backgroundColor: '#E8F4FD',
+    backgroundColor: colors.primaryLight,
     borderWidth: 2,
-    borderColor: '#0F6EC0',
+    borderColor: colors.primary,
   },
   pinDot: {
     width: 16,
     height: 16,
-    borderRadius: 8,
-    backgroundColor: '#0F6EC0',
+    borderRadius: borderRadius.full,
+    backgroundColor: colors.primary,
   },
   errorText: {
-    fontSize: 14,
-    color: '#C31D1E',
-    marginTop: 15,
+    fontSize: typography.fontSize.base,
+    color: colors.error,
+    marginTop: spacing.md,
     textAlign: 'center',
   },
   submitButtonContainer: {
-    paddingHorizontal: 52,
-    marginBottom: 20,
+    paddingHorizontal: spacing['3xl'],
+    marginBottom: spacing.md,
   },
   submitButton: {
-    backgroundColor: '#0F6EC0',
-    borderRadius: 15,
-    height: 60,
+    backgroundColor: colors.primary,
+    borderRadius: borderRadius.lg,
+    height: layout.buttonHeight,
     justifyContent: 'center',
     alignItems: 'center',
   },
   submitButtonDisabled: {
-    backgroundColor: 'rgba(15, 114, 199, 0.3)',
+    backgroundColor: colors.primaryDisabled,
   },
   submitButtonText: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#F5F5F5',
+    fontSize: typography.fontSize.md,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.textLight,
   },
   submitButtonTextDisabled: {
-    color: '#F5F5F5',
+    color: colors.textLight,
     opacity: 0.7,
   },
   keypadContainer: {
     flex: 1,
     justifyContent: 'flex-end',
-    paddingHorizontal: 52,
-    paddingBottom: Platform.OS === 'ios' ? 40 : 30,
-    gap: 18,
+    paddingHorizontal: spacing['3xl'],
+    paddingBottom: Platform.OS === 'ios' ? spacing.xl : spacing.md,
+    gap: spacing.md,
   },
   keypadRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    gap: 18,
+    gap: spacing.md,
   },
   keypadKey: {
     flex: 1,
     height: 58,
-    backgroundColor: 'rgba(15, 114, 199, 0.07)',
+    backgroundColor: colors.primaryLight,
     borderWidth: 1,
-    borderColor: '#D2D6E1',
-    borderRadius: 5,
+    borderColor: colors.border,
+    borderRadius: borderRadius.sm,
     justifyContent: 'center',
     alignItems: 'center',
   },
   keypadKeyDelete: {
-    backgroundColor: 'rgba(15, 114, 199, 0.07)',
+    backgroundColor: colors.primaryLight,
   },
   keypadKeyText: {
-    fontSize: 18,
-    fontWeight: '500',
-    color: '#000000',
+    fontSize: typography.fontSize.lg,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.textPrimary,
   },
 });

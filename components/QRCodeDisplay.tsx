@@ -1,3 +1,4 @@
+import { borderRadius, colors } from '@/constants/theme';
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
@@ -15,11 +16,11 @@ interface QRCodeDisplayProps {
 export default function QRCodeDisplay({
   value,
   size = 200,
-  backgroundColor = '#FFFFFF',
-  color = '#323333',
+  backgroundColor = colors.backgroundCard,
+  color = colors.textSecondary,
   logo,
   logoSize = 50,
-  logoBackgroundColor = '#FFFFFF',
+  logoBackgroundColor = colors.backgroundCard,
 }: QRCodeDisplayProps) {
   return (
     <View style={[styles.container, { backgroundColor }]}>
@@ -42,7 +43,7 @@ export default function QRCodeDisplay({
 const styles = StyleSheet.create({
   container: {
     padding: 15,
-    borderRadius: 15,
+    borderRadius: borderRadius.lg,
     alignItems: 'center',
     justifyContent: 'center',
   },

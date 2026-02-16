@@ -1,13 +1,14 @@
+import { borderRadius, colors, spacing, typography } from '@/constants/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
-    StyleSheet,
-    Text,
-    TextStyle,
-    TouchableOpacity,
-    View,
-    ViewStyle,
+  StyleSheet,
+  Text,
+  TextStyle,
+  TouchableOpacity,
+  View,
+  ViewStyle,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -29,7 +30,7 @@ const FAQItem: React.FC<FAQItemProps> = ({ question, answer, expanded, onToggle 
       <Ionicons
         name={expanded ? 'chevron-up' : 'chevron-down'}
         size={20}
-        color="#000000"
+        color={colors.textPrimary}
       />
     </TouchableOpacity>
     {expanded && (
@@ -75,7 +76,7 @@ export default function FAQScreen() {
           onPress={() => router.back()}
           activeOpacity={0.7}
         >
-          <Ionicons name="chevron-back" size={24} color="#000000" />
+          <Ionicons name="chevron-back" size={24} color={colors.textPrimary} />
         </TouchableOpacity>
         <Text style={styles.headerTitle as TextStyle}>FAQ</Text>
         <View style={styles.placeholder as ViewStyle} />
@@ -99,36 +100,36 @@ export default function FAQScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F5F5',
+    backgroundColor: colors.background,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
   },
   backButton: {
     padding: 4,
   },
   headerTitle: {
-    fontSize: 25,
-    fontWeight: '600',
-    color: '#000000',
+    fontSize: typography.fontSize['4xl'],
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.textPrimary,
   },
   placeholder: {
     width: 40,
   },
   content: {
     flex: 1,
-    paddingHorizontal: 20,
-    paddingTop: 10,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.sm,
   },
   faqItem: {
-    backgroundColor: '#F4F6F5',
-    borderRadius: 10,
-    marginBottom: 12,
-    padding: 15,
+    backgroundColor: colors.backgroundInput,
+    borderRadius: borderRadius.md,
+    marginBottom: spacing.sm,
+    padding: spacing.md,
   },
   faqHeader: {
     flexDirection: 'row',
@@ -136,21 +137,21 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   questionText: {
-    fontSize: 16,
-    color: '#000000',
-    fontWeight: '600',
+    fontSize: typography.fontSize.md,
+    color: colors.textPrimary,
+    fontWeight: typography.fontWeight.semibold,
     flex: 1,
-    paddingRight: 10,
+    paddingRight: spacing.sm,
   },
   faqAnswer: {
-    marginTop: 12,
-    paddingTop: 12,
+    marginTop: spacing.sm,
+    paddingTop: spacing.sm,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(0, 0, 0, 0.1)',
+    borderTopColor: colors.divider,
   },
   answerText: {
-    fontSize: 14,
-    color: '#323333',
-    lineHeight: 20,
+    fontSize: typography.fontSize.base,
+    color: colors.textSecondary,
+    lineHeight: typography.lineHeight.relaxed,
   },
 });

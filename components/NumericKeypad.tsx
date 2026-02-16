@@ -1,3 +1,4 @@
+import { borderRadius, colors, typography } from '@/constants/theme';
 import { Delete } from 'lucide-react-native';
 import React from 'react';
 import {
@@ -67,7 +68,7 @@ export default function NumericKeypad({
                 }
               >
                 {key === 'delete' ? (
-                  <Delete size={24} color="#000000" strokeWidth={2} />
+                  <Delete size={24} color={colors.textPrimary} strokeWidth={2} />
                 ) : (
                   <Text style={styles.keyText}>{displayKey}</Text>
                 )}
@@ -92,16 +93,16 @@ const styles = StyleSheet.create({
   key: {
     flex: 1,
     height: 58,
-    backgroundColor: 'rgba(15, 114, 199, 0.07)',
+    backgroundColor: colors.primaryLight,
     borderWidth: 1,
-    borderColor: '#D2D6E1',
-    borderRadius: 5,
+    borderColor: colors.border,
+    borderRadius: borderRadius.sm,
     justifyContent: 'center',
     alignItems: 'center',
   },
   keyText: {
-    fontSize: 18,
-    fontWeight: '500',
-    color: '#000000',
+    fontSize: typography.fontSize.lg,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.textPrimary,
   },
 });

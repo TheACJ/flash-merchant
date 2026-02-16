@@ -1,13 +1,14 @@
+import { colors, typography } from '@/constants/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
-    StyleSheet,
-    Text,
-    TextStyle,
-    TouchableOpacity,
-    View,
-    ViewStyle,
+  StyleSheet,
+  Text,
+  TextStyle,
+  TouchableOpacity,
+  View,
+  ViewStyle,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -36,7 +37,7 @@ const CurrencyItem: React.FC<CurrencyItemProps> = ({ code, name, selected, onSel
     <View style={styles.currencyRight as ViewStyle}>
       {selected && (
         <View style={styles.checkCircle as ViewStyle}>
-          <Ionicons name="checkmark-circle" size={24} color="#0F6EC0" />
+          <Ionicons name="checkmark-circle" size={24} color={colors.primary} />
         </View>
       )}
     </View>
@@ -66,7 +67,7 @@ export default function CurrencyScreen() {
           onPress={() => router.back()}
           activeOpacity={0.7}
         >
-          <Ionicons name="chevron-back" size={24} color="#000000" />
+          <Ionicons name="chevron-back" size={24} color={colors.textPrimary} />
         </TouchableOpacity>
         <Text style={styles.headerTitle as TextStyle}>Currency</Text>
         <View style={styles.placeholder as ViewStyle} />
@@ -90,7 +91,7 @@ export default function CurrencyScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F5F5',
+    backgroundColor: colors.background,
   },
   header: {
     flexDirection: 'row',
@@ -103,9 +104,9 @@ const styles = StyleSheet.create({
     padding: 4,
   },
   headerTitle: {
-    fontSize: 25,
-    fontWeight: '600',
-    color: '#000000',
+    fontSize: typography.fontSize['4xl'],
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.textPrimary,
   },
   placeholder: {
     width: 40,
@@ -121,7 +122,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#E0E0E0',
+    borderBottomColor: colors.borderLight,
   },
   currencyLeft: {
     flexDirection: 'row',
@@ -131,27 +132,27 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#F5F5F5',
+    backgroundColor: colors.background,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
   },
   flagText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#000000',
+    fontSize: typography.fontSize.md,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.textPrimary,
   },
   currencyInfo: {
     flexDirection: 'column',
   },
   currencyCode: {
-    fontSize: 16,
-    color: '#000000',
-    fontWeight: '600',
+    fontSize: typography.fontSize.md,
+    color: colors.textPrimary,
+    fontWeight: typography.fontWeight.semibold,
   },
   currencyName: {
-    fontSize: 14,
-    color: '#323333',
+    fontSize: typography.fontSize.base,
+    color: colors.textSecondary,
     marginTop: 2,
   },
   currencyRight: {
@@ -161,7 +162,7 @@ const styles = StyleSheet.create({
     width: 24,
     height: 24,
     borderRadius: 12,
-    backgroundColor: '#0F6EC0',
+    backgroundColor: colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
   },

@@ -1,13 +1,14 @@
 import { ArrowLeft } from 'lucide-react-native';
 import React from 'react';
 import {
-    Platform,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Platform,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { borderRadius, colors, layout, typography } from '@/constants/theme';
 import { TransactionSummary as TransactionSummaryType } from './types';
 
 interface TransactionSummaryProps {
@@ -50,7 +51,7 @@ export default function TransactionSummary({
           activeOpacity={0.7}
           accessibilityLabel="Go back"
         >
-          <ArrowLeft size={24} color="#000000" strokeWidth={2} />
+          <ArrowLeft size={24} color={colors.textPrimary} strokeWidth={2} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Transaction summary</Text>
         <View style={styles.headerSpacer} />
@@ -108,7 +109,7 @@ export default function TransactionSummary({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F5F5',
+    backgroundColor: colors.background,
   },
   header: {
     flexDirection: 'row',
@@ -121,14 +122,14 @@ const styles = StyleSheet.create({
     width: 50,
     height: 50,
     borderRadius: 25,
-    backgroundColor: '#F4F6F5',
+    backgroundColor: colors.backgroundInput,
     justifyContent: 'center',
     alignItems: 'center',
   },
   headerTitle: {
-    fontSize: 22,
-    fontWeight: '600',
-    color: '#000000',
+    fontSize: typography.fontSize['2xl'],
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.textPrimary,
     textAlign: 'center',
   },
   headerSpacer: {
@@ -140,8 +141,8 @@ const styles = StyleSheet.create({
     paddingTop: 40,
   },
   summaryCard: {
-    backgroundColor: '#F4F6F5',
-    borderRadius: 15,
+    backgroundColor: colors.backgroundInput,
+    borderRadius: borderRadius.lg,
     padding: 20,
   },
   summaryRow: {
@@ -151,20 +152,20 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   summaryLabel: {
-    fontSize: 16,
-    color: '#323333',
-    fontWeight: '400',
+    fontSize: typography.fontSize.md,
+    color: colors.textSecondary,
+    fontWeight: typography.fontWeight.regular,
   },
   summaryValue: {
-    fontSize: 16,
-    color: '#000000',
-    fontWeight: '500',
+    fontSize: typography.fontSize.md,
+    color: colors.textPrimary,
+    fontWeight: typography.fontWeight.medium,
     textAlign: 'right',
     maxWidth: '50%',
   },
   summaryValueHighlighted: {
-    color: '#0F6EC0',
-    fontWeight: '600',
+    color: colors.primary,
+    fontWeight: typography.fontWeight.semibold,
   },
   divider: {
     height: 1,
@@ -174,50 +175,50 @@ const styles = StyleSheet.create({
     marginTop: 30,
     alignItems: 'center',
     padding: 20,
-    backgroundColor: 'rgba(15, 110, 192, 0.05)',
-    borderRadius: 15,
+    backgroundColor: colors.primaryLight,
+    borderRadius: borderRadius.lg,
     borderWidth: 1,
-    borderColor: 'rgba(15, 110, 192, 0.2)',
+    borderColor: colors.primaryLight,
   },
   amountLabel: {
-    fontSize: 14,
-    color: '#657084',
+    fontSize: typography.fontSize.sm,
+    color: colors.textTertiary,
     marginBottom: 8,
   },
   amountValue: {
-    fontSize: 36,
-    fontWeight: '700',
-    color: '#0F6EC0',
+    fontSize: typography.fontSize['5xl'],
+    fontWeight: typography.fontWeight.bold,
+    color: colors.primary,
   },
   disclaimerContainer: {
     marginTop: 20,
     paddingHorizontal: 10,
   },
   disclaimerText: {
-    fontSize: 12,
-    color: '#657084',
+    fontSize: typography.fontSize.xs,
+    color: colors.textTertiary,
     textAlign: 'center',
-    lineHeight: 18,
+    lineHeight: typography.lineHeight.normal,
   },
   bottomContainer: {
     paddingHorizontal: 52,
     paddingBottom: Platform.OS === 'ios' ? 40 : 30,
   },
   confirmButton: {
-    backgroundColor: '#0F6EC0',
-    borderRadius: 15,
-    height: 60,
+    backgroundColor: colors.primary,
+    borderRadius: borderRadius.lg,
+    height: layout.buttonHeight,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#0F6EC0',
+    shadowColor: colors.primary,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 6,
   },
   confirmButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#F5F5F5',
+    fontSize: typography.fontSize.md,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.textLight,
   },
 });

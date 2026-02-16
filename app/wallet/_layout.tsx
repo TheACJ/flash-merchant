@@ -1,5 +1,6 @@
 import { Stack } from 'expo-router';
 import React from 'react';
+import { colors } from '@/constants/theme';
 
 export default function WalletLayout() {
   return (
@@ -7,7 +8,7 @@ export default function WalletLayout() {
       screenOptions={{
         headerShown: false,
         animation: 'slide_from_right',
-        contentStyle: { backgroundColor: '#F5F5F5' },
+        contentStyle: { backgroundColor: colors.background },
       }}
     >
       {/* Deposit Routes */}

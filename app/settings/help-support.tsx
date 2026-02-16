@@ -1,13 +1,14 @@
+import { borderRadius, colors, spacing, typography } from '@/constants/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React from 'react';
 import {
-    StyleSheet,
-    Text,
-    TextStyle,
-    TouchableOpacity,
-    View,
-    ViewStyle,
+  StyleSheet,
+  Text,
+  TextStyle,
+  TouchableOpacity,
+  View,
+  ViewStyle,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -26,7 +27,7 @@ const SupportItem: React.FC<SupportItemProps> = ({
   subtitle,
   onPress,
   showChevron = true,
-  subtitleColor = '#0F6EC0',
+  subtitleColor = colors.primary,
 }) => (
   <TouchableOpacity
     style={styles.supportItem as ViewStyle}
@@ -35,7 +36,7 @@ const SupportItem: React.FC<SupportItemProps> = ({
   >
     <View style={styles.itemLeft as ViewStyle}>
       <View style={styles.iconContainer as ViewStyle}>
-        <Ionicons name={icon as any} size={20} color="#323333" />
+        <Ionicons name={icon as any} size={20} color={colors.textSecondary} />
       </View>
       <View style={styles.textContainer as ViewStyle}>
         <Text style={styles.itemTitle as TextStyle}>{title}</Text>
@@ -45,7 +46,7 @@ const SupportItem: React.FC<SupportItemProps> = ({
       </View>
     </View>
     {showChevron && (
-      <Ionicons name="chevron-forward" size={20} color="#000000" />
+      <Ionicons name="chevron-forward" size={20} color={colors.textPrimary} />
     )}
   </TouchableOpacity>
 );
@@ -61,7 +62,7 @@ export default function HelpSupportScreen() {
           onPress={() => router.back()}
           activeOpacity={0.7}
         >
-          <Ionicons name="chevron-back" size={24} color="#000000" />
+          <Ionicons name="chevron-back" size={24} color={colors.textPrimary} />
         </TouchableOpacity>
         <Text style={styles.headerTitle as TextStyle}>Help and support</Text>
         <View style={styles.placeholder as ViewStyle} />
@@ -111,41 +112,41 @@ export default function HelpSupportScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F5F5',
+    backgroundColor: colors.background,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
   },
   backButton: {
     padding: 4,
   },
   headerTitle: {
-    fontSize: 25,
-    fontWeight: '600',
-    color: '#000000',
+    fontSize: typography.fontSize['4xl'],
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.textPrimary,
   },
   placeholder: {
     width: 40,
   },
   content: {
     flex: 1,
-    paddingHorizontal: 20,
-    paddingTop: 20,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.lg,
   },
   supportCard: {
-    backgroundColor: '#F4F6F5',
-    borderRadius: 10,
-    padding: 15,
+    backgroundColor: colors.backgroundInput,
+    borderRadius: borderRadius.md,
+    padding: spacing.md,
   },
   supportItem: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 12,
+    paddingVertical: spacing.sm,
   },
   itemLeft: {
     flexDirection: 'row',
@@ -155,29 +156,29 @@ const styles = StyleSheet.create({
   iconContainer: {
     width: 40,
     height: 40,
-    borderRadius: 30,
-    backgroundColor: '#F5F5F5',
+    borderRadius: borderRadius.full,
+    backgroundColor: colors.background,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12,
+    marginRight: spacing.sm,
   },
   textContainer: {
     flex: 1,
   },
   itemTitle: {
-    fontSize: 16,
-    color: '#000000',
-    fontWeight: '400',
+    fontSize: typography.fontSize.md,
+    color: colors.textPrimary,
+    fontWeight: typography.fontWeight.regular,
   },
   itemSubtitle: {
-    fontSize: 14,
-    marginTop: 4,
-    fontWeight: '400',
+    fontSize: typography.fontSize.base,
+    marginTop: spacing.xs,
+    fontWeight: typography.fontWeight.regular,
   },
   divider: {
     height: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.1)',
-    marginLeft: 52,
-    marginVertical: 4,
+    backgroundColor: colors.divider,
+    marginLeft: spacing['3xl'],
+    marginVertical: spacing.xs,
   },
 });
