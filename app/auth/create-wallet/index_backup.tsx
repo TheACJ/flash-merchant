@@ -7,9 +7,8 @@ import {
   spacing,
   typography,
 } from '@/constants/theme';
-import { useWalletGeneration } from '@/hooks/useWalletGeneration';
 import merchantApi from '@/services/MerchantApiService';
-import walletWorkletService from '@/services/WalletWorkletService';
+import MerchantWalletService from '@/services/MerchantWalletService';
 import * as Location from 'expo-location';
 import { useRouter } from 'expo-router';
 import {
@@ -250,12 +249,9 @@ const SignupScreen1: React.FC<SignupScreen1Props> = ({ onNext }) => {
   const [longitude, setLongitude] = useState<number | undefined>();
   const [loading, setLoading] = useState(false);
   const [locationLoading, setLocationLoading] = useState(true);
-  const { status: walletStatus, progress } = useWalletGeneration();
 
   useEffect(() => {
     getCurrentLocation();
-    // Start wallet generation in the background as soon as component mounts
-    walletWorkletService.startBackgroundGeneration();
   }, []);
 
   const requestLocationPermission = async () => {
@@ -362,18 +358,6 @@ const SignupScreen1: React.FC<SignupScreen1Props> = ({ onNext }) => {
           <Text style={styles.screenSubtitle}>
             Set up your Flash merchant POS in minutes
           </Text>
-          
-          {/* Wallet Generation Progress Indicator */}
-          {walletStatus === 'generating' && (
-            <View style={styles.walletProgressContainer}>
-              <View style={styles.walletProgressBar}>
-                <View style={[styles.walletProgressFill, { width: `${progress}%` }]} />
-              </View>
-              <Text style={styles.walletProgressText}>
-                Preparing your wallets... {progress}%
-              </Text>
-            </View>
-          )}
         </View>
 
         {/* Form */}
@@ -547,7 +531,6 @@ const SignupScreen2: React.FC<SignupScreen2Props> = ({ onNext, userData }) => {
   const [loading, setLoading] = useState(false);
   const inputRefs = useRef<(TextInput | null)[]>([]);
   const shakeAnim = useRef(new Animated.Value(0)).current;
-  const { status: walletStatus, isCompleted, wallets, progress } = useWalletGeneration();
 
   const handleCodeChange = (text: string, index: number) => {
     if (text && !/^\d+$/.test(text)) return;
@@ -577,19 +560,15 @@ const SignupScreen2: React.FC<SignupScreen2Props> = ({ onNext, userData }) => {
 
     setLoading(true);
     try {
-      // Wait for wallet generation to complete if not already done
-      const generatedWallets = isCompleted && wallets 
-        ? wallets 
-        : await walletWorkletService.waitForCompletion();
-
+      const wallets = await MerchantWalletService.createWallet();
       const response = await merchantApi.registerComplete({
         session_token: userData.sessionToken || '',
         otp: verificationCode,
         wallets: {
-          ethereum: { addresses: [generatedWallets.ethereum.address] },
-          solana: { addresses: [generatedWallets.solana.address] },
-          bitcoin: { addresses: [generatedWallets.bitcoin.address] },
-          bnb: { addresses: [generatedWallets.bnb.address] },
+          ethereum: { addresses: [wallets.ethereum.address] },
+          solana: { addresses: [wallets.solana.address] },
+          bitcoin: { addresses: [wallets.bitcoin.address] },
+          bnb: { addresses: [wallets.bnb.address] },
         },
       });
 
@@ -611,7 +590,6 @@ const SignupScreen2: React.FC<SignupScreen2Props> = ({ onNext, userData }) => {
   };
 
   const codeComplete = code.join('').length === OTP_LENGTH;
-  const canVerify = codeComplete && (isCompleted || walletStatus === 'generating');
 
   return (
     <KeyboardAvoidingView
@@ -635,22 +613,6 @@ const SignupScreen2: React.FC<SignupScreen2Props> = ({ onNext, userData }) => {
               {userData.phoneNumber || userData.email}
             </Text>
           </Text>
-
-          {/* Wallet Generation Status */}
-          {walletStatus === 'generating' && (
-            <View style={styles.walletProgressContainer}>
-              <ActivityIndicator size="small" color={colors.primary} />
-              <Text style={styles.walletProgressText}>
-                Securing your wallets... {progress}%
-              </Text>
-            </View>
-          )}
-
-          {isCompleted && (
-            <View style={styles.walletCompletedContainer}>
-              <Text style={styles.walletCompletedText}>✓ Wallets ready</Text>
-            </View>
-          )}
         </View>
 
         {/* OTP Inputs */}
@@ -698,19 +660,17 @@ const SignupScreen2: React.FC<SignupScreen2Props> = ({ onNext, userData }) => {
         <TouchableOpacity
           style={[
             styles.primaryButton,
-            (!canVerify || loading) && styles.buttonDisabled,
+            (!codeComplete || loading) && styles.buttonDisabled,
           ]}
           onPress={handleNext}
-          disabled={!canVerify || loading}
+          disabled={!codeComplete || loading}
           activeOpacity={0.85}
         >
           {loading ? (
             <ActivityIndicator size="small" color={colors.textWhite} />
           ) : null}
           <Text style={styles.primaryButtonText}>
-            {loading 
-              ? (walletStatus === 'generating' ? 'Securing wallets...' : 'Verifying…')
-              : 'Verify & Continue'}
+            {loading ? 'Verifying…' : 'Verify & Continue'}
           </Text>
         </TouchableOpacity>
       </ScrollView>
@@ -815,46 +775,6 @@ const styles = StyleSheet.create({
     fontWeight: typography.fontWeight.regular,
     color: colors.textTertiary,
     marginTop: spacing['2xs'],
-  },
-
-  // Wallet Generation Progress
-  walletProgressContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    marginTop: spacing.md,
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.base,
-    backgroundColor: colors.infoLight,
-    borderRadius: borderRadius.md,
-  },
-  walletProgressBar: {
-    height: 4,
-    backgroundColor: colors.borderLight,
-    borderRadius: borderRadius.full,
-    overflow: 'hidden',
-    marginTop: spacing.xs,
-  },
-  walletProgressFill: {
-    height: '100%',
-    backgroundColor: colors.primary,
-  },
-  walletProgressText: {
-    fontSize: typography.fontSize.xs,
-    fontWeight: typography.fontWeight.medium,
-    color: colors.primary,
-  },
-  walletCompletedContainer: {
-    marginTop: spacing.md,
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.base,
-    backgroundColor: colors.successLight || colors.infoLight,
-    borderRadius: borderRadius.md,
-  },
-  walletCompletedText: {
-    fontSize: typography.fontSize.sm,
-    fontWeight: typography.fontWeight.semibold,
-    color: colors.success || colors.primary,
   },
 
   // OTP

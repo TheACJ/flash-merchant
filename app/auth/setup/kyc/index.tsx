@@ -1,5 +1,23 @@
-import { useRouter } from "expo-router";
-import React from "react";
+// auth/setup/kyc/index.tsx
+import {
+  borderRadius,
+  colors,
+  layout,
+  shadows,
+  spacing,
+  typography,
+} from '@/constants/theme';
+import { useRouter } from 'expo-router';
+import {
+  ArrowLeft,
+  Car,
+  ChevronRight,
+  CreditCard,
+  Fingerprint,
+  ShieldCheck,
+  UserCheck
+} from 'lucide-react-native';
+import React from 'react';
 import {
   SafeAreaView,
   StatusBar,
@@ -7,104 +25,144 @@ import {
   Text,
   TouchableOpacity,
   View,
-} from "react-native";
-import { Path, Svg } from "react-native-svg";
+} from 'react-native';
 
-// --- Chevron Right Icon ---
-const ChevronRightIcon = () => (
-  <Svg width={12} height={20} viewBox="0 0 12 20" fill="none">
-    <Path
-      d="M2 18L10 10L2 2"
-      stroke="#000000"
-      strokeWidth={2.5}
-      strokeLinecap="round"
-      strokeLinejoin="round"
+interface KYCOptionProps {
+  title: string;
+  description: string;
+  icon: React.ReactNode;
+  onPress: () => void;
+}
+
+const KYCOption: React.FC<KYCOptionProps> = ({
+  title,
+  description,
+  icon,
+  onPress,
+}) => (
+  <TouchableOpacity
+    style={styles.optionContainer}
+    onPress={onPress}
+    activeOpacity={0.7}
+  >
+    <View style={styles.optionIconContainer}>{icon}</View>
+    <View style={styles.optionTextGroup}>
+      <Text style={styles.optionTitle}>{title}</Text>
+      <Text style={styles.optionDescription}>{description}</Text>
+    </View>
+    <ChevronRight
+      size={layout.iconSize.sm}
+      color={colors.textMuted}
+      strokeWidth={2}
     />
-  </Svg>
+  </TouchableOpacity>
 );
 
 export default function KYCVerification() {
   const router = useRouter();
 
-  const handleNIN = () => {
-    router.push('/auth/setup/kyc/nin');
-  };
-
-  const handleBVN = () => {
-    router.push('/auth/setup/kyc/bvn');
-  };
-
-  const handleDriversLicence = () => {
-    router.push('/auth/setup/kyc/drivers_licence');
-  };
+  const kycOptions = [
+    {
+      title: 'NIN',
+      description: 'National Identification Number',
+      icon: (
+        <Fingerprint
+          size={layout.iconSize.md}
+          color={colors.primary}
+          strokeWidth={1.8}
+        />
+      ),
+      onPress: () => router.push('/auth/setup/kyc/nin'),
+    },
+    {
+      title: 'BVN',
+      description: 'Bank Verification Number',
+      icon: (
+        <CreditCard
+          size={layout.iconSize.md}
+          color={colors.primary}
+          strokeWidth={1.8}
+        />
+      ),
+      onPress: () => router.push('/auth/setup/kyc/bvn'),
+    },
+    {
+      title: "Driver's Licence",
+      description: 'Vehicle operation permit',
+      icon: (
+        <Car
+          size={layout.iconSize.md}
+          color={colors.primary}
+          strokeWidth={1.8}
+        />
+      ),
+      onPress: () => router.push('/auth/setup/kyc/drivers_licence'),
+    },
+  ];
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="dark-content" backgroundColor="#F5F5F5" />
+      <StatusBar barStyle="dark-content" backgroundColor={colors.background} />
+
+      {/* Header */}
+      <View style={styles.header}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => router.back()}
+          activeOpacity={0.7}
+        >
+          <ArrowLeft
+            size={layout.iconSize.md}
+            color={colors.textPrimary}
+            strokeWidth={2}
+          />
+        </TouchableOpacity>
+      </View>
+
       <View style={styles.container}>
-        {/* Header */}
+        {/* Title Section */}
         <View style={styles.headerSection}>
-          <Text style={styles.title}>KYC verification</Text>
-          <Text style={styles.subtitle}>Choose your verifying method</Text>
+          <View style={styles.titleIconContainer}>
+            <UserCheck
+              size={layout.iconSize.xl}
+              color={colors.primary}
+              strokeWidth={1.8}
+            />
+          </View>
+          <Text style={styles.title}>Identity Verification</Text>
+          <Text style={styles.subtitle}>
+            Verify your identity to unlock full merchant features and higher
+            transaction limits
+          </Text>
         </View>
 
         {/* Options */}
         <View style={styles.optionsSection}>
-          <TouchableOpacity
-            style={styles.optionContainer}
-            onPress={handleNIN}
-            activeOpacity={0.7}
-          >
-            <View style={styles.optionContent}>
-              <View style={styles.optionTextGroup}>
-                <Text style={styles.optionTitle}>NIN</Text>
-                <Text style={styles.optionDescription}>
-                  National identification number
-                </Text>
-              </View>
-              <ChevronRightIcon />
-            </View>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.optionContainer}
-            onPress={handleBVN}
-            activeOpacity={0.7}
-          >
-            <View style={styles.optionContent}>
-              <View style={styles.optionTextGroup}>
-                <Text style={styles.optionTitle}>BVN</Text>
-                <Text style={styles.optionDescription}>
-                  Bank verification number
-                </Text>
-              </View>
-              <ChevronRightIcon />
-            </View>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.optionContainer}
-            onPress={handleDriversLicence}
-            activeOpacity={0.7}
-          >
-            <View style={styles.optionContent}>
-              <View style={styles.optionTextGroup}>
-                <Text style={styles.optionTitle}>Driver's licence</Text>
-                <Text style={styles.optionDescription}>
-                  Permit to operate a motor vehicle
-                </Text>
-              </View>
-              <ChevronRightIcon />
-            </View>
-          </TouchableOpacity>
+          <Text style={styles.sectionLabel}>Verification Method</Text>
+          {kycOptions.map((option, index) => (
+            <KYCOption key={index} {...option} />
+          ))}
         </View>
+
+        {/* Spacer */}
+        <View style={{ flex: 1 }} />
 
         {/* Footer Notice */}
         <View style={styles.footerSection}>
-          <Text style={styles.footerText}>
-            Your details are securely verified through official identity
-            providers.
-          </Text>
+          <View style={styles.footerCard}>
+            <ShieldCheck
+              size={layout.iconSize.sm}
+              color={colors.success}
+              strokeWidth={1.8}
+            />
+            <View style={styles.footerTextContainer}>
+              <Text style={styles.footerTitle}>Secure Verification</Text>
+              <Text style={styles.footerText}>
+                Your details are encrypted and verified through official
+                government identity providers. We never store raw document data.
+              </Text>
+            </View>
+          </View>
         </View>
       </View>
     </SafeAreaView>
@@ -114,79 +172,131 @@ export default function KYCVerification() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: "#F5F5F5",
+    backgroundColor: colors.background,
+  },
+  header: {
+    height: layout.headerHeight,
+    paddingHorizontal: layout.screenPaddingHorizontal,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  backButton: {
+    width: layout.minTouchTarget,
+    height: layout.minTouchTarget,
+    backgroundColor: colors.backgroundInput,
+    borderRadius: borderRadius.full,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   container: {
     flex: 1,
-    paddingHorizontal: 24,
+    paddingHorizontal: layout.screenPaddingHorizontal,
   },
+
+  // Title Section
   headerSection: {
-    alignItems: "center",
-    gap: 15,
-    marginTop: 50,
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginTop: spacing.lg,
+    marginBottom: spacing['2xl'],
+  },
+  titleIconContainer: {
+    width: 72,
+    height: 72,
+    borderRadius: borderRadius.full,
+    backgroundColor: colors.primaryLight,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: spacing.sm,
   },
   title: {
-    fontFamily: "System",
-    fontWeight: "600",
-    fontSize: 25,
-    lineHeight: 25,
-    textAlign: "center",
-    color: "#000000",
+    fontSize: typography.fontSize['3xl'],
+    fontWeight: typography.fontWeight.bold,
+    textAlign: 'center',
+    color: colors.textPrimary,
+    letterSpacing: typography.letterSpacing.tight,
   },
   subtitle: {
-    fontFamily: "System",
-    fontWeight: "400",
-    fontSize: 18,
-    lineHeight: 25,
-    textAlign: "center",
-    color: "#323333",
+    fontSize: typography.fontSize.base,
+    fontWeight: typography.fontWeight.regular,
+    lineHeight: typography.fontSize.base * typography.lineHeight.normal,
+    textAlign: 'center',
+    color: colors.textTertiary,
+    paddingHorizontal: spacing.sm,
   },
+
+  // Options
   optionsSection: {
-    marginTop: 30,
-    gap: 12,
+    gap: spacing.md,
+  },
+  sectionLabel: {
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.textTertiary,
+    textTransform: 'uppercase',
+    letterSpacing: typography.letterSpacing.wide,
+    marginBottom: spacing.xs,
   },
   optionContainer: {
-    backgroundColor: "#F4F6F5",
-    borderRadius: 10,
-    paddingVertical: 15,
-    paddingHorizontal: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.backgroundCard,
+    borderRadius: borderRadius.lg,
+    paddingVertical: spacing.base,
+    paddingHorizontal: spacing.base,
+    gap: spacing.base,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
+    ...shadows.xs,
   },
-  optionContent: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+  optionIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: borderRadius.md,
+    backgroundColor: colors.primaryLight,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   optionTextGroup: {
-    gap: 8,
     flex: 1,
+    gap: spacing.xs,
   },
   optionTitle: {
-    fontFamily: "System",
-    fontWeight: "400",
-    fontSize: 16,
-    lineHeight: 16,
-    color: "#000000",
+    fontSize: typography.fontSize.md,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.textPrimary,
   },
   optionDescription: {
-    fontFamily: "System",
-    fontWeight: "400",
-    fontSize: 14,
-    lineHeight: 14,
-    color: "#323333",
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.regular,
+    color: colors.textTertiary,
   },
+
+  // Footer
   footerSection: {
-    position: "absolute",
-    bottom: 50,
-    left: 24,
-    right: 24,
-    alignItems: "center",
+    paddingBottom: spacing['2xl'],
+  },
+  footerCard: {
+    flexDirection: 'row',
+    backgroundColor: colors.successLight,
+    borderRadius: borderRadius.md,
+    padding: spacing.base,
+    gap: spacing.md,
+    alignItems: 'flex-start',
+  },
+  footerTextContainer: {
+    flex: 1,
+    gap: spacing.xs,
+  },
+  footerTitle: {
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.success,
   },
   footerText: {
-    fontFamily: "System",
-    fontWeight: "400",
-    fontSize: 12,
-    lineHeight: 15,
-    color: "#323333",
-    textAlign: "center",
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.regular,
+    lineHeight: typography.fontSize.sm * typography.lineHeight.normal,
+    color: colors.textSecondary,
   },
 });
