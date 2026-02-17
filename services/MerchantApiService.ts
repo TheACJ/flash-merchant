@@ -18,6 +18,8 @@ interface ApiResponse<T = any> {
   merchant_exists?: boolean;
   requires_wallet_creation?: boolean;
   merchant?: T;
+  access?: string;
+  refresh?: string;
 }
 
 interface MerchantRegistrationInitiate {
@@ -48,6 +50,7 @@ interface MerchantLoginInitiate {
 interface MerchantLoginComplete {
   phone_number: string;
   otp: string;
+  session_token: string;
 }
 
 interface AddMerchantTag {

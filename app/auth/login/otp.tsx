@@ -32,6 +32,7 @@ const CODE_LENGTH = 6;
 export default function EnterCodeScreen() {
   const params = useLocalSearchParams();
   const phoneNumber = params.phoneNumber as string;
+  const sessionToken = params.sessionToken as string;
   const [code, setCode] = useState('');
   const [resendTimer, setResendTimer] = useState(30);
   const [loading, setLoading] = useState(false);
@@ -68,9 +69,17 @@ export default function EnterCodeScreen() {
       const response = await merchantApi.loginComplete({
         phone_number: phoneNumber,
         otp: otpCode,
+        session_token: sessionToken,
       });
 
-      if (!response.success) {
+      console.log('🔐 Login complete response:', JSON.stringify(response, null, 2));
+
+      // Check for success - backend returns status 200 and access token on success
+      const isSuccess = response.status === 200 || 
+                        response.access ||
+                        response.message?.includes('success');
+
+      if (!isSuccess) {
         Alert.alert('Error', response.error || 'Invalid OTP');
         setCode('');
         inputRef.current?.focus();
@@ -107,7 +116,13 @@ export default function EnterCodeScreen() {
     if (resendTimer > 0) return;
     try {
       const response = await merchantApi.resendOTP(phoneNumber);
-      if (response.success) {
+      
+      // Check for success - backend returns status 200 on success
+      const isSuccess = response.status === 200 || 
+                        response.message?.includes('sent') ||
+                        response.otp;
+      
+      if (isSuccess) {
         setResendTimer(30);
         setCode('');
         inputRef.current?.focus();

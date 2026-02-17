@@ -9,7 +9,7 @@ import {
 } from '@/constants/theme';
 import merchantApi from '@/services/MerchantApiService';
 import { router } from 'expo-router';
-import { ArrowLeft, ChevronRight, Phone, Zap } from 'lucide-react-native';
+import { ChevronRight, Phone, Zap } from 'lucide-react-native';
 import React, { useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -38,10 +38,20 @@ export default function LoginScreen() {
         phone_number: phoneNumber,
       });
 
-      if (response.success) {
+      console.log('🔐 Login initiate response:', JSON.stringify(response, null, 2));
+
+      // Check for success - backend returns status 200 and session_token on success
+      const isSuccess = response.status === 200 || 
+                        response.session_token ||
+                        response.message?.includes('OTP sent');
+
+      if (isSuccess) {
         router.push({
           pathname: '/auth/login/otp',
-          params: { phoneNumber },
+          params: { 
+            phoneNumber,
+            sessionToken: response.session_token || '',
+          },
         });
       } else {
         Alert.alert('Error', response.error || 'Login failed');
