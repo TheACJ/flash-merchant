@@ -1,17 +1,74 @@
-import { borderRadius, colors, layout, typography } from '@/constants/theme';
-import { Ionicons } from '@expo/vector-icons';
+// settings/edit-profile.tsx
+import {
+  borderRadius,
+  colors,
+  layout,
+  shadows,
+  spacing,
+  typography,
+} from '@/constants/theme';
 import { useRouter } from 'expo-router';
+import {
+  ArrowLeft,
+  AtSign,
+  ChevronRight,
+  Mail,
+  MapPin,
+  Phone,
+} from 'lucide-react-native';
 import React, { useState } from 'react';
 import {
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
-  TextStyle,
   TouchableOpacity,
   View,
-  ViewStyle,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+
+interface FormFieldProps {
+  label: string;
+  icon: React.ReactNode;
+  value: string;
+  onChangeText: (text: string) => void;
+  placeholder: string;
+  keyboardType?: TextInput['props']['keyboardType'];
+  autoCapitalize?: TextInput['props']['autoCapitalize'];
+}
+
+const FormField: React.FC<FormFieldProps> = ({
+  label,
+  icon,
+  value,
+  onChangeText,
+  placeholder,
+  keyboardType = 'default',
+  autoCapitalize = 'sentences',
+}) => (
+  <View style={styles.inputGroup}>
+    <Text style={styles.label}>{label}</Text>
+    <View
+      style={[
+        styles.inputContainer,
+        value.length > 0 && styles.inputContainerActive,
+      ]}
+    >
+      <View style={styles.inputIconWrap}>{icon}</View>
+      <TextInput
+        style={styles.input}
+        value={value}
+        onChangeText={onChangeText}
+        placeholder={placeholder}
+        placeholderTextColor={colors.textPlaceholder}
+        keyboardType={keyboardType}
+        autoCapitalize={autoCapitalize}
+      />
+    </View>
+  </View>
+);
 
 export default function EditProfileScreen() {
   const router = useRouter();
@@ -20,94 +77,85 @@ export default function EditProfileScreen() {
   const [email, setEmail] = useState('cryptoguru@example.com');
   const [address, setAddress] = useState('123 Main Street, Lagos');
 
-  const handleSave = () => {
-    // Save profile changes
-    router.back();
-  };
-
   return (
-    <SafeAreaView style={styles.container as ViewStyle}>
-      <View style={styles.header as ViewStyle}>
+    <SafeAreaView style={styles.container}>
+      {/* Header */}
+      <View style={styles.header}>
         <TouchableOpacity
-          style={styles.backButton as ViewStyle}
+          style={styles.backButton}
           onPress={() => router.back()}
           activeOpacity={0.7}
         >
-          <Ionicons name="chevron-back" size={24} color={colors.textPrimary} />
+          <ArrowLeft
+            size={layout.iconSize.md}
+            color={colors.textPrimary}
+            strokeWidth={2}
+          />
         </TouchableOpacity>
-        <Text style={styles.headerTitle as TextStyle}>Edit profile details</Text>
-        <View style={styles.placeholder as ViewStyle} />
+        <Text style={styles.headerTitle}>Edit Profile</Text>
+        <View style={{ width: layout.minTouchTarget }} />
       </View>
 
-      <View style={styles.formContainer as ViewStyle}>
-        {/* Tag Input */}
-        <View style={styles.inputGroup as ViewStyle}>
-          <Text style={styles.label as TextStyle}>Tag</Text>
-          <View style={styles.inputContainer as ViewStyle}>
-            <TextInput
-              style={styles.input as TextStyle}
-              value={tag}
-              onChangeText={setTag}
-              placeholder="Enter your tag"
-              placeholderTextColor={colors.textTertiary}
-            />
-          </View>
-        </View>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
+          <FormField
+            label="Tag"
+            icon={<AtSign size={layout.iconSize.sm} color={tag ? colors.primary : colors.textTertiary} strokeWidth={1.8} />}
+            value={tag}
+            onChangeText={setTag}
+            placeholder="Your merchant tag"
+            autoCapitalize="none"
+          />
 
-        {/* Phone Input */}
-        <View style={styles.inputGroup as ViewStyle}>
-          <Text style={styles.label as TextStyle}>Mobile number</Text>
-          <View style={styles.inputContainer as ViewStyle}>
-            <TextInput
-              style={styles.input as TextStyle}
-              value={phone}
-              onChangeText={setPhone}
-              placeholder="Enter your phone number"
-              placeholderTextColor={colors.textTertiary}
-              keyboardType="phone-pad"
-            />
-          </View>
-        </View>
+          <FormField
+            label="Mobile Number"
+            icon={<Phone size={layout.iconSize.sm} color={phone ? colors.primary : colors.textTertiary} strokeWidth={1.8} />}
+            value={phone}
+            onChangeText={setPhone}
+            placeholder="Phone number"
+            keyboardType="phone-pad"
+          />
 
-        {/* Email Input */}
-        <View style={styles.inputGroup as ViewStyle}>
-          <Text style={styles.label as TextStyle}>Email</Text>
-          <View style={styles.inputContainer as ViewStyle}>
-            <TextInput
-              style={styles.input as TextStyle}
-              value={email}
-              onChangeText={setEmail}
-              placeholder="Enter your email"
-              placeholderTextColor={colors.textTertiary}
-              keyboardType="email-address"
-              autoCapitalize="none"
-            />
-          </View>
-        </View>
+          <FormField
+            label="Email"
+            icon={<Mail size={layout.iconSize.sm} color={email ? colors.primary : colors.textTertiary} strokeWidth={1.8} />}
+            value={email}
+            onChangeText={setEmail}
+            placeholder="Email address"
+            keyboardType="email-address"
+            autoCapitalize="none"
+          />
 
-        {/* Address Input */}
-        <View style={styles.inputGroup as ViewStyle}>
-          <Text style={styles.label as TextStyle}>Address</Text>
-          <View style={styles.inputContainer as ViewStyle}>
-            <TextInput
-              style={styles.input as TextStyle}
-              value={address}
-              onChangeText={setAddress}
-              placeholder="Enter your address"
-              placeholderTextColor={colors.textTertiary}
-            />
-          </View>
-        </View>
-      </View>
+          <FormField
+            label="Address"
+            icon={<MapPin size={layout.iconSize.sm} color={address ? colors.primary : colors.textTertiary} strokeWidth={1.8} />}
+            value={address}
+            onChangeText={setAddress}
+            placeholder="Business address"
+          />
+        </ScrollView>
+      </KeyboardAvoidingView>
 
       {/* Save Button */}
-      <View style={styles.buttonContainer as ViewStyle}>
+      <View style={styles.buttonContainer}>
         <TouchableOpacity
-          style={styles.saveButton as ViewStyle}
-          onPress={handleSave}
-          activeOpacity={0.7}
+          style={styles.saveButton}
+          onPress={() => router.back()}
+          activeOpacity={0.85}
         >
-          <Text style={styles.saveButtonText as TextStyle}>Save changes</Text>
+          <Text style={styles.saveButtonText}>Save Changes</Text>
+          <ChevronRight
+            size={layout.iconSize.sm}
+            color={colors.textWhite}
+            strokeWidth={2.5}
+          />
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -120,54 +168,70 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   header: {
+    height: layout.headerHeight,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
+    paddingHorizontal: layout.screenPaddingHorizontal,
   },
   backButton: {
-    padding: 4,
+    width: layout.minTouchTarget,
+    height: layout.minTouchTarget,
+    borderRadius: borderRadius.full,
+    backgroundColor: colors.backgroundInput,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   headerTitle: {
-    fontSize: typography.fontSize['4xl'],
+    fontSize: typography.fontSize.lg,
     fontWeight: typography.fontWeight.semibold,
     color: colors.textPrimary,
+    letterSpacing: typography.letterSpacing.tight,
   },
-  placeholder: {
-    width: 40,
-  },
-  formContainer: {
-    flex: 1,
-    paddingHorizontal: 20,
-    paddingTop: 20,
+  scrollContent: {
+    paddingHorizontal: layout.screenPaddingHorizontal,
+    paddingTop: spacing.xl,
+    gap: spacing.lg,
+    paddingBottom: spacing.xl,
   },
   inputGroup: {
-    marginBottom: 20,
+    gap: spacing.sm,
   },
   label: {
-    fontSize: typography.fontSize.md,
-    fontWeight: typography.fontWeight.semibold,
-    color: colors.textPrimary,
-    marginBottom: 8,
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.textTertiary,
+    textTransform: 'uppercase',
+    letterSpacing: typography.letterSpacing.wide,
   },
   inputContainer: {
     height: layout.inputHeight,
-    backgroundColor: colors.backgroundInput,
-    borderRadius: borderRadius.lg,
+    backgroundColor: colors.backgroundCard,
+    borderRadius: borderRadius.md,
     borderWidth: 1,
+    borderColor: colors.borderLight,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing.base,
+    gap: spacing.md,
+  },
+  inputContainerActive: {
     borderColor: colors.border,
-    justifyContent: 'center',
-    paddingHorizontal: 20,
+  },
+  inputIconWrap: {
+    width: layout.iconSize.md,
+    alignItems: 'center',
   },
   input: {
-    fontSize: typography.fontSize.md,
-    color: colors.textPrimary,
     flex: 1,
+    fontSize: typography.fontSize.md,
+    fontWeight: typography.fontWeight.regular,
+    color: colors.textPrimary,
+    height: '100%',
   },
   buttonContainer: {
-    paddingHorizontal: 20,
-    paddingBottom: 40,
+    paddingHorizontal: layout.screenPaddingHorizontal,
+    paddingBottom: spacing['2xl'],
   },
   saveButton: {
     height: layout.buttonHeight,
@@ -175,10 +239,13 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.lg,
     justifyContent: 'center',
     alignItems: 'center',
+    flexDirection: 'row',
+    gap: spacing.sm,
+    ...shadows.button,
   },
   saveButtonText: {
     fontSize: typography.fontSize.md,
-    color: colors.textLight,
-    fontWeight: typography.fontWeight.regular,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.textWhite,
   },
 });

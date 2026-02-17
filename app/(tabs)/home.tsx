@@ -1,3 +1,13 @@
+// (tabs)/home.tsx
+import {
+  borderRadius,
+  colors,
+  layout,
+  shadows,
+  spacing,
+  typography,
+} from '@/constants/theme';
+import { useRouter } from 'expo-router';
 import {
   ArrowDownToLine,
   ArrowUpFromLine,
@@ -24,12 +34,8 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-
-import { useRouter } from 'expo-router';
 import { useSelector } from 'react-redux';
 import { RootState } from '../../store';
-import { useTheme } from '../../hooks/useTheme';
-
 
 const { width } = Dimensions.get('window');
 
@@ -37,6 +43,7 @@ interface QuickAction {
   id: string;
   label: string;
   icon: React.ElementType;
+  onPress: () => void;
 }
 
 interface SummaryCard {
@@ -44,26 +51,17 @@ interface SummaryCard {
   label: string;
   value: string;
   icon: React.ElementType;
-}
-
-interface BottomTab {
-  id: string;
-  label: string;
-  icon: React.ElementType;
+  iconColor: string;
 }
 
 const HomeScreen: React.FC = () => {
-  const theme = useTheme();
   const [balanceVisible, setBalanceVisible] = useState<boolean>(true);
-  const [activeTab, setActiveTab] = useState<string>('home');
   const [selectedCurrency, setSelectedCurrency] = useState<string>('USD');
   const router = useRouter();
-  
-  // Get wallets from Redux
-  const wallets = useSelector((state: RootState) => state.merchantWallet.wallets);
-  
-  console.log('Wallets loaded in home:', wallets.length);
 
+  const wallets = useSelector(
+    (state: RootState) => state.merchantWallet.wallets
+  );
 
   const walletBalance = 50000;
   const userName = '@TheACJ';
@@ -80,49 +78,63 @@ const HomeScreen: React.FC = () => {
   };
 
   const quickActions: QuickAction[] = [
-    { id: 'deposit', label: 'Deposit', icon: ArrowDownToLine },
-    { id: 'withdraw', label: 'Withdraw', icon: ArrowUpFromLine },
-    { id: 'stake', label: 'Stake', icon: TrendingUp },
+    {
+      id: 'deposit',
+      label: 'Deposit',
+      icon: ArrowDownToLine,
+      onPress: () => router.push('/wallet/deposit'),
+    },
+    {
+      id: 'withdraw',
+      label: 'Withdraw',
+      icon: ArrowUpFromLine,
+      onPress: () => router.push('/wallet/withdraw'),
+    },
+    {
+      id: 'stake',
+      label: 'Stake',
+      icon: TrendingUp,
+      onPress: () => router.push('/wallet/stake'),
+    },
   ];
 
   const summaryCards: SummaryCard[] = [
-    { id: 'deposits', label: 'Total deposits', value: '$2,000.00', icon: ArrowDownToLine },
-    { id: 'withdrawals', label: 'Total Withdrawal', value: '$2,000.00', icon: ArrowUpFromLine },
-    { id: 'transactions', label: 'Transactions', value: '24', icon: CreditCard },
-    { id: 'success', label: 'Success rate', value: '100%', icon: Star },
-    { id: 'pending', label: 'Pending request', value: '20', icon: Timer },
+    {
+      id: 'deposits',
+      label: 'Total Deposits',
+      value: '$2,000',
+      icon: ArrowDownToLine,
+      iconColor: colors.success,
+    },
+    {
+      id: 'withdrawals',
+      label: 'Total Withdrawals',
+      value: '$2,000',
+      icon: ArrowUpFromLine,
+      iconColor: colors.error,
+    },
+    {
+      id: 'transactions',
+      label: 'Transactions',
+      value: '24',
+      icon: CreditCard,
+      iconColor: colors.primary,
+    },
+    {
+      id: 'success',
+      label: 'Success Rate',
+      value: '100%',
+      icon: Star,
+      iconColor: colors.warning,
+    },
+    {
+      id: 'pending',
+      label: 'Pending',
+      value: '20',
+      icon: Timer,
+      iconColor: colors.info,
+    },
   ];
-
-
-  // Navigate to deposit
-  const handleDeposit = () => {
-    router.push('/wallet/deposit');
-  };
-
-  // Navigate to withdraw
-  const handleWithdraw = () => {
-    router.push('/wallet/withdraw');
-  };
-
-  // Navigate to stake
-  const handleStake = () => {
-    router.push('/wallet/stake');
-  };
-
-  // Navigate to notifications
-  const handleNotifications = () => {
-    router.push('/misc/notifications');
-  };
-
-  // Navigate to chat list
-  const handleChat = () => {
-    router.push('/misc/chat');
-  };
-
-  // Navigate to profile
-  const handleProfile = () =>  {
-    router.push('/settings/profile')
-  }
 
   const renderBadge = (count: number) => {
     if (count <= 0) return null;
@@ -137,59 +149,67 @@ const HomeScreen: React.FC = () => {
     <View style={styles.container}>
       <StatusBar
         barStyle="light-content"
-        backgroundColor="#0F6EC0"
+        backgroundColor={colors.primary}
         translucent={false}
       />
 
-      {/* Header Section with Blue Background */}
+      {/* Header */}
       <View style={styles.headerContainer}>
-        {/* Top Row - User Info & Actions */}
+        {/* Top Row */}
         <View style={styles.topRow}>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.userSection}
             activeOpacity={0.7}
             accessibilityLabel="User Profile"
-            onPress={handleProfile}
-            >
+            onPress={() => router.push('/settings/profile')}
+          >
             <View style={styles.avatar}>
-              <User size={24} color="#E7E7E7" strokeWidth={2} />
+              <User
+                size={layout.iconSize.md}
+                color={colors.borderLight}
+                strokeWidth={2}
+              />
             </View>
             <View style={styles.greetingContainer}>
-              <View style={styles.helloRow}>
-                <Text style={styles.helloText}>Hello</Text>
-              </View>
+              <Text style={styles.helloText}>Hello</Text>
               <Text style={styles.usernameText}>{userName}</Text>
             </View>
-            </TouchableOpacity>
+          </TouchableOpacity>
 
           <View style={styles.actionIconsRow}>
             <TouchableOpacity
               style={styles.actionIconButton}
               activeOpacity={0.7}
-              accessibilityLabel="Messages"
-              accessibilityHint={`You have ${messageCount} unread messages`}
-              onPress={handleChat}
+              accessibilityLabel={`Messages, ${messageCount} unread`}
+              onPress={() => router.push('/misc/chat')}
             >
-              <MessageCircle size={24} color="#DFE0E2" strokeWidth={1.5} />
+              <MessageCircle
+                size={layout.iconSize.md}
+                color={colors.borderLight}
+                strokeWidth={1.5}
+              />
               {renderBadge(messageCount)}
             </TouchableOpacity>
 
             <TouchableOpacity
               style={styles.actionIconButton}
               activeOpacity={0.7}
-              accessibilityLabel="Notifications"
-              accessibilityHint={`You have ${notificationCount} notifications`}
-              onPress={handleNotifications}
+              accessibilityLabel={`Notifications, ${notificationCount} new`}
+              onPress={() => router.push('/misc/notifications')}
             >
-              <Bell size={24} color="#DFE0E2" strokeWidth={1.5} />
+              <Bell
+                size={layout.iconSize.md}
+                color={colors.borderLight}
+                strokeWidth={1.5}
+              />
               {renderBadge(notificationCount)}
             </TouchableOpacity>
           </View>
         </View>
 
-        {/* Balance Section */}
+        {/* Balance */}
         <View style={styles.balanceSection}>
-          <Text style={styles.balanceLabel}>Wallet balance</Text>
+          <Text style={styles.balanceLabel}>Wallet Balance</Text>
 
           <TouchableOpacity
             style={styles.currencySelector}
@@ -200,28 +220,38 @@ const HomeScreen: React.FC = () => {
               <Text style={styles.currencyFlagText}>$</Text>
             </View>
             <Text style={styles.currencyText}>{selectedCurrency}</Text>
-            <ChevronDown size={14} color="#F4F6F5" />
+            <ChevronDown size={14} color={colors.textLight} strokeWidth={2} />
           </TouchableOpacity>
 
           <View style={styles.balanceRow}>
             <Text style={styles.balanceAmount}>
-              {balanceVisible ? formatCurrency(walletBalance) : '******'}
+              {balanceVisible ? formatCurrency(walletBalance) : '••••••'}
             </Text>
             <TouchableOpacity
               onPress={() => setBalanceVisible(!balanceVisible)}
-              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-              accessibilityLabel={balanceVisible ? 'Hide balance' : 'Show balance'}
+              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+              accessibilityLabel={
+                balanceVisible ? 'Hide balance' : 'Show balance'
+              }
             >
               {balanceVisible ? (
-                <Eye size={26} color="#F4F6F5" strokeWidth={1.5} />
+                <Eye
+                  size={layout.iconSize.lg}
+                  color={colors.textLight}
+                  strokeWidth={1.5}
+                />
               ) : (
-                <EyeOff size={26} color="#F4F6F5" strokeWidth={1.5} />
+                <EyeOff
+                  size={layout.iconSize.lg}
+                  color={colors.textLight}
+                  strokeWidth={1.5}
+                />
               )}
             </TouchableOpacity>
           </View>
         </View>
 
-        {/* Quick Actions Card */}
+        {/* Quick Actions */}
         <View style={styles.quickActionsWrapper}>
           <View style={styles.quickActionsContainer}>
             {quickActions.map((action, index) => (
@@ -230,18 +260,14 @@ const HomeScreen: React.FC = () => {
                   style={styles.quickActionItem}
                   activeOpacity={0.7}
                   accessibilityLabel={action.label}
-                  onPress={() => {
-                    if (action.id === 'deposit') {
-                      handleDeposit();
-                    } else if (action.id === 'withdraw') {
-                      handleWithdraw();
-                    } else if (action.id == 'stake') {
-                      handleStake();
-                    }
-                  }}
+                  onPress={action.onPress}
                 >
                   <View style={styles.quickActionIconContainer}>
-                    <action.icon size={28} color="#FFFFFF" strokeWidth={2} />
+                    <action.icon
+                      size={layout.iconSize.lg}
+                      color={colors.textWhite}
+                      strokeWidth={2}
+                    />
                   </View>
                   <Text style={styles.quickActionLabel}>{action.label}</Text>
                 </TouchableOpacity>
@@ -254,38 +280,54 @@ const HomeScreen: React.FC = () => {
         </View>
       </View>
 
-      {/* Scrollable Content */}
+      {/* Content */}
       <ScrollView
         style={styles.scrollContent}
         contentContainerStyle={styles.scrollContentContainer}
         showsVerticalScrollIndicator={false}
-        bounces={true}
+        bounces
       >
-        {/* Wallets Section */}
+        {/* Wallets */}
         {wallets.length > 0 && (
-          <View style={styles.walletsSection}>
-            <Text style={styles.sectionTitle}>My Wallets ({wallets.length})</Text>
-            <View style={styles.walletsGrid}>
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>My Wallets</Text>
+              <View style={styles.sectionBadge}>
+                <Text style={styles.sectionBadgeText}>{wallets.length}</Text>
+              </View>
+            </View>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.walletsScroll}
+            >
               {wallets.map((wallet) => (
                 <View key={wallet.id} style={styles.walletCard}>
-                  <View style={styles.walletHeader}>
-                    <Wallet size={20} color="#0F6EC0" />
-                    <Text style={styles.walletType}>{wallet.type.toUpperCase()}</Text>
+                  <View style={styles.walletCardHeader}>
+                    <View style={styles.walletIconContainer}>
+                      <Wallet
+                        size={layout.iconSize.sm}
+                        color={colors.primary}
+                        strokeWidth={1.8}
+                      />
+                    </View>
+                    <Text style={styles.walletType}>
+                      {wallet.type.toUpperCase()}
+                    </Text>
                   </View>
                   <Text style={styles.walletAddress} numberOfLines={1}>
-                    {wallet.address.slice(0, 8)}...{wallet.address.slice(-6)}
+                    {wallet.address.slice(0, 8)}…{wallet.address.slice(-6)}
                   </Text>
                   <Text style={styles.walletNetwork}>{wallet.network}</Text>
                 </View>
               ))}
-            </View>
+            </ScrollView>
           </View>
         )}
 
-        {/* Summary Cards Section */}
-        <View style={styles.summarySection}>
-          <Text style={styles.sectionTitle}>Summary card</Text>
-
+        {/* Summary */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Summary</Text>
           <View style={styles.cardsGrid}>
             {summaryCards.map((card) => (
               <TouchableOpacity
@@ -296,8 +338,19 @@ const HomeScreen: React.FC = () => {
               >
                 <View style={styles.cardHeader}>
                   <View style={styles.cardAccentLine} />
-                  <View style={styles.cardIconWrapper}>
-                    <card.icon size={22} color="#323333" strokeWidth={1.8} />
+                  <View
+                    style={[
+                      styles.cardIconWrapper,
+                      {
+                        backgroundColor: `${card.iconColor}15`,
+                      },
+                    ]}
+                  >
+                    <card.icon
+                      size={layout.iconSize.sm}
+                      color={card.iconColor}
+                      strokeWidth={1.8}
+                    />
                   </View>
                 </View>
                 <View style={styles.cardContent}>
@@ -309,10 +362,8 @@ const HomeScreen: React.FC = () => {
           </View>
         </View>
 
-        {/* Additional spacing for bottom nav */}
         <View style={styles.bottomSpacer} />
       </ScrollView>
-
     </View>
   );
 };
@@ -320,65 +371,62 @@ const HomeScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: theme.colors.background,
+    backgroundColor: colors.background,
   },
-  
-  // Header Styles
+
+  // Header
   headerContainer: {
-    backgroundColor: theme.colors.primary,
+    backgroundColor: colors.primary,
     paddingTop: Platform.OS === 'ios' ? 50 : 20,
-    paddingBottom: 25,
-    borderBottomLeftRadius: theme.borderRadius['3xl'],
-    borderBottomRightRadius: theme.borderRadius['3xl'],
+    paddingBottom: spacing.xl,
+    borderBottomLeftRadius: borderRadius['3xl'],
+    borderBottomRightRadius: borderRadius['3xl'],
   },
   topRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: theme.layout.containerPadding,
-    marginBottom: theme.spacing['2xl'],
+    paddingHorizontal: layout.screenPaddingHorizontal,
+    marginBottom: spacing['2xl'],
   },
   userSection: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   avatar: {
-    width: theme.layout.avatarSize.md,
-    height: theme.layout.avatarSize.md,
-    borderRadius: theme.borderRadius.full,
-    backgroundColor: '#657084',
+    width: layout.avatarSize.md,
+    height: layout.avatarSize.md,
+    borderRadius: borderRadius.full,
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: theme.spacing.md,
+    marginRight: spacing.md,
   },
   greetingContainer: {
     justifyContent: 'center',
   },
-  helloRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
   helloText: {
-    fontSize: theme.typography.fontSize.xl,
-    fontWeight: theme.typography.fontWeight.medium,
-    color: theme.colors.textLight,
-    letterSpacing: 0.3,
+    fontSize: typography.fontSize.lg,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.textWhite,
+    letterSpacing: typography.letterSpacing.wide,
   },
   usernameText: {
-    fontSize: theme.typography.fontSize.md,
-    color: theme.colors.textLight,
-    opacity: 0.9,
-    marginTop: 2,
+    fontSize: typography.fontSize.base,
+    fontWeight: typography.fontWeight.regular,
+    color: colors.textWhite,
+    opacity: 0.85,
+    marginTop: spacing['2xs'],
   },
   actionIconsRow: {
     flexDirection: 'row',
-    gap: 12,
+    gap: spacing.md,
   },
   actionIconButton: {
-    width: theme.layout.avatarSize.md,
-    height: theme.layout.avatarSize.md,
-    borderRadius: theme.borderRadius.full,
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    width: layout.avatarSize.md,
+    height: layout.avatarSize.md,
+    borderRadius: borderRadius.full,
+    backgroundColor: 'rgba(255, 255, 255, 0.12)',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -388,86 +436,85 @@ const styles = StyleSheet.create({
     right: 2,
     minWidth: 18,
     height: 18,
-    borderRadius: theme.borderRadius.full,
-    backgroundColor: theme.colors.error,
+    borderRadius: borderRadius.full,
+    backgroundColor: colors.error,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: theme.colors.primary,
-    paddingHorizontal: 4,
+    borderColor: colors.primary,
+    paddingHorizontal: spacing['2xs'],
   },
   badgeText: {
-    color: theme.colors.textWhite,
-    fontSize: theme.typography.fontSize.xs,
-    fontWeight: theme.typography.fontWeight.semibold,
+    color: colors.textWhite,
+    fontSize: typography.fontSize['2xs'],
+    fontWeight: typography.fontWeight.bold,
   },
 
-  // Balance Styles
+  // Balance
   balanceSection: {
     alignItems: 'center',
-    paddingHorizontal: 24,
+    paddingHorizontal: layout.screenPaddingHorizontal,
   },
   balanceLabel: {
-    fontSize: 16,
-    color: '#F4F6F5',
-    fontWeight: '400',
-    opacity: 0.9,
-    marginBottom: 10,
+    fontSize: typography.fontSize.base,
+    color: colors.textWhite,
+    fontWeight: typography.fontWeight.regular,
+    opacity: 0.85,
+    marginBottom: spacing.sm,
   },
   currencySelector: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: 20,
-    marginBottom: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: borderRadius.full,
+    marginBottom: spacing.md,
+    gap: spacing.xs,
   },
   currencyFlag: {
     width: 20,
     height: 20,
-    borderRadius: 10,
-    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+    borderRadius: borderRadius.full,
+    backgroundColor: 'rgba(255, 255, 255, 0.25)',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 6,
   },
   currencyFlagText: {
-    color: '#FFFFFF',
-    fontSize: 12,
-    fontWeight: '600',
+    color: colors.textWhite,
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.bold,
   },
   currencyText: {
-    color: '#F4F6F5',
-    fontSize: 14,
-    fontWeight: '500',
-    marginRight: 6,
+    color: colors.textWhite,
+    fontSize: typography.fontSize.base,
+    fontWeight: typography.fontWeight.medium,
   },
   balanceRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 16,
+    gap: spacing.base,
   },
   balanceAmount: {
-    fontSize: 48,
-    fontWeight: '700',
-    color: '#F4F6F5',
-    letterSpacing: -1,
+    fontSize: typography.fontSize['7xl'],
+    fontWeight: typography.fontWeight.bold,
+    color: colors.textWhite,
+    letterSpacing: typography.letterSpacing.tight,
   },
 
-  // Quick Actions Styles
+  // Quick Actions
   quickActionsWrapper: {
-    paddingHorizontal: 20,
-    marginTop: 25,
+    paddingHorizontal: layout.screenPaddingHorizontal,
+    marginTop: spacing.xl,
   },
   quickActionsContainer: {
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
-    borderRadius: 25,
+    backgroundColor: 'rgba(255, 255, 255, 0.12)',
+    borderRadius: borderRadius['2xl'],
     flexDirection: 'row',
     justifyContent: 'space-evenly',
     alignItems: 'center',
-    paddingVertical: 20,
-    paddingHorizontal: 10,
+    paddingVertical: spacing.lg,
+    paddingHorizontal: spacing.sm,
   },
   quickActionItem: {
     alignItems: 'center',
@@ -475,136 +522,157 @@ const styles = StyleSheet.create({
   },
   quickActionDivider: {
     width: 1,
-    height: 60,
+    height: 56,
     backgroundColor: 'rgba(255, 255, 255, 0.1)',
   },
   quickActionIconContainer: {
-    width: 70,
-    height: 70,
-    borderRadius: 35,
-    backgroundColor: '#0F6EC0',
+    width: 64,
+    height: 64,
+    borderRadius: borderRadius.full,
+    backgroundColor: colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 6,
+    marginBottom: spacing.sm,
+    ...shadows.md,
   },
   quickActionLabel: {
-    fontSize: 16,
-    color: '#F4F6F5',
-    fontWeight: '500',
+    fontSize: typography.fontSize.base,
+    color: colors.textWhite,
+    fontWeight: typography.fontWeight.medium,
   },
 
-  // Scroll Content Styles
+  // Content
   scrollContent: {
     flex: 1,
   },
   scrollContentContainer: {
-    padding: 24,
-    paddingTop: 30,
+    padding: layout.screenPaddingHorizontal,
+    paddingTop: spacing['2xl'],
   },
-  summarySection: {
-    flex: 1,
+  section: {
+    marginBottom: spacing['2xl'],
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginBottom: spacing.base,
   },
   sectionTitle: {
-    fontSize: 24,
-    fontWeight: '600',
-    color: '#000000',
-    marginBottom: 20,
+    fontSize: typography.fontSize.xl,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.textPrimary,
+    letterSpacing: typography.letterSpacing.tight,
   },
+  sectionBadge: {
+    backgroundColor: colors.primaryLight,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing['2xs'],
+    borderRadius: borderRadius.full,
+  },
+  sectionBadgeText: {
+    fontSize: typography.fontSize.xs,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.primary,
+  },
+
+  // Wallets
+  walletsScroll: {
+    gap: spacing.md,
+  },
+  walletCard: {
+    width: 180,
+    backgroundColor: colors.backgroundCard,
+    borderRadius: borderRadius.lg,
+    padding: spacing.base,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
+    ...shadows.sm,
+  },
+  walletCardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginBottom: spacing.sm,
+  },
+  walletIconContainer: {
+    width: 28,
+    height: 28,
+    borderRadius: borderRadius.sm,
+    backgroundColor: colors.primaryLight,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  walletType: {
+    fontSize: typography.fontSize.xs,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.primary,
+    letterSpacing: typography.letterSpacing.wider,
+  },
+  walletAddress: {
+    fontSize: typography.fontSize.xs,
+    fontWeight: typography.fontWeight.regular,
+    color: colors.textTertiary,
+    fontFamily: typography.fontFamilyMono,
+    marginBottom: spacing.xs,
+  },
+  walletNetwork: {
+    fontSize: typography.fontSize['2xs'],
+    fontWeight: typography.fontWeight.medium,
+    color: colors.textMuted,
+    textTransform: 'capitalize',
+  },
+
+  // Summary Cards
   cardsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
+    gap: spacing.md,
   },
   summaryCard: {
-    width: (width - 64) / 2,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 18,
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 3,
+    width: (width - layout.screenPaddingHorizontal * 2 - spacing.md) / 2,
+    backgroundColor: colors.backgroundCard,
+    borderRadius: borderRadius.lg,
+    padding: spacing.base,
+    ...shadows.sm,
   },
   cardHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: spacing.base,
   },
   cardAccentLine: {
     width: 3,
     height: 28,
-    backgroundColor: '#0F6EC0',
-    borderRadius: 2,
-    marginRight: 10,
+    backgroundColor: colors.primary,
+    borderRadius: borderRadius.full,
+    marginRight: spacing.sm,
   },
   cardIconWrapper: {
     width: 36,
     height: 36,
-    borderRadius: 18,
-    backgroundColor: '#F5F7FA',
+    borderRadius: borderRadius.md,
     justifyContent: 'center',
     alignItems: 'center',
   },
   cardContent: {
-    gap: 8,
+    gap: spacing.xs,
   },
   cardLabel: {
-    fontSize: 14,
-    color: '#657084',
-    fontWeight: '500',
+    fontSize: typography.fontSize.sm,
+    color: colors.textTertiary,
+    fontWeight: typography.fontWeight.medium,
   },
   cardValue: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: '#000000',
+    fontSize: typography.fontSize.xl,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.textPrimary,
   },
-  walletsSection: {
-    marginBottom: 30,
-  },
-  walletsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
-  },
-  walletCard: {
-    width: (width - 64) / 2,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: '#E7E7E7',
-  },
-  walletHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginBottom: 8,
-  },
-  walletType: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#0F6EC0',
-  },
-  walletAddress: {
-    fontSize: 11,
-    color: '#657084',
-    marginBottom: 4,
-  },
-  walletNetwork: {
-    fontSize: 10,
-    color: '#999',
-    textTransform: 'capitalize',
-  },
+
   bottomSpacer: {
     height: 100,
-  }
+  },
 });
 
 export default HomeScreen;

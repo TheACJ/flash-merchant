@@ -1,14 +1,20 @@
-import { borderRadius, colors, layout, typography } from '@/constants/theme';
-import { Ionicons } from '@expo/vector-icons';
+// settings/logout.tsx
+import {
+  borderRadius,
+  colors,
+  layout,
+  shadows,
+  spacing,
+  typography,
+} from '@/constants/theme';
 import { useRouter } from 'expo-router';
+import { LogOut } from 'lucide-react-native';
 import React from 'react';
 import {
   StyleSheet,
   Text,
-  TextStyle,
   TouchableOpacity,
   View,
-  ViewStyle,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -16,31 +22,43 @@ export default function LogoutScreen() {
   const router = useRouter();
 
   return (
-    <SafeAreaView style={styles.container as ViewStyle}>
-      <View style={styles.content as ViewStyle}>
-        <View style={styles.iconContainer as ViewStyle}>
-          <Ionicons name="log-out-outline" size={80} color={colors.error} />
+    <SafeAreaView style={styles.container}>
+      <View style={styles.content}>
+        <View style={styles.iconContainer}>
+          <LogOut
+            size={layout.iconSize['2xl']}
+            color={colors.error}
+            strokeWidth={1.5}
+          />
         </View>
-        <Text style={styles.title as TextStyle}>
-          Are you sure you want to logout your account?
+        <Text style={styles.title}>
+          Are you sure you want to logout?
+        </Text>
+        <Text style={styles.subtitle}>
+          You'll need to sign in again to access your merchant account
         </Text>
       </View>
 
-      <View style={styles.buttonContainer as ViewStyle}>
+      <View style={styles.buttonContainer}>
         <TouchableOpacity
-          style={styles.yesButton as ViewStyle}
+          style={styles.logoutButton}
           onPress={() => router.replace('/auth/login' as any)}
-          activeOpacity={0.7}
+          activeOpacity={0.85}
         >
-          <Text style={styles.yesButtonText as TextStyle}>Yes</Text>
+          <LogOut
+            size={layout.iconSize.sm}
+            color={colors.textWhite}
+            strokeWidth={2}
+          />
+          <Text style={styles.logoutButtonText}>Yes, Logout</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={styles.cancelButton as ViewStyle}
+          style={styles.cancelButton}
           onPress={() => router.back()}
-          activeOpacity={0.7}
+          activeOpacity={0.8}
         >
-          <Text style={styles.cancelButtonText as TextStyle}>Cancel</Text>
+          <Text style={styles.cancelButtonText}>Cancel</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -56,51 +74,62 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 40,
+    paddingHorizontal: spacing['3xl'],
   },
   iconContainer: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: 'rgba(195, 29, 30, 0.1)',
+    width: 88,
+    height: 88,
+    borderRadius: borderRadius.full,
+    backgroundColor: colors.errorLight,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 30,
+    marginBottom: spacing['2xl'],
   },
   title: {
-    fontSize: typography.fontSize['4xl'],
-    fontWeight: typography.fontWeight.semibold,
+    fontSize: typography.fontSize['3xl'],
+    fontWeight: typography.fontWeight.bold,
     color: colors.textPrimary,
     textAlign: 'center',
-    lineHeight: 30,
+    marginBottom: spacing.sm,
+    letterSpacing: typography.letterSpacing.tight,
+  },
+  subtitle: {
+    fontSize: typography.fontSize.base,
+    fontWeight: typography.fontWeight.regular,
+    color: colors.textTertiary,
+    textAlign: 'center',
+    lineHeight: typography.fontSize.base * typography.lineHeight.normal,
   },
   buttonContainer: {
-    paddingHorizontal: 20,
-    paddingBottom: 40,
+    paddingHorizontal: layout.screenPaddingHorizontal,
+    paddingBottom: spacing['2xl'],
+    gap: spacing.md,
   },
-  yesButton: {
-    height: layout.buttonHeightSmall,
-    backgroundColor: colors.primary,
+  logoutButton: {
+    height: layout.buttonHeight,
+    backgroundColor: colors.error,
     borderRadius: borderRadius.lg,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 15,
+    flexDirection: 'row',
+    gap: spacing.sm,
+    ...shadows.md,
   },
-  yesButtonText: {
-    fontSize: 15,
-    color: colors.textLight,
-    fontWeight: typography.fontWeight.regular,
+  logoutButtonText: {
+    fontSize: typography.fontSize.md,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.textWhite,
   },
   cancelButton: {
-    height: layout.buttonHeightSmall,
-    backgroundColor: colors.primaryLight,
+    height: layout.buttonHeight,
+    backgroundColor: colors.backgroundInput,
     borderRadius: borderRadius.lg,
     justifyContent: 'center',
     alignItems: 'center',
   },
   cancelButtonText: {
-    fontSize: 15,
-    color: colors.primary,
-    fontWeight: typography.fontWeight.regular,
+    fontSize: typography.fontSize.md,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.textSecondary,
   },
 });

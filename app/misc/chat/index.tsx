@@ -1,20 +1,28 @@
+// misc/chat/index.tsx
+import {
+  borderRadius,
+  colors,
+  layout,
+  spacing,
+  typography
+} from '@/constants/theme';
 import { useRouter } from 'expo-router';
 import { ArrowLeft, User } from 'lucide-react-native';
 import React, { useCallback, useMemo, useState } from 'react';
 import {
-    FlatList,
-    RefreshControl,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  FlatList,
+  RefreshControl,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
-    CHAT_FILTERS,
-    ChatFilter,
-    Conversation,
-    MOCK_CONVERSATIONS,
+  CHAT_FILTERS,
+  ChatFilter,
+  Conversation,
+  MOCK_CONVERSATIONS,
 } from './types';
 
 interface ConversationItemProps {
@@ -24,53 +32,46 @@ interface ConversationItemProps {
 
 function ConversationItem({ conversation, onPress }: ConversationItemProps) {
   const formatTime = (date: Date): string => {
-    const hours = date.getHours();
-    const minutes = date.getMinutes();
-    const ampm = hours >= 12 ? 'PM' : 'AM';
-    const formattedHours = hours % 12 || 12;
-    const formattedMinutes = minutes.toString().padStart(2, '0');
-    return `${formattedHours}:${formattedMinutes} ${ampm}`;
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
   const hasUnread = conversation.unreadCount > 0;
 
   return (
     <TouchableOpacity
-      style={styles.conversationItem}
+      style={styles.itemContainer}
       onPress={() => onPress(conversation)}
       activeOpacity={0.7}
-      accessibilityLabel={`Chat with ${conversation.participant.name}`}
     >
-      <View style={styles.conversationLeft}>
-        {/* Avatar */}
+      <View style={styles.itemLeft}>
         <View style={styles.avatar}>
-          <User size={24} color="#E7E7E7" strokeWidth={2} />
+          <User size={24} color={colors.textWhite} strokeWidth={2} />
           {conversation.participant.isOnline && (
-            <View style={styles.onlineIndicator} />
+            <View style={styles.onlineDot} />
           )}
         </View>
-
-        {/* Content */}
-        <View style={styles.conversationContent}>
-          <Text style={styles.participantName} numberOfLines={1}>
+        <View style={styles.itemContent}>
+          <Text style={styles.itemName} numberOfLines={1}>
             {conversation.participant.name}
           </Text>
-          <Text style={styles.lastMessage} numberOfLines={1}>
+          <Text
+            style={[styles.itemMessage, hasUnread && styles.itemMessageUnread]}
+            numberOfLines={1}
+          >
             {conversation.lastMessage?.content || 'No messages yet'}
           </Text>
         </View>
       </View>
 
-      {/* Right side */}
-      <View style={styles.conversationRight}>
-        <Text style={styles.timestamp}>
+      <View style={styles.itemRight}>
+        <Text style={styles.itemTime}>
           {conversation.lastMessage
             ? formatTime(conversation.lastMessage.timestamp)
             : ''}
         </Text>
         {hasUnread && (
-          <View style={styles.unreadBadge}>
-            <Text style={styles.unreadBadgeText}>
+          <View style={styles.badge}>
+            <Text style={styles.badgeText}>
               {conversation.unreadCount > 9 ? '9+' : conversation.unreadCount}
             </Text>
           </View>
@@ -83,7 +84,7 @@ function ConversationItem({ conversation, onPress }: ConversationItemProps) {
 export default function ChatListScreen() {
   const router = useRouter();
   const [selectedFilter, setSelectedFilter] = useState<ChatFilter>('all');
-  const [conversations, setConversations] = useState<Conversation[]>(MOCK_CONVERSATIONS);
+  const [conversations, setConversations] = useState(MOCK_CONVERSATIONS);
   const [refreshing, setRefreshing] = useState(false);
 
   const filteredConversations = useMemo(() => {
@@ -103,12 +104,8 @@ export default function ChatListScreen() {
     setRefreshing(false);
   }, []);
 
-  const handleConversationPress = useCallback((conversation: Conversation) => {
+  const handleConversationPress = (conversation: Conversation) => {
     router.push(`/misc/chat/${conversation.id}`);
-  }, [router]);
-
-  const handleGoBack = () => {
-    router.back();
   };
 
   return (
@@ -117,13 +114,13 @@ export default function ChatListScreen() {
       <View style={styles.header}>
         <TouchableOpacity
           style={styles.backButton}
-          onPress={handleGoBack}
+          onPress={() => router.back()}
           activeOpacity={0.7}
         >
-          <ArrowLeft size={24} color="#000000" strokeWidth={2} />
+          <ArrowLeft size={24} color={colors.textPrimary} strokeWidth={2} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Messages</Text>
-        <View style={styles.headerSpacer} />
+        <View style={styles.placeholder} />
       </View>
 
       {/* Filter Tabs */}
@@ -139,8 +136,8 @@ export default function ChatListScreen() {
             >
               <Text
                 style={[
-                  styles.filterTabText,
-                  isActive && styles.filterTabTextActive,
+                  styles.filterText,
+                  isActive && styles.filterTextActive,
                 ]}
               >
                 {filter.label}
@@ -150,7 +147,7 @@ export default function ChatListScreen() {
         })}
       </View>
 
-      {/* Conversations List */}
+      {/* List */}
       <FlatList
         data={filteredConversations}
         renderItem={({ item }) => (
@@ -166,12 +163,12 @@ export default function ChatListScreen() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={handleRefresh}
-            tintColor="#0F6EC0"
+            tintColor={colors.primary}
           />
         }
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>No conversations</Text>
+            <Text style={styles.emptyText}>No conversations found</Text>
           </View>
         }
       />
@@ -182,141 +179,139 @@ export default function ChatListScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F5F5',
+    backgroundColor: colors.background,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    backgroundColor: '#F4F6F5',
+    paddingHorizontal: layout.screenPaddingHorizontal,
+    paddingVertical: spacing.md,
+    backgroundColor: colors.background,
   },
   backButton: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: '#F5F5F5',
+    width: layout.minTouchTarget,
+    height: layout.minTouchTarget,
+    backgroundColor: colors.backgroundInput,
+    borderRadius: borderRadius.full,
     justifyContent: 'center',
     alignItems: 'center',
   },
   headerTitle: {
-    fontSize: 25,
-    fontWeight: '500',
-    color: '#000000',
-    textAlign: 'center',
+    fontSize: typography.fontSize.xl,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.textPrimary,
   },
-  headerSpacer: {
-    width: 50,
+  placeholder: {
+    width: layout.minTouchTarget,
   },
   filterContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
-    paddingHorizontal: 52,
-    paddingVertical: 10,
-    backgroundColor: '#F4F6F5',
+    paddingHorizontal: layout.screenPaddingHorizontal,
+    marginBottom: spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: '#D2D6E1',
+    borderBottomColor: colors.borderLight,
   },
   filterTab: {
-    paddingHorizontal: 10,
-    paddingVertical: 10,
+    paddingVertical: spacing.md,
+    marginRight: spacing.lg,
     borderBottomWidth: 2,
     borderBottomColor: 'transparent',
   },
   filterTabActive: {
-    borderBottomColor: '#0F6EC0',
+    borderBottomColor: colors.primary,
   },
-  filterTabText: {
-    fontSize: 18,
-    fontWeight: '400',
-    color: '#000000',
+  filterText: {
+    fontSize: typography.fontSize.md,
+    color: colors.textTertiary,
+    fontWeight: typography.fontWeight.medium,
   },
-  filterTabTextActive: {
-    color: '#000000',
+  filterTextActive: {
+    color: colors.textPrimary,
+    fontWeight: typography.fontWeight.semibold,
   },
   listContent: {
-    paddingHorizontal: 52,
-    paddingTop: 16,
-    paddingBottom: 20,
+    paddingHorizontal: layout.screenPaddingHorizontal,
+    paddingBottom: spacing['4xl'],
   },
-  conversationItem: {
+  itemContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 12,
+    paddingVertical: spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: '#D2D6E1',
+    borderBottomColor: colors.borderLight,
   },
-  conversationLeft: {
+  itemLeft: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: spacing.md,
     flex: 1,
-    gap: 12,
   },
   avatar: {
     width: 50,
     height: 50,
-    borderRadius: 25,
-    backgroundColor: '#657084',
+    borderRadius: borderRadius.full,
+    backgroundColor: colors.textTertiary,
     justifyContent: 'center',
     alignItems: 'center',
-    position: 'relative',
   },
-  onlineIndicator: {
+  onlineDot: {
     position: 'absolute',
     bottom: 2,
     right: 2,
     width: 12,
     height: 12,
     borderRadius: 6,
-    backgroundColor: '#128807',
+    backgroundColor: colors.success,
     borderWidth: 2,
-    borderColor: '#F5F5F5',
+    borderColor: colors.background,
   },
-  conversationContent: {
+  itemContent: {
     flex: 1,
-    gap: 8,
+    gap: 4,
   },
-  participantName: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#000000',
+  itemName: {
+    fontSize: typography.fontSize.md,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.textPrimary,
   },
-  lastMessage: {
-    fontSize: 14,
-    color: '#323333',
+  itemMessage: {
+    fontSize: typography.fontSize.sm,
+    color: colors.textSecondary,
   },
-  conversationRight: {
+  itemMessageUnread: {
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.textPrimary,
+  },
+  itemRight: {
     alignItems: 'flex-end',
-    gap: 8,
+    gap: 6,
   },
-  timestamp: {
-    fontSize: 12,
-    color: '#323333',
+  itemTime: {
+    fontSize: typography.fontSize.xs,
+    color: colors.textTertiary,
   },
-  unreadBadge: {
-    minWidth: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: '#0F6EC0',
+  badge: {
+    minWidth: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 6,
   },
-  unreadBadgeText: {
-    fontSize: 14,
-    fontWeight: '400',
-    color: '#F4F6F5',
+  badgeText: {
+    fontSize: 10,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.textWhite,
   },
   emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
     alignItems: 'center',
-    paddingTop: 100,
+    paddingTop: spacing['5xl'],
   },
   emptyText: {
-    fontSize: 16,
-    color: '#657084',
+    fontSize: typography.fontSize.md,
+    color: colors.textTertiary,
   },
 });

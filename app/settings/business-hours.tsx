@@ -1,101 +1,176 @@
-import { borderRadius, colors, layout, spacing, typography } from '@/constants/theme';
-import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
-import React from 'react';
+// settings/business-hours.tsx
 import {
+  borderRadius,
+  colors,
+  layout,
+  shadows,
+  spacing,
+  typography,
+} from '@/constants/theme';
+import { useRouter } from 'expo-router';
+import {
+  ArrowLeft,
+  ChevronRight,
+  Clock
+} from 'lucide-react-native';
+import React, { useState } from 'react';
+import {
+  ScrollView,
   StyleSheet,
+  Switch,
   Text,
-  TextStyle,
   TouchableOpacity,
   View,
-  ViewStyle,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-interface DayItemProps {
+interface DaySchedule {
   day: string;
+  shortDay: string;
   isOpen: boolean;
   openTime: string;
   closeTime: string;
 }
 
-const DayItem: React.FC<DayItemProps> = ({ day, isOpen, openTime, closeTime }) => (
-  <View style={styles.dayItem as ViewStyle}>
-    <View style={styles.dayLeft as ViewStyle}>
-      <View style={styles.checkCircle as ViewStyle}>
-        <Ionicons name="checkmark-circle" size={24} color={colors.primary} />
-      </View>
-      <Text style={styles.dayName as TextStyle}>{day}</Text>
-    </View>
-    <View style={styles.dayRight as ViewStyle}>
-      <View style={styles.timeContainer as ViewStyle}>
-        <Text style={styles.time as TextStyle}>{openTime}</Text>
-        <Text style={styles.timeDivider as TextStyle}>to</Text>
-        <Text style={styles.time as TextStyle}>{closeTime}</Text>
-      </View>
-    </View>
-  </View>
-);
-
 export default function BusinessHoursScreen() {
   const router = useRouter();
+  const [days, setDays] = useState<DaySchedule[]>([
+    { day: 'Monday', shortDay: 'Mon', isOpen: true, openTime: '9:00 AM', closeTime: '6:00 PM' },
+    { day: 'Tuesday', shortDay: 'Tue', isOpen: true, openTime: '9:00 AM', closeTime: '6:00 PM' },
+    { day: 'Wednesday', shortDay: 'Wed', isOpen: true, openTime: '9:00 AM', closeTime: '6:00 PM' },
+    { day: 'Thursday', shortDay: 'Thu', isOpen: true, openTime: '9:00 AM', closeTime: '6:00 PM' },
+    { day: 'Friday', shortDay: 'Fri', isOpen: true, openTime: '9:00 AM', closeTime: '6:00 PM' },
+    { day: 'Saturday', shortDay: 'Sat', isOpen: false, openTime: '9:00 AM', closeTime: '6:00 PM' },
+    { day: 'Sunday', shortDay: 'Sun', isOpen: false, openTime: '9:00 AM', closeTime: '6:00 PM' },
+  ]);
 
-  const days = [
-    { day: 'Monday', isOpen: true, openTime: '9:00 AM', closeTime: '6:00 PM' },
-    { day: 'Tuesday', isOpen: true, openTime: '9:00 AM', closeTime: '6:00 PM' },
-    { day: 'Wednesday', isOpen: true, openTime: '9:00 AM', closeTime: '6:00 PM' },
-    { day: 'Thursday', isOpen: true, openTime: '9:00 AM', closeTime: '6:00 PM' },
-    { day: 'Friday', isOpen: true, openTime: '9:00 AM', closeTime: '6:00 PM' },
-    { day: 'Saturday', isOpen: false, openTime: '9:00 AM', closeTime: '6:00 PM' },
-    { day: 'Sunday', isOpen: false, openTime: '9:00 AM', closeTime: '6:00 PM' },
-  ];
+  const toggleDay = (index: number) => {
+    setDays((prev) =>
+      prev.map((d, i) => (i === index ? { ...d, isOpen: !d.isOpen } : d))
+    );
+  };
 
   return (
-    <SafeAreaView style={styles.container as ViewStyle}>
-      <View style={styles.header as ViewStyle}>
+    <SafeAreaView style={styles.container}>
+      {/* Header */}
+      <View style={styles.header}>
         <TouchableOpacity
-          style={styles.backButton as ViewStyle}
+          style={styles.backButton}
           onPress={() => router.back()}
           activeOpacity={0.7}
         >
-          <Ionicons name="chevron-back" size={24} color={colors.textPrimary} />
+          <ArrowLeft
+            size={layout.iconSize.md}
+            color={colors.textPrimary}
+            strokeWidth={2}
+          />
         </TouchableOpacity>
-        <Text style={styles.headerTitle as TextStyle}>Business hours</Text>
-        <View style={styles.placeholder as ViewStyle} />
+        <Text style={styles.headerTitle}>Business Hours</Text>
+        <View style={{ width: layout.minTouchTarget }} />
       </View>
 
-      <View style={styles.content as ViewStyle}>
-        {days.map((day) => (
-          <View key={day.day} style={styles.dayCard as ViewStyle}>
-            <View style={styles.dayHeader as ViewStyle}>
-              <View style={styles.dayInfo as ViewStyle}>
-                <View style={styles.iconContainer as ViewStyle}>
-                  <Ionicons name="checkmark-circle" size={24} color={day.isOpen ? colors.primary : colors.textSecondary} />
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Info Card */}
+        <View style={styles.infoCard}>
+          <Clock
+            size={layout.iconSize.sm}
+            color={colors.primary}
+            strokeWidth={1.8}
+          />
+          <Text style={styles.infoText}>
+            Set your operating hours so customers know when you're available
+          </Text>
+        </View>
+
+        {/* Schedule */}
+        <View style={styles.scheduleContainer}>
+          {days.map((day, index) => (
+            <View
+              key={day.day}
+              style={[
+                styles.dayCard,
+                !day.isOpen && styles.dayCardClosed,
+              ]}
+            >
+              <View style={styles.dayHeader}>
+                <View style={styles.dayInfo}>
+                  <View
+                    style={[
+                      styles.dayStatusDot,
+                      {
+                        backgroundColor: day.isOpen
+                          ? colors.success
+                          : colors.textMuted,
+                      },
+                    ]}
+                  />
+                  <View>
+                    <Text style={styles.dayName}>{day.day}</Text>
+                    <Text style={styles.dayStatus}>
+                      {day.isOpen ? 'Open' : 'Closed'}
+                    </Text>
+                  </View>
                 </View>
-                <Text style={styles.dayName as TextStyle}>{day.day}</Text>
+                <Switch
+                  value={day.isOpen}
+                  onValueChange={() => toggleDay(index)}
+                  trackColor={{
+                    false: colors.borderLight,
+                    true: colors.primary,
+                  }}
+                  thumbColor={colors.backgroundCard}
+                />
               </View>
-              <View style={styles.timeSlotContainer as ViewStyle}>
-                <View style={styles.timeInput as ViewStyle}>
-                  <Text style={styles.timeInputText as TextStyle}>{day.openTime}</Text>
+
+              {day.isOpen && (
+                <View style={styles.timeRow}>
+                  <TouchableOpacity
+                    style={styles.timePill}
+                    activeOpacity={0.7}
+                  >
+                    <Clock
+                      size={12}
+                      color={colors.primary}
+                      strokeWidth={2}
+                    />
+                    <Text style={styles.timeText}>{day.openTime}</Text>
+                  </TouchableOpacity>
+                  <Text style={styles.toText}>to</Text>
+                  <TouchableOpacity
+                    style={styles.timePill}
+                    activeOpacity={0.7}
+                  >
+                    <Clock
+                      size={12}
+                      color={colors.primary}
+                      strokeWidth={2}
+                    />
+                    <Text style={styles.timeText}>{day.closeTime}</Text>
+                  </TouchableOpacity>
                 </View>
-                <Text style={styles.toText as TextStyle}>to</Text>
-                <View style={styles.timeInput as ViewStyle}>
-                  <Text style={styles.timeInputText as TextStyle}>{day.closeTime}</Text>
-                </View>
-              </View>
+              )}
             </View>
-          </View>
-        ))}
-      </View>
+          ))}
+        </View>
+      </ScrollView>
 
-      {/* Next Button */}
-      <View style={styles.buttonContainer as ViewStyle}>
+      {/* Save Button */}
+      <View style={styles.buttonContainer}>
         <TouchableOpacity
-          style={styles.nextButton as ViewStyle}
+          style={styles.saveButton}
           onPress={() => router.back()}
-          activeOpacity={0.7}
+          activeOpacity={0.85}
         >
-          <Text style={styles.nextButtonText as TextStyle}>Next</Text>
+          <Text style={styles.saveButtonText}>Save Schedule</Text>
+          <ChevronRight
+            size={layout.iconSize.sm}
+            color={colors.textWhite}
+            strokeWidth={2.5}
+          />
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -108,33 +183,63 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   header: {
+    height: layout.headerHeight,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
+    paddingHorizontal: layout.screenPaddingHorizontal,
   },
   backButton: {
-    padding: 4,
+    width: layout.minTouchTarget,
+    height: layout.minTouchTarget,
+    borderRadius: borderRadius.full,
+    backgroundColor: colors.backgroundInput,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   headerTitle: {
-    fontSize: typography.fontSize['4xl'],
+    fontSize: typography.fontSize.lg,
     fontWeight: typography.fontWeight.semibold,
     color: colors.textPrimary,
+    letterSpacing: typography.letterSpacing.tight,
   },
-  placeholder: {
-    width: 40,
-  },
-  content: {
+  scrollView: {
     flex: 1,
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.sm,
+  },
+  scrollContent: {
+    paddingHorizontal: layout.screenPaddingHorizontal,
+    paddingTop: spacing.base,
+    paddingBottom: spacing.xl,
+  },
+  infoCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.infoLight,
+    borderRadius: borderRadius.md,
+    padding: spacing.base,
+    gap: spacing.md,
+    marginBottom: spacing.xl,
+  },
+  infoText: {
+    flex: 1,
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.regular,
+    color: colors.textSecondary,
+    lineHeight: typography.fontSize.sm * typography.lineHeight.normal,
+  },
+  scheduleContainer: {
+    gap: spacing.md,
   },
   dayCard: {
-    backgroundColor: colors.backgroundInput,
-    borderRadius: borderRadius.sm,
-    marginBottom: spacing.sm,
-    padding: spacing.md,
+    backgroundColor: colors.backgroundCard,
+    borderRadius: borderRadius.lg,
+    padding: spacing.base,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
+    gap: spacing.md,
+  },
+  dayCardClosed: {
+    opacity: 0.7,
   },
   dayHeader: {
     flexDirection: 'row',
@@ -144,88 +249,65 @@ const styles = StyleSheet.create({
   dayInfo: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: spacing.md,
   },
-  iconContainer: {
-    width: 40,
-    height: 40,
+  dayStatusDot: {
+    width: 8,
+    height: 8,
     borderRadius: borderRadius.full,
-    backgroundColor: colors.background,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: spacing.sm,
   },
   dayName: {
-    fontSize: typography.fontSize.md,
-    color: colors.textPrimary,
-    fontWeight: typography.fontWeight.medium,
-  },
-  dayRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  dayItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: spacing.md,
-  },
-  dayLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  checkCircle: {
-    marginRight: spacing.xs,
-  },
-  timeContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  timeSlotContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'flex-end',
-  },
-  timeInput: {
-    backgroundColor: colors.background,
-    borderRadius: borderRadius.sm,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-    minWidth: 85,
-    alignItems: 'center',
-  },
-  timeInputText: {
-    fontSize: typography.fontSize.md,
+    fontSize: typography.fontSize.base,
+    fontWeight: typography.fontWeight.semibold,
     color: colors.textPrimary,
   },
-  time: {
-    fontSize: typography.fontSize.md,
-    color: colors.textPrimary,
+  dayStatus: {
+    fontSize: typography.fontSize.xs,
     fontWeight: typography.fontWeight.regular,
+    color: colors.textTertiary,
+    marginTop: spacing['2xs'],
+  },
+  timeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  timePill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.primaryLight,
+    borderRadius: borderRadius.full,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    gap: spacing.xs,
+  },
+  timeText: {
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.primary,
   },
   toText: {
     fontSize: typography.fontSize.sm,
-    color: colors.textSecondary,
-    marginHorizontal: spacing.xs,
-  },
-  timeDivider: {
-    fontSize: typography.fontSize.sm,
-    color: colors.textSecondary,
-    marginHorizontal: spacing.xs,
+    fontWeight: typography.fontWeight.regular,
+    color: colors.textMuted,
   },
   buttonContainer: {
-    paddingHorizontal: spacing.lg,
+    paddingHorizontal: layout.screenPaddingHorizontal,
     paddingBottom: spacing['2xl'],
   },
-  nextButton: {
+  saveButton: {
     height: layout.buttonHeight,
     backgroundColor: colors.primary,
     borderRadius: borderRadius.lg,
     justifyContent: 'center',
     alignItems: 'center',
+    flexDirection: 'row',
+    gap: spacing.sm,
+    ...shadows.button,
   },
-  nextButtonText: {
+  saveButtonText: {
     fontSize: typography.fontSize.md,
-    color: colors.textLight,
-    fontWeight: typography.fontWeight.regular,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.textWhite,
   },
 });

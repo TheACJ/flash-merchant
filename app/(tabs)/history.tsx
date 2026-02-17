@@ -1,6 +1,23 @@
+// (tabs)/history.tsx
+import {
+  borderRadius,
+  colors,
+  layout,
+  shadows,
+  spacing,
+  typography,
+} from '@/constants/theme';
 import { useRouter } from 'expo-router';
 import {
-  ArrowLeft
+  ArrowDownToLine,
+  ArrowLeft,
+  ArrowUpFromLine,
+  CheckCircle2,
+  Clock,
+  Printer,
+  Receipt,
+  XCircle,
+  Zap
 } from 'lucide-react-native';
 import React, { useCallback, useMemo, useState } from 'react';
 import {
@@ -14,6 +31,8 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+
+// ─── Types ──────────────────────────────────────────────────────────────────
 
 type TransactionType = 'withdrawal' | 'deposit';
 type TransactionStatus = 'success' | 'pending' | 'failed';
@@ -34,10 +53,12 @@ interface Transaction {
   timestamp: Date;
 }
 
+// ─── Constants ──────────────────────────────────────────────────────────────
+
 const HISTORY_FILTERS = [
   { id: 'all' as HistoryFilter, label: 'All' },
-  { id: 'withdrawal' as HistoryFilter, label: 'Withdrawal' },
-  { id: 'deposit' as HistoryFilter, label: 'Deposit' },
+  { id: 'withdrawal' as HistoryFilter, label: 'Withdrawals' },
+  { id: 'deposit' as HistoryFilter, label: 'Deposits' },
 ];
 
 const MOCK_TRANSACTIONS: Transaction[] = [
@@ -48,8 +69,8 @@ const MOCK_TRANSACTIONS: Transaction[] = [
     title: 'Physical withdrawal',
     userName: '@Alicejhon222',
     amount: 500,
-    cryptoAmount: '0.00034 Btc',
-    exchangeRate: '1 Btc=$40,000',
+    cryptoAmount: '0.00034 BTC',
+    exchangeRate: '1 BTC = $40,000',
     reference: 'FLH-7829-ALICE',
     gasFee: 5,
     method: 'Fiat',
@@ -62,7 +83,7 @@ const MOCK_TRANSACTIONS: Transaction[] = [
     title: 'Physical deposit',
     userName: '@Alicejhon222',
     amount: 500,
-    exchangeRate: '1 Btc=$40,000',
+    exchangeRate: '1 BTC = $40,000',
     reference: 'FLH-7830-ALICE',
     gasFee: 5,
     method: 'Fiat',
@@ -75,7 +96,7 @@ const MOCK_TRANSACTIONS: Transaction[] = [
     title: 'Physical deposit',
     userName: '@Carol456',
     amount: 500,
-    exchangeRate: '1 Btc=$40,000',
+    exchangeRate: '1 BTC = $40,000',
     reference: 'FLH-7831-CAROL',
     gasFee: 5,
     method: 'Fiat',
@@ -83,46 +104,59 @@ const MOCK_TRANSACTIONS: Transaction[] = [
   },
 ];
 
+// ─── Helpers ────────────────────────────────────────────────────────────────
+
+const formatDate = (date: Date): string => {
+  const months = [
+    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+  ];
+  const hours = date.getHours();
+  const minutes = date.getMinutes();
+  const ampm = hours >= 12 ? 'PM' : 'AM';
+  const formattedHours = hours % 12 || 12;
+  return `${months[date.getMonth()]} ${date.getDate()}, ${formattedHours}:${minutes
+    .toString()
+    .padStart(2, '0')} ${ampm}`;
+};
+
+const getStatusConfig = (status: TransactionStatus) => {
+  switch (status) {
+    case 'success':
+      return {
+        color: colors.success,
+        bgColor: colors.successLight,
+        label: 'Completed',
+        icon: CheckCircle2,
+      };
+    case 'pending':
+      return {
+        color: colors.warning,
+        bgColor: colors.warningLight,
+        label: 'Pending',
+        icon: Clock,
+      };
+    case 'failed':
+      return {
+        color: colors.error,
+        bgColor: colors.errorLight,
+        label: 'Failed',
+        icon: XCircle,
+      };
+  }
+};
+
+// ─── Transaction Card ───────────────────────────────────────────────────────
+
 interface TransactionCardProps {
   transaction: Transaction;
   onPress: (transaction: Transaction) => void;
 }
 
 function TransactionCard({ transaction, onPress }: TransactionCardProps) {
-  const formatDate = (date: Date): string => {
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    const hours = date.getHours();
-    const minutes = date.getMinutes();
-    const ampm = hours >= 12 ? 'PM' : 'AM';
-    const formattedHours = hours % 12 || 12;
-    return `${months[date.getMonth()]} ${date.getDate()}, ${formattedHours}:${minutes.toString().padStart(2, '0')} ${ampm}`;
-  };
-
   const isWithdrawal = transaction.type === 'withdrawal';
-  const amountColor = isWithdrawal ? '#C31D1E' : '#128807';
-  const amountPrefix = isWithdrawal ? '-' : '+';
-
-  const getStatusColor = (status: TransactionStatus): string => {
-    switch (status) {
-      case 'success':
-        return '#128807';
-      case 'pending':
-        return '#FF9934';
-      case 'failed':
-        return '#C31D1E';
-    }
-  };
-
-  const getStatusLabel = (status: TransactionStatus): string => {
-    switch (status) {
-      case 'success':
-        return 'Success';
-      case 'pending':
-        return 'Pending fiat';
-      case 'failed':
-        return 'Failed';
-    }
-  };
+  const statusConfig = getStatusConfig(transaction.status);
+  const StatusIcon = statusConfig.icon;
 
   return (
     <TouchableOpacity
@@ -130,24 +164,77 @@ function TransactionCard({ transaction, onPress }: TransactionCardProps) {
       onPress={() => onPress(transaction)}
       activeOpacity={0.7}
     >
-      <View style={styles.transactionContent}>
-        <View style={styles.transactionHeader}>
-          <Text style={styles.transactionTitle}>{transaction.title}</Text>
-          <Text style={styles.transactionDate}>{formatDate(transaction.timestamp)}</Text>
-        </View>
-        <View style={styles.transactionDetails}>
-          <Text style={styles.transactionUser}>{transaction.userName} requesting</Text>
-          <Text style={[styles.transactionAmount, { color: amountColor }]}>
-            {amountPrefix}${transaction.amount}
+      {/* Icon */}
+      <View
+        style={[
+          styles.txIconContainer,
+          {
+            backgroundColor: isWithdrawal
+              ? colors.errorLight
+              : colors.successLight,
+          },
+        ]}
+      >
+        {isWithdrawal ? (
+          <ArrowUpFromLine
+            size={layout.iconSize.sm}
+            color={colors.error}
+            strokeWidth={2}
+          />
+        ) : (
+          <ArrowDownToLine
+            size={layout.iconSize.sm}
+            color={colors.success}
+            strokeWidth={2}
+          />
+        )}
+      </View>
+
+      {/* Content */}
+      <View style={styles.txContent}>
+        <View style={styles.txTopRow}>
+          <Text style={styles.txTitle}>{transaction.title}</Text>
+          <Text
+            style={[
+              styles.txAmount,
+              { color: isWithdrawal ? colors.error : colors.success },
+            ]}
+          >
+            {isWithdrawal ? '-' : '+'}${transaction.amount}
           </Text>
         </View>
-        <Text style={[styles.transactionStatus, { color: getStatusColor(transaction.status) }]}>
-          {getStatusLabel(transaction.status)}
+        <View style={styles.txBottomRow}>
+          <Text style={styles.txUser}>{transaction.userName}</Text>
+          <View
+            style={[
+              styles.txStatusBadge,
+              { backgroundColor: statusConfig.bgColor },
+            ]}
+          >
+            <StatusIcon
+              size={10}
+              color={statusConfig.color}
+              strokeWidth={2.5}
+            />
+            <Text
+              style={[
+                styles.txStatusText,
+                { color: statusConfig.color },
+              ]}
+            >
+              {statusConfig.label}
+            </Text>
+          </View>
+        </View>
+        <Text style={styles.txDate}>
+          {formatDate(transaction.timestamp)}
         </Text>
       </View>
     </TouchableOpacity>
   );
 }
+
+// ─── Transaction Detail Modal ───────────────────────────────────────────────
 
 interface TransactionDetailModalProps {
   visible: boolean;
@@ -164,16 +251,30 @@ function TransactionDetailModal({
 }: TransactionDetailModalProps) {
   if (!transaction) return null;
 
-  const formatDate = (date: Date): string => {
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    const hours = date.getHours();
-    const minutes = date.getMinutes();
-    const ampm = hours >= 12 ? 'PM' : 'AM';
-    const formattedHours = hours % 12 || 12;
-    return `${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear()}, ${formattedHours}:${minutes.toString().padStart(2, '0')} ${ampm}`;
-  };
-
   const isWithdrawal = transaction.type === 'withdrawal';
+  const statusConfig = getStatusConfig(transaction.status);
+
+  const details = [
+    transaction.exchangeRate && {
+      label: 'Exchange Rate',
+      value: transaction.exchangeRate,
+    },
+    transaction.cryptoAmount && {
+      label: 'Crypto Amount',
+      value: transaction.cryptoAmount,
+    },
+    { label: 'Reference', value: transaction.reference, mono: true },
+    transaction.gasFee && {
+      label: 'Gas Fee',
+      value: `$${transaction.gasFee}`,
+    },
+    { label: 'Method', value: transaction.method },
+    { label: 'Date', value: formatDate(transaction.timestamp) },
+  ].filter(Boolean) as Array<{
+    label: string;
+    value: string;
+    mono?: boolean;
+  }>;
 
   return (
     <Modal
@@ -183,75 +284,98 @@ function TransactionDetailModal({
       onRequestClose={onClose}
     >
       <SafeAreaView style={styles.modalContainer}>
-        {/* Close Button */}
-        <TouchableOpacity
-          style={styles.closeButton}
-          onPress={onClose}
-          activeOpacity={0.7}
-        >
-          <ArrowLeft size={24} color="#000000" strokeWidth={2} />
-        </TouchableOpacity>
+        {/* Header */}
+        <View style={styles.modalHeader}>
+          <TouchableOpacity
+            style={styles.modalBackButton}
+            onPress={onClose}
+            activeOpacity={0.7}
+          >
+            <ArrowLeft
+              size={layout.iconSize.md}
+              color={colors.textPrimary}
+              strokeWidth={2}
+            />
+          </TouchableOpacity>
+          <Text style={styles.modalHeaderTitle}>Transaction Details</Text>
+          <View style={{ width: layout.minTouchTarget }} />
+        </View>
 
         {/* Content */}
         <View style={styles.modalContent}>
-          {/* Logo Placeholder */}
-          <View style={styles.logoPlaceholder}>
-            <Text style={styles.logoText}>F</Text>
+          {/* Logo */}
+          <View style={styles.modalLogo}>
+            <Zap
+              size={layout.iconSize.xl}
+              color={colors.textWhite}
+              strokeWidth={2}
+            />
           </View>
 
           {/* Amount */}
-          <View style={styles.amountSection}>
-            <Text style={styles.modalAmount}>
-              ${transaction.amount.toLocaleString()}.00
-            </Text>
-            <Text style={styles.modalStatus}>
-              {isWithdrawal ? 'Withdraw' : 'Deposit'} successfully
+          <Text style={styles.modalAmount}>
+            ${transaction.amount.toLocaleString()}.00
+          </Text>
+
+          {/* Status */}
+          <View
+            style={[
+              styles.modalStatusBadge,
+              { backgroundColor: statusConfig.bgColor },
+            ]}
+          >
+            <statusConfig.icon
+              size={14}
+              color={statusConfig.color}
+              strokeWidth={2.5}
+            />
+            <Text
+              style={[
+                styles.modalStatusText,
+                { color: statusConfig.color },
+              ]}
+            >
+              {isWithdrawal ? 'Withdrawal' : 'Deposit'}{' '}
+              {statusConfig.label.toLowerCase()}
             </Text>
           </View>
 
-          {/* Details */}
-          <View style={styles.detailsList}>
-            {transaction.exchangeRate && (
-              <View style={styles.detailItem}>
-                <Text style={styles.detailItemLabel}>Exchange rate</Text>
-                <Text style={styles.detailItemValue}>{transaction.exchangeRate}</Text>
-              </View>
-            )}
-            {transaction.cryptoAmount && (
-              <View style={styles.detailItem}>
-                <Text style={styles.detailItemLabel}>Customer receives</Text>
-                <Text style={styles.detailItemValue}>₦100,000</Text>
-              </View>
-            )}
-            <View style={styles.detailItem}>
-              <Text style={styles.detailItemLabel}>Reference</Text>
-              <Text style={styles.detailItemValue}>{transaction.reference}</Text>
-            </View>
-            {transaction.gasFee && (
-              <View style={styles.detailItem}>
-                <Text style={styles.detailItemLabel}>Gas fee</Text>
-                <Text style={styles.detailItemValue}>${transaction.gasFee}</Text>
-              </View>
-            )}
-            <View style={styles.detailItem}>
-              <Text style={styles.detailItemLabel}>Method</Text>
-              <Text style={styles.detailItemValue}>{transaction.method}</Text>
-            </View>
-            <View style={[styles.detailItem, styles.detailItemNoBorder]}>
-              <Text style={styles.detailItemLabel}>Date</Text>
-              <Text style={styles.detailItemValue}>{formatDate(transaction.timestamp)}</Text>
-            </View>
+          {/* Details Card */}
+          <View style={styles.detailsCard}>
+            {details.map((detail, index) => (
+              <React.Fragment key={detail.label}>
+                <View style={styles.detailRow}>
+                  <Text style={styles.detailLabel}>{detail.label}</Text>
+                  <Text
+                    style={[
+                      styles.detailValue,
+                      detail.mono && styles.detailValueMono,
+                    ]}
+                  >
+                    {detail.value}
+                  </Text>
+                </View>
+                {index < details.length - 1 && (
+                  <View style={styles.detailDivider} />
+                )}
+              </React.Fragment>
+            ))}
           </View>
         </View>
 
-        {/* Print Receipt Button */}
+        {/* Footer */}
         <View style={styles.modalFooter}>
           <TouchableOpacity
             style={styles.printButton}
             onPress={onPrintReceipt}
-            activeOpacity={0.8}
+            activeOpacity={0.85}
           >
-            <Text style={styles.printButtonText}>Print receipt</Text>
+            <Printer
+              size={layout.iconSize.sm}
+              color={colors.textWhite}
+              strokeWidth={1.8}
+            />
+            <Text style={styles.printButtonText}>Print Receipt</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -259,12 +383,17 @@ function TransactionDetailModal({
   );
 }
 
+// ─── Main Screen ────────────────────────────────────────────────────────────
+
 export default function HistoryScreen() {
   const router = useRouter();
-  const [selectedFilter, setSelectedFilter] = useState<HistoryFilter>('all');
-  const [transactions, setTransactions] = useState<Transaction[]>(MOCK_TRANSACTIONS);
+  const [selectedFilter, setSelectedFilter] =
+    useState<HistoryFilter>('all');
+  const [transactions] =
+    useState<Transaction[]>(MOCK_TRANSACTIONS);
   const [refreshing, setRefreshing] = useState(false);
-  const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
+  const [selectedTransaction, setSelectedTransaction] =
+    useState<Transaction | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
 
   const filteredTransactions = useMemo(() => {
@@ -274,12 +403,12 @@ export default function HistoryScreen() {
 
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+    await new Promise((r) => setTimeout(r, 1500));
     setRefreshing(false);
   }, []);
 
-  const handleTransactionPress = useCallback((transaction: Transaction) => {
-    setSelectedTransaction(transaction);
+  const handleTransactionPress = useCallback((tx: Transaction) => {
+    setSelectedTransaction(tx);
     setModalVisible(true);
   }, []);
 
@@ -289,13 +418,8 @@ export default function HistoryScreen() {
   }, []);
 
   const handlePrintReceipt = useCallback(() => {
-    // Implement print functionality
     console.log('Print receipt for:', selectedTransaction?.id);
   }, [selectedTransaction]);
-
-  const handleGoBack = () => {
-    router.back();
-  };
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -303,42 +427,47 @@ export default function HistoryScreen() {
       <View style={styles.header}>
         <TouchableOpacity
           style={styles.backButton}
-          onPress={handleGoBack}
+          onPress={() => router.back()}
           activeOpacity={0.7}
         >
-          <ArrowLeft size={24} color="#000000" strokeWidth={2} />
+          <ArrowLeft
+            size={layout.iconSize.md}
+            color={colors.textPrimary}
+            strokeWidth={2}
+          />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Transaction history</Text>
-        <View style={styles.headerSpacer} />
+        <Text style={styles.headerTitle}>History</Text>
+        <View style={{ width: layout.minTouchTarget }} />
       </View>
 
       {/* Filters */}
       <View style={styles.filterContainer}>
-        <View style={styles.filterWrapper}>
-          {HISTORY_FILTERS.map((filter) => {
-            const isActive = selectedFilter === filter.id;
-            return (
-              <TouchableOpacity
-                key={filter.id}
-                style={[styles.filterTab, isActive && styles.filterTabActive]}
-                onPress={() => setSelectedFilter(filter.id)}
-                activeOpacity={0.7}
+        {HISTORY_FILTERS.map((filter) => {
+          const isActive = selectedFilter === filter.id;
+          return (
+            <TouchableOpacity
+              key={filter.id}
+              style={[
+                styles.filterTab,
+                isActive && styles.filterTabActive,
+              ]}
+              onPress={() => setSelectedFilter(filter.id)}
+              activeOpacity={0.7}
+            >
+              <Text
+                style={[
+                  styles.filterTabText,
+                  isActive && styles.filterTabTextActive,
+                ]}
               >
-                <Text
-                  style={[
-                    styles.filterTabText,
-                    isActive && styles.filterTabTextActive,
-                  ]}
-                >
-                  {filter.label}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
+                {filter.label}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
       </View>
 
-      {/* Transactions List */}
+      {/* List */}
       <FlatList
         data={filteredTransactions}
         renderItem={({ item }) => (
@@ -354,17 +483,24 @@ export default function HistoryScreen() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={handleRefresh}
-            tintColor="#0F6EC0"
+            tintColor={colors.primary}
           />
         }
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>No transactions</Text>
+            <Receipt
+              size={layout.iconSize['2xl']}
+              color={colors.textMuted}
+              strokeWidth={1.2}
+            />
+            <Text style={styles.emptyTitle}>No transactions yet</Text>
+            <Text style={styles.emptySubtitle}>
+              Your transaction history will appear here
+            </Text>
           </View>
         }
       />
 
-      {/* Transaction Detail Modal */}
       <TransactionDetailModal
         visible={modalVisible}
         transaction={selectedTransaction}
@@ -378,201 +514,264 @@ export default function HistoryScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F5F5',
+    backgroundColor: colors.background,
   },
+
+  // Header
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
+    paddingHorizontal: layout.screenPaddingHorizontal,
+    height: layout.headerHeight,
   },
   backButton: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: '#F4F6F5',
+    width: layout.minTouchTarget,
+    height: layout.minTouchTarget,
+    borderRadius: borderRadius.full,
+    backgroundColor: colors.backgroundInput,
     justifyContent: 'center',
     alignItems: 'center',
   },
   headerTitle: {
-    fontSize: 25,
-    fontWeight: '600',
-    color: '#000000',
+    fontSize: typography.fontSize.xl,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.textPrimary,
+    letterSpacing: typography.letterSpacing.tight,
   },
-  headerSpacer: {
-    width: 50,
-  },
+
+  // Filters
   filterContainer: {
-    paddingHorizontal: 52,
-    marginBottom: 20,
-  },
-  filterWrapper: {
     flexDirection: 'row',
-    backgroundColor: '#F4F6F5',
-    borderRadius: 10,
-    padding: 5,
+    paddingHorizontal: layout.screenPaddingHorizontal,
+    marginBottom: spacing.lg,
+    backgroundColor: colors.backgroundInput,
+    marginHorizontal: layout.screenPaddingHorizontal,
+    borderRadius: borderRadius.md,
+    padding: spacing.xs,
+    gap: spacing.xs,
   },
   filterTab: {
     flex: 1,
-    paddingVertical: 12,
-    borderRadius: 10,
+    paddingVertical: spacing.sm,
+    borderRadius: borderRadius.sm,
     alignItems: 'center',
   },
   filterTabActive: {
-    backgroundColor: '#0F6EC0',
+    backgroundColor: colors.primary,
+    ...shadows.sm,
   },
   filterTabText: {
-    fontSize: 18,
-    fontWeight: '400',
-    color: '#323333',
+    fontSize: typography.fontSize.base,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.textTertiary,
   },
   filterTabTextActive: {
-    fontWeight: '500',
-    color: '#F4F6F5',
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.textWhite,
   },
+
+  // List
   listContent: {
-    paddingHorizontal: 52,
+    paddingHorizontal: layout.screenPaddingHorizontal,
     paddingBottom: 100,
-    gap: 20,
+    gap: spacing.md,
   },
+
+  // Transaction Card
   transactionCard: {
-    backgroundColor: '#F4F6F5',
-    borderRadius: 10,
-    padding: 20,
-  },
-  transactionContent: {
-    gap: 20,
-  },
-  transactionHeader: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    backgroundColor: colors.backgroundCard,
+    borderRadius: borderRadius.lg,
+    padding: spacing.base,
+    gap: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
+    ...shadows.xs,
   },
-  transactionTitle: {
-    fontSize: 20,
-    fontWeight: '500',
-    color: '#000000',
-  },
-  transactionDate: {
-    fontSize: 14,
-    color: '#323333',
-  },
-  transactionDetails: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  transactionUser: {
-    fontSize: 16,
-    color: '#323333',
-  },
-  transactionAmount: {
-    fontSize: 20,
-    fontWeight: '500',
-  },
-  transactionStatus: {
-    fontSize: 16,
-    fontWeight: '400',
-  },
-  emptyContainer: {
-    paddingTop: 100,
-    alignItems: 'center',
-  },
-  emptyText: {
-    fontSize: 16,
-    color: '#657084',
-  },
-  // Modal Styles
-  modalContainer: {
-    flex: 1,
-    backgroundColor: '#F5F5F5',
-  },
-  closeButton: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: '#F4F6F5',
+  txIconContainer: {
+    width: 44,
+    height: 44,
+    borderRadius: borderRadius.md,
     justifyContent: 'center',
     alignItems: 'center',
-    marginLeft: 20,
-    marginTop: 16,
+  },
+  txContent: {
+    flex: 1,
+    gap: spacing.xs,
+  },
+  txTopRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  txTitle: {
+    fontSize: typography.fontSize.base,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.textPrimary,
+  },
+  txAmount: {
+    fontSize: typography.fontSize.md,
+    fontWeight: typography.fontWeight.bold,
+  },
+  txBottomRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  txUser: {
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.regular,
+    color: colors.textTertiary,
+  },
+  txStatusBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing['2xs'],
+    borderRadius: borderRadius.full,
+  },
+  txStatusText: {
+    fontSize: typography.fontSize['2xs'],
+    fontWeight: typography.fontWeight.semibold,
+    textTransform: 'uppercase',
+    letterSpacing: typography.letterSpacing.wide,
+  },
+  txDate: {
+    fontSize: typography.fontSize.xs,
+    fontWeight: typography.fontWeight.regular,
+    color: colors.textMuted,
+  },
+
+  // Empty
+  emptyContainer: {
+    paddingTop: spacing['7xl'],
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  emptyTitle: {
+    fontSize: typography.fontSize.lg,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.textPrimary,
+    marginTop: spacing.base,
+  },
+  emptySubtitle: {
+    fontSize: typography.fontSize.base,
+    fontWeight: typography.fontWeight.regular,
+    color: colors.textTertiary,
+  },
+
+  // Modal
+  modalContainer: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
+  modalHeader: {
+    height: layout.headerHeight,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: layout.screenPaddingHorizontal,
+  },
+  modalBackButton: {
+    width: layout.minTouchTarget,
+    height: layout.minTouchTarget,
+    borderRadius: borderRadius.full,
+    backgroundColor: colors.backgroundInput,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalHeaderTitle: {
+    fontSize: typography.fontSize.lg,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.textPrimary,
   },
   modalContent: {
     flex: 1,
-    paddingHorizontal: 52,
-    paddingTop: 30,
+    paddingHorizontal: layout.screenPaddingHorizontal,
+    paddingTop: spacing['2xl'],
     alignItems: 'center',
   },
-  logoPlaceholder: {
-    width: 78,
-    height: 51,
-    backgroundColor: '#0F6EC0',
-    borderRadius: 10,
+  modalLogo: {
+    width: 64,
+    height: 64,
+    borderRadius: borderRadius.lg,
+    backgroundColor: colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 30,
-  },
-  logoText: {
-    fontSize: 32,
-    fontWeight: '700',
-    color: '#FFFFFF',
-  },
-  amountSection: {
-    alignItems: 'center',
-    gap: 15,
-    marginBottom: 40,
+    marginBottom: spacing.xl,
+    ...shadows.md,
   },
   modalAmount: {
-    fontSize: 30,
-    fontWeight: '600',
-    color: '#0F6EC0',
+    fontSize: typography.fontSize['5xl'],
+    fontWeight: typography.fontWeight.bold,
+    color: colors.primary,
+    marginBottom: spacing.md,
+    letterSpacing: typography.letterSpacing.tight,
   },
-  modalStatus: {
-    fontSize: 18,
-    fontWeight: '500',
-    color: '#323333',
+  modalStatusBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    paddingHorizontal: spacing.base,
+    paddingVertical: spacing.sm,
+    borderRadius: borderRadius.full,
+    marginBottom: spacing['2xl'],
   },
-  detailsList: {
+  modalStatusText: {
+    fontSize: typography.fontSize.base,
+    fontWeight: typography.fontWeight.semibold,
+  },
+  detailsCard: {
     width: '100%',
-    gap: 20,
+    backgroundColor: colors.backgroundCard,
+    borderRadius: borderRadius.lg,
+    padding: spacing.base,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
   },
-  detailItem: {
+  detailRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingBottom: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: '#D2D6E1',
-    borderStyle: 'dashed',
+    paddingVertical: spacing.md,
   },
-  detailItemNoBorder: {
-    borderBottomWidth: 0,
-    paddingBottom: 0,
+  detailLabel: {
+    fontSize: typography.fontSize.base,
+    fontWeight: typography.fontWeight.regular,
+    color: colors.textTertiary,
   },
-  detailItemLabel: {
-    fontSize: 16,
-    color: '#323333',
+  detailValue: {
+    fontSize: typography.fontSize.base,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.textPrimary,
   },
-  detailItemValue: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#000000',
+  detailValueMono: {
+    fontFamily: typography.fontFamilyMono,
+    letterSpacing: typography.letterSpacing.wide,
+  },
+  detailDivider: {
+    height: 1,
+    backgroundColor: colors.divider,
   },
   modalFooter: {
-    paddingHorizontal: 52,
-    paddingBottom: Platform.OS === 'ios' ? 50 : 30,
+    paddingHorizontal: layout.screenPaddingHorizontal,
+    paddingBottom: Platform.OS === 'ios' ? spacing['3xl'] : spacing['2xl'],
   },
   printButton: {
-    backgroundColor: '#0F6EC0',
-    borderRadius: 15,
-    height: 60,
+    backgroundColor: colors.primary,
+    borderRadius: borderRadius.lg,
+    height: layout.buttonHeight,
     justifyContent: 'center',
     alignItems: 'center',
+    flexDirection: 'row',
+    gap: spacing.sm,
+    ...shadows.button,
   },
   printButtonText: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#F5F5F5',
+    fontSize: typography.fontSize.md,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.textWhite,
   },
 });

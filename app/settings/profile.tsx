@@ -1,191 +1,190 @@
-import { Ionicons } from '@expo/vector-icons';
+// settings/profile.tsx
+import {
+  borderRadius,
+  colors,
+  layout,
+  shadows,
+  spacing,
+  typography,
+} from '@/constants/theme';
 import { useRouter } from 'expo-router';
+import {
+  ArrowLeft,
+  Briefcase,
+  CheckCircle2,
+  ChevronRight,
+  CreditCard,
+  HelpCircle,
+  LogOut,
+  ShieldCheck,
+  User,
+} from 'lucide-react-native';
 import React from 'react';
 import {
-    StyleSheet,
-    Text,
-    TextStyle,
-    TouchableOpacity,
-    View,
-    ViewStyle,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+
+interface MenuItemProps {
+  icon: React.ReactNode;
+  title: string;
+  subtitle: string;
+  onPress: () => void;
+  showDivider?: boolean;
+}
+
+const MenuItem: React.FC<MenuItemProps> = ({
+  icon,
+  title,
+  subtitle,
+  onPress,
+  showDivider = true,
+}) => (
+  <>
+    <TouchableOpacity
+      style={styles.menuItem}
+      onPress={onPress}
+      activeOpacity={0.7}
+    >
+      <View style={styles.itemLeft}>
+        <View style={styles.iconContainer}>{icon}</View>
+        <View>
+          <Text style={styles.itemTitle}>{title}</Text>
+          <Text style={styles.itemSubtitle}>{subtitle}</Text>
+        </View>
+      </View>
+      <ChevronRight size={20} color={colors.textTertiary} />
+    </TouchableOpacity>
+    {showDivider && <View style={styles.divider} />}
+  </>
+);
 
 export default function ProfileScreen() {
   const router = useRouter();
 
   return (
-    <SafeAreaView style={styles.container as ViewStyle}>
-      <View style={styles.header as ViewStyle}>
+    <SafeAreaView style={styles.container}>
+      {/* Header */}
+      <View style={styles.header}>
         <TouchableOpacity
-          style={styles.backButton as ViewStyle}
+          style={styles.backButton}
           onPress={() => router.back()}
           activeOpacity={0.7}
         >
-          <Ionicons name="chevron-back" size={24} color="#000000" />
+          <ArrowLeft size={24} color={colors.textPrimary} strokeWidth={2} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle as TextStyle}>Settings</Text>
-        <View style={styles.placeholder as ViewStyle} />
+        <Text style={styles.headerTitle}>Profile & Settings</Text>
+        <View style={styles.placeholder} />
       </View>
 
-      <View style={styles.profileSection as ViewStyle}>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Profile Card */}
         <TouchableOpacity
-          style={styles.profileCard as ViewStyle}
-          onPress={() => router.push('/settings/edit-profile' as any)}
-          activeOpacity={0.7}
+          style={styles.profileCard}
+          onPress={() => router.push('/settings/edit-profile')}
+          activeOpacity={0.8}
         >
-          <View style={styles.profileLeft as ViewStyle}>
-            <View style={styles.avatarContainer as ViewStyle}>
-              <View style={styles.avatar as ViewStyle}>
-                <Ionicons name="person" size={30} color="#657084" />
-              </View>
-              <View style={styles.verifiedBadge as ViewStyle}>
-                <Ionicons name="checkmark-circle" size={16} color="#128807" />
+          <View style={styles.profileLeft}>
+            <View style={styles.avatarContainer}>
+              <User size={28} color={colors.textSecondary} />
+              <View style={styles.verifiedBadge}>
+                <CheckCircle2
+                  size={16}
+                  color={colors.success}
+                  fill={colors.backgroundCard}
+                />
               </View>
             </View>
-            <View style={styles.profileInfo as ViewStyle}>
-              <View style={styles.profileNameRow as ViewStyle}>
-                <Text style={styles.profileName as TextStyle}>Cryptoguru</Text>
-                <Ionicons name="checkmark-circle" size={16} color="#128807" />
+            <View style={styles.profileInfo}>
+              <View style={styles.nameRow}>
+                <Text style={styles.profileName}>Cryptoguru</Text>
+                <CheckCircle2 size={16} color={colors.success} />
               </View>
-              <Text style={styles.profileRole as TextStyle}>Merchant</Text>
+              <Text style={styles.profileRole}>Merchant Account</Text>
             </View>
           </View>
-          <Ionicons name="chevron-forward" size={20} color="#000000" />
+          <ChevronRight size={20} color={colors.textTertiary} />
         </TouchableOpacity>
-      </View>
 
-      {/* Account Section */}
-      <View style={styles.section as ViewStyle}>
-        <Text style={styles.sectionTitle as TextStyle}>Account</Text>
-        <View style={styles.card as ViewStyle}>
-          <TouchableOpacity
-            style={styles.menuItem as ViewStyle}
-            onPress={() => router.push('/settings/bank-details' as any)}
-            activeOpacity={0.7}
-          >
-            <View style={styles.itemLeft as ViewStyle}>
-              <View style={styles.iconContainer as ViewStyle}>
-                <Ionicons name="card-outline" size={20} color="#323333" />
-              </View>
-              <View style={styles.textContainer as ViewStyle}>
-                <Text style={styles.itemTitle as TextStyle}>Bank account</Text>
-                <Text style={styles.itemSubtitle as TextStyle}>Manage payout methods</Text>
-              </View>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color="#000000" />
-          </TouchableOpacity>
-          <View style={styles.divider as ViewStyle} />
-          <TouchableOpacity
-            style={styles.menuItem as ViewStyle}
-            onPress={() => router.push('/settings/security' as any)}
-            activeOpacity={0.7}
-          >
-            <View style={styles.itemLeft as ViewStyle}>
-              <View style={styles.iconContainer as ViewStyle}>
-                <Ionicons name="shield-checkmark-outline" size={20} color="#323333" />
-              </View>
-              <View style={styles.textContainer as ViewStyle}>
-                <Text style={styles.itemTitle as TextStyle}>Security</Text>
-                <Text style={styles.itemSubtitle as TextStyle}>PIN, biometric, and KYC settings</Text>
-              </View>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color="#000000" />
-          </TouchableOpacity>
+        {/* Account Section */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Account</Text>
+          <View style={styles.sectionCard}>
+            <MenuItem
+              icon={<CreditCard size={20} color={colors.textSecondary} />}
+              title="Bank Account"
+              subtitle="Manage payout methods"
+              onPress={() => router.push('/settings/bank-details')}
+            />
+            <MenuItem
+              icon={<ShieldCheck size={20} color={colors.textSecondary} />}
+              title="Security"
+              subtitle="PIN, biometric, and KYC settings"
+              onPress={() => router.push('/settings/security')}
+              showDivider={false}
+            />
+          </View>
         </View>
-      </View>
 
-      {/* Business Settings Section */}
-      <View style={styles.section as ViewStyle}>
-        <Text style={styles.sectionTitle as TextStyle}>Business settings</Text>
-        <View style={styles.card as ViewStyle}>
-          <TouchableOpacity
-            style={styles.menuItem as ViewStyle}
-            onPress={() => router.push('/settings/business-hours' as any)}
-            activeOpacity={0.7}
-          >
-            <View style={styles.itemLeft as ViewStyle}>
-              <View style={styles.iconContainer as ViewStyle}>
-                <Ionicons name="time-outline" size={20} color="#323333" />
-              </View>
-              <View style={styles.textContainer as ViewStyle}>
-                <Text style={styles.itemTitle as TextStyle}>Business hours</Text>
-                <Text style={styles.itemSubtitle as TextStyle}>Mon-Fri: 9:00 AM - 6:00 PM</Text>
-              </View>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color="#000000" />
-          </TouchableOpacity>
-          <View style={styles.divider as ViewStyle} />
-          <TouchableOpacity
-            style={styles.menuItem as ViewStyle}
-            onPress={() => router.push('/settings/exchange-rate' as any)}
-            activeOpacity={0.7}
-          >
-            <View style={styles.itemLeft as ViewStyle}>
-              <View style={styles.iconContainer as ViewStyle}>
-                <Ionicons name="swap-horizontal-outline" size={20} color="#323333" />
-              </View>
-              <View style={styles.textContainer as ViewStyle}>
-                <Text style={styles.itemTitle as TextStyle}>Exchange rate</Text>
-                <Text style={styles.itemSubtitle as TextStyle}>Customize your pricing</Text>
-              </View>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color="#000000" />
-          </TouchableOpacity>
-          <View style={styles.divider as ViewStyle} />
-          <TouchableOpacity
-            style={styles.menuItem as ViewStyle}
-            onPress={() => router.push('/settings/currency' as any)}
-            activeOpacity={0.7}
-          >
-            <View style={styles.itemLeft as ViewStyle}>
-              <View style={styles.iconContainer as ViewStyle}>
-                <Ionicons name="cash-outline" size={20} color="#323333" />
-              </View>
-              <View style={styles.textContainer as ViewStyle}>
-                <Text style={styles.itemTitle as TextStyle}>Currency</Text>
-                <Text style={styles.itemSubtitle as TextStyle}>Choose your currency</Text>
-              </View>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color="#000000" />
-          </TouchableOpacity>
+        {/* Business Settings */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Business Settings</Text>
+          <View style={styles.sectionCard}>
+            <MenuItem
+              icon={<Briefcase size={20} color={colors.textSecondary} />}
+              title="Business Hours"
+              subtitle="Manage operating hours"
+              onPress={() => router.push('/settings/business-hours')}
+            />
+            <MenuItem
+              icon={<User size={20} color={colors.textSecondary} />}
+              title="Exchange Rate"
+              subtitle="Customize your pricing"
+              onPress={() => router.push('/settings/exchange-rate')}
+            />
+            <MenuItem
+              icon={<CreditCard size={20} color={colors.textSecondary} />}
+              title="Currency"
+              subtitle="Choose your currency"
+              onPress={() => router.push('/settings/currency')}
+              showDivider={false}
+            />
+          </View>
         </View>
-      </View>
 
-      {/* Support Section */}
-      <View style={styles.section as ViewStyle}>
-        <Text style={styles.sectionTitle as TextStyle}>Support</Text>
-        <View style={styles.card as ViewStyle}>
-          <TouchableOpacity
-            style={styles.menuItem as ViewStyle}
-            onPress={() => router.push('/settings/help-support' as any)}
-            activeOpacity={0.7}
-          >
-            <View style={styles.itemLeft as ViewStyle}>
-              <View style={styles.iconContainer as ViewStyle}>
-                <Ionicons name="help-circle-outline" size={20} color="#323333" />
-              </View>
-              <View style={styles.textContainer as ViewStyle}>
-                <Text style={styles.itemTitle as TextStyle}>Help and support</Text>
-                <Text style={styles.itemSubtitle as TextStyle}>FAQs and contact support</Text>
-              </View>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color="#000000" />
-          </TouchableOpacity>
+        {/* Support */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Support</Text>
+          <View style={styles.sectionCard}>
+            <MenuItem
+              icon={<HelpCircle size={20} color={colors.textSecondary} />}
+              title="Help & Support"
+              subtitle="FAQs and contact support"
+              onPress={() => router.push('/settings/help-support')}
+              showDivider={false}
+            />
+          </View>
         </View>
-      </View>
 
-      {/* Logout Section */}
-      <View style={styles.section as ViewStyle}>
+        {/* Logout */}
         <TouchableOpacity
-          style={styles.logoutButton as ViewStyle}
-          onPress={() => router.push('/settings/logout' as any)}
+          style={styles.logoutButton}
+          onPress={() => router.push('/settings/logout')}
           activeOpacity={0.7}
         >
-          <Ionicons name="log-out-outline" size={20} color="#C31D1E" />
-          <Text style={styles.logoutText as TextStyle}>Logout</Text>
+          <LogOut size={20} color={colors.error} />
+          <Text style={styles.logoutText}>Log Out</Text>
         </TouchableOpacity>
-      </View>
+
+        <View style={styles.bottomSpacer} />
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -193,143 +192,157 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F5F5',
+    backgroundColor: colors.background,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
+    paddingHorizontal: layout.screenPaddingHorizontal,
+    paddingVertical: spacing.md,
   },
   backButton: {
-    padding: 4,
+    width: layout.minTouchTarget,
+    height: layout.minTouchTarget,
+    backgroundColor: colors.backgroundInput,
+    borderRadius: borderRadius.full,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   headerTitle: {
-    fontSize: 25,
-    fontWeight: '600',
-    color: '#000000',
+    fontSize: typography.fontSize.xl,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.textPrimary,
   },
   placeholder: {
-    width: 40,
+    width: layout.minTouchTarget,
   },
-  profileSection: {
-    paddingHorizontal: 20,
-    marginBottom: 20,
+  scrollContent: {
+    paddingHorizontal: layout.screenPaddingHorizontal,
+    paddingTop: spacing.lg,
   },
   profileCard: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: 16,
-    backgroundColor: '#F4F6F5',
-    borderRadius: 10,
+    backgroundColor: colors.backgroundCard,
+    padding: spacing.lg,
+    borderRadius: borderRadius.xl,
+    marginBottom: spacing.xl,
+    ...shadows.sm,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
   },
   profileLeft: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: spacing.md,
   },
   avatarContainer: {
-    position: 'relative',
-    marginRight: 12,
-  },
-  avatar: {
-    width: 50,
-    height: 50,
-    borderRadius: 40,
-    backgroundColor: '#F5F5F5',
+    width: 56,
+    height: 56,
+    borderRadius: borderRadius.full,
+    backgroundColor: colors.backgroundInput,
     justifyContent: 'center',
     alignItems: 'center',
   },
   verifiedBadge: {
     position: 'absolute',
-    bottom: 0,
-    right: 0,
-    backgroundColor: '#F4F6F5',
-    borderRadius: 10,
+    bottom: -2,
+    right: -2,
+    backgroundColor: colors.backgroundCard,
+    borderRadius: borderRadius.full,
+    padding: 2,
   },
-  profileInfo: {},
-  profileNameRow: {
+  profileInfo: {
+    gap: 4,
+  },
+  nameRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: spacing.xs,
   },
   profileName: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#000000',
-    marginRight: 6,
+    fontSize: typography.fontSize.lg,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.textPrimary,
   },
   profileRole: {
-    fontSize: 14,
-    color: '#323333',
-    marginTop: 4,
+    fontSize: typography.fontSize.sm,
+    color: colors.textTertiary,
   },
   section: {
-    marginBottom: 20,
-    paddingHorizontal: 20,
+    marginBottom: spacing.xl,
   },
   sectionTitle: {
-    fontSize: 16,
-    color: '#323333',
-    marginBottom: 10,
-    fontWeight: '400',
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.textTertiary,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+    marginBottom: spacing.sm,
+    marginLeft: spacing.xs,
   },
-  card: {
-    backgroundColor: '#F4F6F5',
-    borderRadius: 10,
-    paddingVertical: 4,
+  sectionCard: {
+    backgroundColor: colors.backgroundCard,
+    borderRadius: borderRadius.xl,
+    overflow: 'hidden',
+    ...shadows.sm,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
   },
   menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: 16,
-    paddingVertical: 20,
+    padding: spacing.md,
+    minHeight: 72,
   },
   itemLeft: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: spacing.md,
     flex: 1,
   },
   iconContainer: {
     width: 40,
     height: 40,
-    borderRadius: 30,
-    backgroundColor: '#F5F5F5',
+    borderRadius: borderRadius.full,
+    backgroundColor: colors.backgroundInput,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12,
-  },
-  textContainer: {
-    flex: 1,
   },
   itemTitle: {
-    fontSize: 16,
-    color: '#000000',
-    fontWeight: '400',
+    fontSize: typography.fontSize.md,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.textPrimary,
+    marginBottom: 2,
   },
   itemSubtitle: {
-    fontSize: 14,
-    color: '#323333',
-    marginTop: 4,
+    fontSize: typography.fontSize.sm,
+    color: colors.textTertiary,
   },
   divider: {
     height: 1,
-    backgroundColor: 'rgba(195, 29, 30, 0.1)',
+    backgroundColor: colors.divider,
     marginLeft: 68,
   },
   logoutButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 16,
-    backgroundColor: 'rgba(195, 29, 30, 0.1)',
-    borderRadius: 10,
+    backgroundColor: colors.errorLight,
+    padding: spacing.md,
+    borderRadius: borderRadius.lg,
+    marginBottom: spacing.xl,
+    gap: spacing.sm,
   },
   logoutText: {
-    fontSize: 16,
-    color: '#000000',
-    marginLeft: 8,
-    fontWeight: '400',
+    fontSize: typography.fontSize.md,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.error,
+  },
+  bottomSpacer: {
+    height: 80,
   },
 });

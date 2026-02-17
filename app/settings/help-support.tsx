@@ -1,108 +1,116 @@
-import { borderRadius, colors, spacing, typography } from '@/constants/theme';
-import { Ionicons } from '@expo/vector-icons';
+// settings/help-support.tsx
+import {
+  borderRadius,
+  colors,
+  layout,
+  spacing,
+  typography,
+} from '@/constants/theme';
 import { useRouter } from 'expo-router';
+import {
+  ArrowLeft,
+  ChevronRight,
+  HelpCircle,
+  Mail,
+  MessageCircle,
+  Phone,
+} from 'lucide-react-native';
 import React from 'react';
 import {
   StyleSheet,
   Text,
-  TextStyle,
   TouchableOpacity,
   View,
-  ViewStyle,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-interface SupportItemProps {
-  icon: string;
+interface SupportOption {
+  icon: React.ReactNode;
   title: string;
   subtitle: string;
   onPress: () => void;
-  showChevron?: boolean;
-  subtitleColor?: string;
 }
-
-const SupportItem: React.FC<SupportItemProps> = ({
-  icon,
-  title,
-  subtitle,
-  onPress,
-  showChevron = true,
-  subtitleColor = colors.primary,
-}) => (
-  <TouchableOpacity
-    style={styles.supportItem as ViewStyle}
-    onPress={onPress}
-    activeOpacity={0.7}
-  >
-    <View style={styles.itemLeft as ViewStyle}>
-      <View style={styles.iconContainer as ViewStyle}>
-        <Ionicons name={icon as any} size={20} color={colors.textSecondary} />
-      </View>
-      <View style={styles.textContainer as ViewStyle}>
-        <Text style={styles.itemTitle as TextStyle}>{title}</Text>
-        <Text style={[styles.itemSubtitle as TextStyle, { color: subtitleColor }]}>
-          {subtitle}
-        </Text>
-      </View>
-    </View>
-    {showChevron && (
-      <Ionicons name="chevron-forward" size={20} color={colors.textPrimary} />
-    )}
-  </TouchableOpacity>
-);
 
 export default function HelpSupportScreen() {
   const router = useRouter();
 
+  const options: SupportOption[] = [
+    {
+      icon: <Phone size={layout.iconSize.sm} color={colors.textSecondary} strokeWidth={1.8} />,
+      title: 'Phone Support',
+      subtitle: '+234 800 FLASH 00',
+      onPress: () => {},
+    },
+    {
+      icon: <Mail size={layout.iconSize.sm} color={colors.textSecondary} strokeWidth={1.8} />,
+      title: 'Email Support',
+      subtitle: 'merchant@flash.support',
+      onPress: () => {},
+    },
+    {
+      icon: <HelpCircle size={layout.iconSize.sm} color={colors.textSecondary} strokeWidth={1.8} />,
+      title: 'Frequently Asked Questions',
+      subtitle: 'Common questions and tips',
+      onPress: () => router.push('/settings/faq' as any),
+    },
+    {
+      icon: <MessageCircle size={layout.iconSize.sm} color={colors.textSecondary} strokeWidth={1.8} />,
+      title: 'Chat with Support',
+      subtitle: 'Get instant help from the Flash team',
+      onPress: () => router.push('/misc/chat' as any),
+    },
+  ];
+
   return (
-    <SafeAreaView style={styles.container as ViewStyle}>
-      <View style={styles.header as ViewStyle}>
+    <SafeAreaView style={styles.container}>
+      {/* Header */}
+      <View style={styles.header}>
         <TouchableOpacity
-          style={styles.backButton as ViewStyle}
+          style={styles.backButton}
           onPress={() => router.back()}
           activeOpacity={0.7}
         >
-          <Ionicons name="chevron-back" size={24} color={colors.textPrimary} />
+          <ArrowLeft
+            size={layout.iconSize.md}
+            color={colors.textPrimary}
+            strokeWidth={2}
+          />
         </TouchableOpacity>
-        <Text style={styles.headerTitle as TextStyle}>Help and support</Text>
-        <View style={styles.placeholder as ViewStyle} />
+        <Text style={styles.headerTitle}>Help & Support</Text>
+        <View style={{ width: layout.minTouchTarget }} />
       </View>
 
-      <View style={styles.content as ViewStyle}>
-        <View style={styles.supportCard as ViewStyle}>
-          <SupportItem
-            icon="call-outline"
-            title="Phone Support"
-            subtitle="+234 800 FLASH 00"
-            onPress={() => {}}
-          />
-
-          <View style={styles.divider as ViewStyle} />
-
-          <SupportItem
-            icon="mail-outline"
-            title="Email Support"
-            subtitle="merchant@flash.support"
-            onPress={() => {}}
-          />
-
-          <View style={styles.divider as ViewStyle} />
-
-          <SupportItem
-            icon="help-circle-outline"
-            title="Frequently Asked Questions"
-            subtitle="common questions and tips"
-            onPress={() => router.push('/settings/faq' as any)}
-          />
-
-          <View style={styles.divider as ViewStyle} />
-
-          <SupportItem
-            icon="chatbubbles-outline"
-            title="Chat with support"
-            subtitle="Get instant help from flash team"
-            onPress={() => router.push('/misc/chat' as any)}
-          />
+      <View style={styles.content}>
+        <View style={styles.card}>
+          {options.map((option, index) => (
+            <React.Fragment key={option.title}>
+              <TouchableOpacity
+                style={styles.supportItem}
+                onPress={option.onPress}
+                activeOpacity={0.7}
+              >
+                <View style={styles.itemLeft}>
+                  <View style={styles.iconContainer}>
+                    {option.icon}
+                  </View>
+                  <View style={styles.textContainer}>
+                    <Text style={styles.itemTitle}>{option.title}</Text>
+                    <Text style={styles.itemSubtitle}>
+                      {option.subtitle}
+                    </Text>
+                  </View>
+                </View>
+                <ChevronRight
+                  size={layout.iconSize.sm}
+                  color={colors.textMuted}
+                  strokeWidth={2}
+                />
+              </TouchableOpacity>
+              {index < options.length - 1 && (
+                <View style={styles.divider} />
+              )}
+            </React.Fragment>
+          ))}
         </View>
       </View>
     </SafeAreaView>
@@ -115,70 +123,74 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   header: {
+    height: layout.headerHeight,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
+    paddingHorizontal: layout.screenPaddingHorizontal,
   },
   backButton: {
-    padding: 4,
+    width: layout.minTouchTarget,
+    height: layout.minTouchTarget,
+    borderRadius: borderRadius.full,
+    backgroundColor: colors.backgroundInput,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   headerTitle: {
-    fontSize: typography.fontSize['4xl'],
+    fontSize: typography.fontSize.lg,
     fontWeight: typography.fontWeight.semibold,
     color: colors.textPrimary,
-  },
-  placeholder: {
-    width: 40,
+    letterSpacing: typography.letterSpacing.tight,
   },
   content: {
-    flex: 1,
-    paddingHorizontal: spacing.lg,
+    paddingHorizontal: layout.screenPaddingHorizontal,
     paddingTop: spacing.lg,
   },
-  supportCard: {
-    backgroundColor: colors.backgroundInput,
-    borderRadius: borderRadius.md,
-    padding: spacing.md,
+  card: {
+    backgroundColor: colors.backgroundCard,
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
+    overflow: 'hidden',
   },
   supportItem: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: spacing.sm,
+    padding: spacing.base,
   },
   itemLeft: {
     flexDirection: 'row',
     alignItems: 'center',
     flex: 1,
+    gap: spacing.md,
   },
   iconContainer: {
     width: 40,
     height: 40,
-    borderRadius: borderRadius.full,
-    backgroundColor: colors.background,
+    borderRadius: borderRadius.md,
+    backgroundColor: colors.backgroundInput,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: spacing.sm,
   },
   textContainer: {
     flex: 1,
+    gap: spacing['2xs'],
   },
   itemTitle: {
-    fontSize: typography.fontSize.md,
+    fontSize: typography.fontSize.base,
+    fontWeight: typography.fontWeight.medium,
     color: colors.textPrimary,
-    fontWeight: typography.fontWeight.regular,
   },
   itemSubtitle: {
-    fontSize: typography.fontSize.base,
-    marginTop: spacing.xs,
+    fontSize: typography.fontSize.sm,
     fontWeight: typography.fontWeight.regular,
+    color: colors.primary,
   },
   divider: {
     height: 1,
     backgroundColor: colors.divider,
-    marginLeft: spacing['3xl'],
-    marginVertical: spacing.xs,
+    marginLeft: 68,
   },
 });

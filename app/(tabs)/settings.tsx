@@ -1,20 +1,41 @@
-import { Ionicons } from '@expo/vector-icons';
+// (tabs)/settings.tsx
+import {
+  borderRadius,
+  colors,
+  layout,
+  shadows,
+  spacing,
+  typography,
+} from '@/constants/theme';
 import { useRouter } from 'expo-router';
-import React from 'react';
+import {
+  ArrowRightLeft,
+  BadgeCheck,
+  Bell,
+  ChevronRight,
+  CircleDollarSign,
+  Clock,
+  CreditCard,
+  HelpCircle,
+  LogOut,
+  Shield,
+  User,
+} from 'lucide-react-native';
+import React, { useState } from 'react';
 import {
   ScrollView,
   StyleSheet,
   Switch,
   Text,
-  TextStyle,
   TouchableOpacity,
   View,
-  ViewStyle,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+// ─── Settings Item ──────────────────────────────────────────────────────────
+
 interface SettingsItemProps {
-  icon: string;
+  icon: React.ReactNode;
   title: string;
   subtitle?: string;
   onPress?: () => void;
@@ -33,131 +54,203 @@ const SettingsItem: React.FC<SettingsItemProps> = ({
   showSwitch = false,
   switchValue = false,
   onSwitchChange,
-}) => {
-  return (
-    <TouchableOpacity
-      style={styles.settingsItem as ViewStyle}
-      onPress={onPress}
-      disabled={showSwitch}
-      activeOpacity={0.7}
-    >
-      <View style={styles.itemLeft as ViewStyle}>
-        <View style={styles.iconContainer as ViewStyle}>
-          <Ionicons name={icon as any} size={20} color="#323333" />
-        </View>
-        <View style={styles.textContainer as ViewStyle}>
-          <Text style={styles.itemTitle as TextStyle}>{title}</Text>
-          {subtitle && <Text style={styles.itemSubtitle as TextStyle}>{subtitle}</Text>}
-        </View>
-      </View>
-      <View style={styles.itemRight as ViewStyle}>
-        {showSwitch && (
-          <Switch
-            value={switchValue}
-            onValueChange={onSwitchChange}
-            trackColor={{ false: '#D2D6E1', true: '#0F6EC0' }}
-            thumbColor="#F4F6F5"
-          />
-        )}
-        {showChevron && !showSwitch && (
-          <Ionicons name="chevron-forward" size={20} color="#000000" />
+}) => (
+  <TouchableOpacity
+    style={styles.settingsItem}
+    onPress={onPress}
+    disabled={showSwitch}
+    activeOpacity={0.7}
+  >
+    <View style={styles.itemLeft}>
+      <View style={styles.iconContainer}>{icon}</View>
+      <View style={styles.textContainer}>
+        <Text style={styles.itemTitle}>{title}</Text>
+        {subtitle && (
+          <Text style={styles.itemSubtitle}>{subtitle}</Text>
         )}
       </View>
-    </TouchableOpacity>
-  );
-};
+    </View>
+    <View style={styles.itemRight}>
+      {showSwitch && (
+        <Switch
+          value={switchValue}
+          onValueChange={onSwitchChange}
+          trackColor={{
+            false: colors.borderLight,
+            true: colors.primary,
+          }}
+          thumbColor={colors.backgroundCard}
+        />
+      )}
+      {showChevron && !showSwitch && (
+        <ChevronRight
+          size={layout.iconSize.sm}
+          color={colors.textMuted}
+          strokeWidth={2}
+        />
+      )}
+    </View>
+  </TouchableOpacity>
+);
+
+// ─── Section Header ─────────────────────────────────────────────────────────
 
 const SectionHeader: React.FC<{ title: string }> = ({ title }) => (
-  <Text style={styles.sectionTitle as TextStyle}>{title}</Text>
+  <Text style={styles.sectionTitle}>{title}</Text>
 );
+
+// ─── Main Screen ────────────────────────────────────────────────────────────
 
 export default function SettingsScreen() {
   const router = useRouter();
-  const [notificationsEnabled, setNotificationsEnabled] = React.useState(true);
+  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
 
   return (
-    <SafeAreaView style={styles.container as ViewStyle}>
+    <SafeAreaView style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Header */}
-        <View style={styles.header as ViewStyle}>
-          <Text style={styles.headerTitle as TextStyle}>Settings</Text>
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>Settings</Text>
         </View>
 
-        {/* Profile Section */}
+        {/* Profile Card */}
         <TouchableOpacity
-          style={styles.profileSection as ViewStyle}
+          style={styles.profileSection}
           onPress={() => router.push('/settings/profile' as any)}
           activeOpacity={0.7}
         >
-          <View style={styles.profileLeft as ViewStyle}>
-            <View style={styles.avatarContainer as ViewStyle}>
-              <View style={styles.avatar as ViewStyle}>
-                <Ionicons name="person" size={24} color="#657084" />
+          <View style={styles.profileLeft}>
+            <View style={styles.avatarContainer}>
+              <View style={styles.avatar}>
+                <User
+                  size={layout.iconSize.md}
+                  color={colors.textTertiary}
+                  strokeWidth={1.8}
+                />
               </View>
-              <View style={styles.verifiedBadge as ViewStyle}>
-                <Ionicons name="checkmark-circle" size={16} color="#128807" />
+              <View style={styles.verifiedBadge}>
+                <BadgeCheck
+                  size={16}
+                  color={colors.success}
+                  strokeWidth={2.5}
+                  fill={colors.successLight}
+                />
               </View>
             </View>
-            <View style={styles.profileInfo as ViewStyle}>
-              <View style={styles.profileNameRow as ViewStyle}>
-                <Text style={styles.profileName as TextStyle}>Cryptoguru</Text>
-                <Ionicons name="checkmark-circle" size={16} color="#128807" />
+            <View style={styles.profileInfo}>
+              <View style={styles.profileNameRow}>
+                <Text style={styles.profileName}>Cryptoguru</Text>
+                <BadgeCheck
+                  size={14}
+                  color={colors.success}
+                  strokeWidth={2.5}
+                />
               </View>
-              <Text style={styles.profileRole as TextStyle}>Merchant</Text>
+              <Text style={styles.profileRole}>Merchant</Text>
             </View>
           </View>
-          <Ionicons name="chevron-forward" size={20} color="#000000" />
+          <ChevronRight
+            size={layout.iconSize.sm}
+            color={colors.textMuted}
+            strokeWidth={2}
+          />
         </TouchableOpacity>
 
         {/* Account Section */}
-        <View style={styles.section as ViewStyle}>
+        <View style={styles.section}>
           <SectionHeader title="Account" />
-          <View style={styles.card as ViewStyle}>
+          <View style={styles.card}>
             <SettingsItem
-              icon="card-outline"
-              title="Bank account"
+              icon={
+                <CreditCard
+                  size={layout.iconSize.sm}
+                  color={colors.textSecondary}
+                  strokeWidth={1.8}
+                />
+              }
+              title="Bank Account"
               subtitle="Manage payout methods"
-              onPress={() => router.push('/settings/bank-details' as any)}
+              onPress={() =>
+                router.push('/settings/bank-details' as any)
+              }
             />
-            <View style={styles.divider as ViewStyle} />
+            <View style={styles.divider} />
             <SettingsItem
-              icon="shield-checkmark-outline"
+              icon={
+                <Shield
+                  size={layout.iconSize.sm}
+                  color={colors.textSecondary}
+                  strokeWidth={1.8}
+                />
+              }
               title="Security"
-              subtitle="PIN, biometric, and KYC settings"
-              onPress={() => router.push('/settings/security' as any)}
+              subtitle="PIN, biometric & KYC settings"
+              onPress={() =>
+                router.push('/settings/security' as any)
+              }
             />
           </View>
         </View>
 
-        {/* Business Settings Section */}
-        <View style={styles.section as ViewStyle}>
-          <SectionHeader title="Business settings" />
-          <View style={styles.card as ViewStyle}>
+        {/* Business Settings */}
+        <View style={styles.section}>
+          <SectionHeader title="Business" />
+          <View style={styles.card}>
             <SettingsItem
-              icon="time-outline"
-              title="Business hours"
-              subtitle="Mon-Fri: 9:00 AM - 6:00 PM"
-              onPress={() => router.push('/settings/business-hours' as any)}
+              icon={
+                <Clock
+                  size={layout.iconSize.sm}
+                  color={colors.textSecondary}
+                  strokeWidth={1.8}
+                />
+              }
+              title="Business Hours"
+              subtitle="Mon–Fri: 9:00 AM – 6:00 PM"
+              onPress={() =>
+                router.push('/settings/business-hours' as any)
+              }
             />
-            <View style={styles.divider as ViewStyle} />
+            <View style={styles.divider} />
             <SettingsItem
-              icon="swap-horizontal-outline"
-              title="Exchange rate"
+              icon={
+                <ArrowRightLeft
+                  size={layout.iconSize.sm}
+                  color={colors.textSecondary}
+                  strokeWidth={1.8}
+                />
+              }
+              title="Exchange Rate"
               subtitle="Customize your pricing"
-              onPress={() => router.push('/settings/exchange-rate' as any)}
+              onPress={() =>
+                router.push('/settings/exchange-rate' as any)
+              }
             />
-            <View style={styles.divider as ViewStyle} />
+            <View style={styles.divider} />
             <SettingsItem
-              icon="cash-outline"
+              icon={
+                <CircleDollarSign
+                  size={layout.iconSize.sm}
+                  color={colors.textSecondary}
+                  strokeWidth={1.8}
+                />
+              }
               title="Currency"
               subtitle="Choose your currency"
-              onPress={() => router.push('/settings/currency' as any)}
+              onPress={() =>
+                router.push('/settings/currency' as any)
+              }
             />
-            <View style={styles.divider as ViewStyle} />
+            <View style={styles.divider} />
             <SettingsItem
-              icon="notifications-outline"
+              icon={
+                <Bell
+                  size={layout.iconSize.sm}
+                  color={colors.textSecondary}
+                  strokeWidth={1.8}
+                />
+              }
               title="Notifications"
-              subtitle="Allow notifications"
+              subtitle="Allow push notifications"
               showChevron={false}
               showSwitch
               switchValue={notificationsEnabled}
@@ -166,33 +259,44 @@ export default function SettingsScreen() {
           </View>
         </View>
 
-        {/* Support Section */}
-        <View style={styles.section as ViewStyle}>
+        {/* Support */}
+        <View style={styles.section}>
           <SectionHeader title="Support" />
-          <View style={styles.card as ViewStyle}>
+          <View style={styles.card}>
             <SettingsItem
-              icon="help-circle-outline"
-              title="Help and support"
+              icon={
+                <HelpCircle
+                  size={layout.iconSize.sm}
+                  color={colors.textSecondary}
+                  strokeWidth={1.8}
+                />
+              }
+              title="Help & Support"
               subtitle="FAQs and contact support"
-              onPress={() => router.push('/settings/help-support' as any)}
+              onPress={() =>
+                router.push('/settings/help-support' as any)
+              }
             />
           </View>
         </View>
 
-        {/* Logout Section */}
-        <View style={styles.section as ViewStyle}>
+        {/* Logout */}
+        <View style={styles.section}>
           <TouchableOpacity
-            style={styles.logoutButton as ViewStyle}
+            style={styles.logoutButton}
             onPress={() => router.push('/settings/logout' as any)}
             activeOpacity={0.7}
           >
-            <Ionicons name="log-out-outline" size={20} color="#C31D1E" />
-            <Text style={styles.logoutText as TextStyle}>Logout</Text>
+            <LogOut
+              size={layout.iconSize.sm}
+              color={colors.error}
+              strokeWidth={1.8}
+            />
+            <Text style={styles.logoutText}>Logout</Text>
           </TouchableOpacity>
         </View>
 
-        {/* Spacer for bottom navigation */}
-        <View style={styles.bottomSpacer as ViewStyle} />
+        <View style={styles.bottomSpacer} />
       </ScrollView>
     </SafeAreaView>
   );
@@ -201,26 +305,32 @@ export default function SettingsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F5F5',
+    backgroundColor: colors.background,
   },
   header: {
-    paddingHorizontal: 20,
-    paddingVertical: 16,
+    paddingHorizontal: layout.screenPaddingHorizontal,
+    paddingVertical: spacing.base,
   },
   headerTitle: {
-    fontSize: 25,
-    fontWeight: '600',
-    color: '#000000',
+    fontSize: typography.fontSize['3xl'],
+    fontWeight: typography.fontWeight.bold,
+    color: colors.textPrimary,
+    letterSpacing: typography.letterSpacing.tight,
   },
+
+  // Profile
   profileSection: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: 16,
-    marginHorizontal: 20,
-    marginBottom: 16,
-    backgroundColor: '#F4F6F5',
-    borderRadius: 10,
+    padding: spacing.base,
+    marginHorizontal: layout.screenPaddingHorizontal,
+    marginBottom: spacing.base,
+    backgroundColor: colors.backgroundCard,
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
+    ...shadows.sm,
   },
   profileLeft: {
     flexDirection: 'row',
@@ -228,60 +338,68 @@ const styles = StyleSheet.create({
   },
   avatarContainer: {
     position: 'relative',
-    marginRight: 12,
+    marginRight: spacing.md,
   },
   avatar: {
-    width: 50,
-    height: 50,
-    borderRadius: 40,
-    backgroundColor: '#F5F5F5',
+    width: layout.avatarSize.lg,
+    height: layout.avatarSize.lg,
+    borderRadius: borderRadius.full,
+    backgroundColor: colors.backgroundInput,
     justifyContent: 'center',
     alignItems: 'center',
   },
   verifiedBadge: {
     position: 'absolute',
-    bottom: 0,
-    right: 0,
-    backgroundColor: '#F4F6F5',
-    borderRadius: 10,
+    bottom: -2,
+    right: -2,
+    backgroundColor: colors.backgroundCard,
+    borderRadius: borderRadius.full,
+    padding: 1,
   },
-  profileInfo: {},
+  profileInfo: {
+    gap: spacing.xs,
+  },
   profileNameRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: spacing.xs,
   },
   profileName: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#000000',
-    marginRight: 6,
+    fontSize: typography.fontSize.md,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.textPrimary,
   },
   profileRole: {
-    fontSize: 14,
-    color: '#323333',
-    marginTop: 4,
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.regular,
+    color: colors.textTertiary,
   },
+
+  // Sections
   section: {
-    marginBottom: 20,
-    paddingHorizontal: 20,
+    marginBottom: spacing.lg,
+    paddingHorizontal: layout.screenPaddingHorizontal,
   },
   sectionTitle: {
-    fontSize: 16,
-    color: '#323333',
-    marginBottom: 10,
-    fontWeight: '400',
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.textTertiary,
+    textTransform: 'uppercase',
+    letterSpacing: typography.letterSpacing.wide,
+    marginBottom: spacing.sm,
   },
   card: {
-    backgroundColor: '#F4F6F5',
-    borderRadius: 10,
-    paddingVertical: 4,
+    backgroundColor: colors.backgroundCard,
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
+    overflow: 'hidden',
   },
   settingsItem: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: 16,
-    paddingVertical: 20,
+    padding: spacing.base,
   },
   itemLeft: {
     flexDirection: 'row',
@@ -291,47 +409,51 @@ const styles = StyleSheet.create({
   iconContainer: {
     width: 40,
     height: 40,
-    borderRadius: 30,
-    backgroundColor: '#F5F5F5',
+    borderRadius: borderRadius.md,
+    backgroundColor: colors.backgroundInput,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12,
+    marginRight: spacing.md,
   },
   textContainer: {
     flex: 1,
+    gap: spacing['2xs'],
   },
   itemTitle: {
-    fontSize: 16,
-    color: '#000000',
-    fontWeight: '400',
+    fontSize: typography.fontSize.base,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.textPrimary,
   },
   itemSubtitle: {
-    fontSize: 14,
-    color: '#323333',
-    marginTop: 4,
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.regular,
+    color: colors.textTertiary,
   },
   itemRight: {
-    marginLeft: 12,
+    marginLeft: spacing.md,
   },
   divider: {
     height: 1,
-    backgroundColor: 'rgba(195, 29, 30, 0.1)',
+    backgroundColor: colors.divider,
     marginLeft: 68,
   },
+
+  // Logout
   logoutButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 16,
-    backgroundColor: 'rgba(195, 29, 30, 0.1)',
-    borderRadius: 10,
+    padding: spacing.base,
+    backgroundColor: colors.errorLight,
+    borderRadius: borderRadius.lg,
+    gap: spacing.sm,
   },
   logoutText: {
-    fontSize: 16,
-    color: '#000000',
-    marginLeft: 8,
-    fontWeight: '400',
+    fontSize: typography.fontSize.base,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.error,
   },
+
   bottomSpacer: {
     height: 100,
   },

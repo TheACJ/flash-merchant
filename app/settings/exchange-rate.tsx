@@ -1,96 +1,120 @@
-import { borderRadius, colors, layout, spacing, typography } from '@/constants/theme';
-import { Ionicons } from '@expo/vector-icons';
+// settings/exchange-rate.tsx
+import {
+  borderRadius,
+  colors,
+  layout,
+  shadows,
+  spacing,
+  typography,
+} from '@/constants/theme';
 import { useRouter } from 'expo-router';
+import {
+  ArrowLeft,
+  ArrowRightLeft,
+  ChevronRight,
+  TrendingUp,
+} from 'lucide-react-native';
 import React from 'react';
 import {
+  ScrollView,
   StyleSheet,
   Text,
-  TextStyle,
   TouchableOpacity,
   View,
-  ViewStyle,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-const CryptoRateItem: React.FC<{
-  icon: string;
+interface CryptoRate {
+  symbol: string;
   name: string;
   yourRate: string;
   marketRate: string;
-}> = ({ icon, name, yourRate, marketRate }) => (
-  <View style={styles.cryptoItem as ViewStyle}>
-    <View style={styles.cryptoHeader as ViewStyle}>
-      <View style={styles.cryptoIcon as ViewStyle}>
-        <Text style={styles.cryptoIconText as TextStyle}>{icon}</Text>
-      </View>
-      <Text style={styles.cryptoName as TextStyle}>{name}</Text>
-    </View>
-    <View style={styles.rateContainer as ViewStyle}>
-      <Text style={styles.yourRateLabel as TextStyle}>Your rate</Text>
-      <View style={styles.rateInput as ViewStyle}>
-        <Text style={styles.rateValue as TextStyle}>{yourRate}</Text>
-      </View>
-      <View style={styles.marketRateRow as ViewStyle}>
-        <Text style={styles.marketRateLabel as TextStyle}>Market rate</Text>
-        <Text style={styles.marketRateValue as TextStyle}>{marketRate}</Text>
-      </View>
-    </View>
-  </View>
-);
+}
+
+const CRYPTO_RATES: CryptoRate[] = [
+  { symbol: 'SOL', name: 'Solana', yourRate: '$2,500.00', marketRate: '$2,670.00' },
+  { symbol: 'ZEC', name: 'Zcash', yourRate: '$2,500.00', marketRate: '$2,670.00' },
+  { symbol: 'BTC', name: 'Bitcoin', yourRate: '$2,500.00', marketRate: '$2,670.00' },
+];
 
 export default function ExchangeRateScreen() {
   const router = useRouter();
 
-  const cryptos = [
-    { icon: '◎', name: 'Solana', yourRate: '$2,500.00', marketRate: '2,6700' },
-    { icon: 'Z', name: 'Zcash', yourRate: '$2,500.00', marketRate: '2,6700' },
-    { icon: '₿', name: 'Bitcoin', yourRate: '$2,500.00', marketRate: '2,6700' },
-  ];
-
   return (
-    <SafeAreaView style={styles.container as ViewStyle}>
-      <View style={styles.header as ViewStyle}>
+    <SafeAreaView style={styles.container}>
+      {/* Header */}
+      <View style={styles.header}>
         <TouchableOpacity
-          style={styles.backButton as ViewStyle}
+          style={styles.backButton}
           onPress={() => router.back()}
           activeOpacity={0.7}
         >
-          <Ionicons name="chevron-back" size={24} color={colors.textPrimary} />
+          <ArrowLeft
+            size={layout.iconSize.md}
+            color={colors.textPrimary}
+            strokeWidth={2}
+          />
         </TouchableOpacity>
-        <Text style={styles.headerTitle as TextStyle}>Exchange rate</Text>
-        <View style={styles.placeholder as ViewStyle} />
+        <Text style={styles.headerTitle}>Exchange Rate</Text>
+        <View style={{ width: layout.minTouchTarget }} />
       </View>
 
-      <View style={styles.content as ViewStyle}>
-        {cryptos.map((crypto) => (
-          <View key={crypto.name} style={styles.cryptoCard as ViewStyle}>
-            <View style={styles.cryptoInfo as ViewStyle}>
-              <View style={styles.cryptoIconBg as ViewStyle}>
-                <Text style={styles.cryptoIconText as TextStyle}>{crypto.icon}</Text>
+      <ScrollView
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+      >
+        {CRYPTO_RATES.map((crypto) => (
+          <View key={crypto.name} style={styles.cryptoCard}>
+            {/* Crypto Header */}
+            <View style={styles.cryptoHeader}>
+              <View style={styles.cryptoIcon}>
+                <Text style={styles.cryptoSymbol}>{crypto.symbol}</Text>
               </View>
-              <Text style={styles.cryptoName as TextStyle}>{crypto.name}</Text>
+              <Text style={styles.cryptoName}>{crypto.name}</Text>
             </View>
-            <View style={styles.cryptoRates as ViewStyle}>
-              <Text style={styles.yourRateLabel as TextStyle}>Your rate</Text>
-              <View style={styles.rateBox as ViewStyle}>
-                <Text style={styles.rateText as TextStyle}>{crypto.yourRate}</Text>
+
+            {/* Your Rate */}
+            <View style={styles.rateSection}>
+              <Text style={styles.rateLabel}>Your Rate</Text>
+              <TouchableOpacity style={styles.rateInput} activeOpacity={0.7}>
+                <Text style={styles.rateValue}>{crypto.yourRate}</Text>
+                <ArrowRightLeft
+                  size={14}
+                  color={colors.primary}
+                  strokeWidth={1.8}
+                />
+              </TouchableOpacity>
+            </View>
+
+            {/* Market Rate */}
+            <View style={styles.marketRow}>
+              <View style={styles.marketLabelRow}>
+                <TrendingUp
+                  size={12}
+                  color={colors.success}
+                  strokeWidth={2}
+                />
+                <Text style={styles.marketLabel}>Market Rate</Text>
               </View>
-              <View style={styles.marketRow as ViewStyle}>
-                <Text style={styles.marketLabel as TextStyle}>Market rate</Text>
-                <Text style={styles.marketValue as TextStyle}>{crypto.marketRate}</Text>
-              </View>
+              <Text style={styles.marketValue}>{crypto.marketRate}</Text>
             </View>
           </View>
         ))}
-      </View>
+      </ScrollView>
 
-      <View style={styles.buttonContainer as ViewStyle}>
+      {/* Save Button */}
+      <View style={styles.buttonContainer}>
         <TouchableOpacity
-          style={styles.nextButton as ViewStyle}
+          style={styles.saveButton}
           onPress={() => router.back()}
-          activeOpacity={0.7}
+          activeOpacity={0.85}
         >
-          <Text style={styles.nextButtonText as TextStyle}>Next</Text>
+          <Text style={styles.saveButtonText}>Save Rates</Text>
+          <ChevronRight
+            size={layout.iconSize.sm}
+            color={colors.textWhite}
+            strokeWidth={2.5}
+          />
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -103,153 +127,123 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   header: {
+    height: layout.headerHeight,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
+    paddingHorizontal: layout.screenPaddingHorizontal,
   },
   backButton: {
-    padding: 4,
-  },
-  headerTitle: {
-    fontSize: typography.fontSize['4xl'],
-    fontWeight: typography.fontWeight.semibold,
-    color: colors.textPrimary,
-  },
-  placeholder: {
-    width: 40,
-  },
-  content: {
-    flex: 1,
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.sm,
-  },
-  cryptoCard: {
-    backgroundColor: colors.backgroundInput,
-    borderRadius: borderRadius.sm,
-    marginBottom: spacing.md,
-    padding: spacing.md,
-  },
-  cryptoInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: spacing.sm,
-  },
-  cryptoIconBg: {
-    width: 40,
-    height: 40,
+    width: layout.minTouchTarget,
+    height: layout.minTouchTarget,
     borderRadius: borderRadius.full,
-    backgroundColor: colors.shadow,
+    backgroundColor: colors.backgroundInput,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: spacing.sm,
   },
-  cryptoIconText: {
-    color: colors.backgroundInput,
+  headerTitle: {
     fontSize: typography.fontSize.lg,
     fontWeight: typography.fontWeight.semibold,
+    color: colors.textPrimary,
+    letterSpacing: typography.letterSpacing.tight,
+  },
+  content: {
+    paddingHorizontal: layout.screenPaddingHorizontal,
+    paddingTop: spacing.base,
+    gap: spacing.md,
+    paddingBottom: spacing.xl,
+  },
+  cryptoCard: {
+    backgroundColor: colors.backgroundCard,
+    borderRadius: borderRadius.lg,
+    padding: spacing.base,
+    gap: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
+  },
+  cryptoHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+  },
+  cryptoIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: borderRadius.md,
+    backgroundColor: colors.textPrimary,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  cryptoSymbol: {
+    fontSize: typography.fontSize.xs,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.textWhite,
+    letterSpacing: typography.letterSpacing.wide,
   },
   cryptoName: {
     fontSize: typography.fontSize.md,
+    fontWeight: typography.fontWeight.semibold,
     color: colors.textPrimary,
-    fontWeight: typography.fontWeight.medium,
   },
-  cryptoRates: {
-    paddingTop: spacing.xs,
+  rateSection: {
+    gap: spacing.xs,
   },
-  yourRateLabel: {
-    fontSize: typography.fontSize.base,
-    color: colors.textSecondary,
-    marginBottom: spacing.xs,
+  rateLabel: {
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.regular,
+    color: colors.textTertiary,
   },
-  rateBox: {
-    backgroundColor: colors.background,
+  rateInput: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: colors.backgroundInput,
     borderRadius: borderRadius.sm,
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.md,
-    marginBottom: spacing.xs,
   },
-  rateText: {
+  rateValue: {
     fontSize: typography.fontSize.md,
+    fontWeight: typography.fontWeight.semibold,
     color: colors.success,
-    fontWeight: typography.fontWeight.medium,
   },
   marketRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
+  marketLabelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
   marketLabel: {
-    fontSize: typography.fontSize.base,
-    color: colors.textPrimary,
+    fontSize: typography.fontSize.sm,
     fontWeight: typography.fontWeight.medium,
+    color: colors.textSecondary,
   },
   marketValue: {
     fontSize: typography.fontSize.base,
+    fontWeight: typography.fontWeight.semibold,
     color: colors.success,
-    fontWeight: typography.fontWeight.medium,
-  },
-  cryptoItem: {
-    marginBottom: spacing.lg,
-  },
-  cryptoHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: spacing.sm,
-  },
-  cryptoIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: borderRadius.full,
-    backgroundColor: colors.shadow,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: spacing.sm,
-  },
-  rateContainer: {
-    paddingTop: spacing.xs,
-  },
-  rateInput: {
-    backgroundColor: colors.background,
-    borderRadius: borderRadius.sm,
-    padding: spacing.sm,
-    marginBottom: spacing.xs,
-  },
-  rateValue: {
-    fontSize: typography.fontSize.md,
-    color: colors.success,
-    fontWeight: typography.fontWeight.medium,
-  },
-  marketRateRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  marketRateLabel: {
-    fontSize: typography.fontSize.base,
-    color: colors.textPrimary,
-    fontWeight: typography.fontWeight.medium,
-  },
-  marketRateValue: {
-    fontSize: typography.fontSize.base,
-    color: colors.success,
-    fontWeight: typography.fontWeight.medium,
   },
   buttonContainer: {
-    paddingHorizontal: spacing.lg,
+    paddingHorizontal: layout.screenPaddingHorizontal,
     paddingBottom: spacing['2xl'],
   },
-  nextButton: {
+  saveButton: {
     height: layout.buttonHeight,
     backgroundColor: colors.primary,
     borderRadius: borderRadius.lg,
     justifyContent: 'center',
     alignItems: 'center',
+    flexDirection: 'row',
+    gap: spacing.sm,
+    ...shadows.button,
   },
-  nextButtonText: {
+  saveButtonText: {
     fontSize: typography.fontSize.md,
-    color: colors.textLight,
-    fontWeight: typography.fontWeight.regular,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.textWhite,
   },
 });

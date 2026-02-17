@@ -111,12 +111,28 @@ class MerchantApiService {
     // Request interceptor to add auth token and log requests
     this.api.interceptors.request.use(
       async (config) => {
-        // Add auth token
-        if (!this.authToken) {
-          this.authToken = await SecureStore.getItemAsync(STORAGE_KEYS.session_token);
-        }
-        if (this.authToken) {
-          config.headers.Authorization = `Bearer ${this.authToken}`;
+        // Check if this request should skip authentication
+        const skipAuth = (config as any).skipAuth === true;
+        
+        // Only add auth token if not skipped
+        if (!skipAuth) {
+          // Always try to get auth token from memory first, then SecureStore
+          if (!this.authToken) {
+            try {
+              const storedToken = await SecureStore.getItemAsync(STORAGE_KEYS.session_token);
+              if (storedToken) {
+                this.authToken = storedToken;
+                console.log('🔑 Retrieved token from SecureStore:', storedToken.substring(0, 20) + '...');
+              }
+            } catch (e) {
+              console.error('Failed to get token from SecureStore:', e);
+            }
+          }
+          if (this.authToken) {
+            config.headers.Authorization = `Bearer ${this.authToken}`;
+          } else {
+            console.log('⚠️ No auth token available for request:', config.url);
+          }
         }
 
         // Log request
@@ -124,7 +140,8 @@ class MerchantApiService {
           method: config.method?.toUpperCase(),
           url: config.url,
           baseURL: config.baseURL,
-          headers: config.headers,
+          hasAuth: !!config.headers.Authorization,
+          skipAuth: skipAuth,
           data: config.data,
           params: config.params,
         });
@@ -159,7 +176,9 @@ class MerchantApiService {
           message: error.message,
         });
 
-        if (error.response?.status === 401) {
+        // Only clear auth token on 401 for authenticated requests
+        const skipAuth = (error.config as any)?.skipAuth === true;
+        if (error.response?.status === 401 && !skipAuth) {
           console.log('🔒 Unauthorized - Clearing auth token');
           await this.clearAuth();
         }
@@ -174,6 +193,9 @@ class MerchantApiService {
     console.log('🔑 Setting auth token:', token.substring(0, 20) + '...');
     this.authToken = token;
     await SecureStore.setItemAsync(STORAGE_KEYS.session_token, token);
+    // Verify it was stored
+    const verified = await SecureStore.getItemAsync(STORAGE_KEYS.session_token);
+    console.log('🔑 Token verified in SecureStore:', verified ? 'YES' : 'NO');
   }
 
   async clearAuth(): Promise<void> {
@@ -230,7 +252,8 @@ class MerchantApiService {
   }
 
   async checkTagAvailability(tag: string): Promise<ApiResponse<{ available: boolean }>> {
-    const response = await this.api.get('/tag/check-tag/', { params: { tag } });
+    // This is a public endpoint - don't require auth
+    const response = await this.api.get('/tag/check-tag/', { params: { tag }, skipAuth: true } as any);
     return response.data;
   }
 
