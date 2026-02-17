@@ -43,6 +43,7 @@ export default function CreateTag() {
   const [tagStatus, setTagStatus] = useState<TagStatus>('idle');
   const [loading, setLoading] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isSubmittingRef = useRef(false);
 
   const checkTagAvailability = useCallback(async (value: string) => {
     if (debounceRef.current) {
@@ -80,26 +81,68 @@ export default function CreateTag() {
 
   const handleNext = async () => {
     if (tagStatus !== 'available') return;
+    
+    // Prevent double submission
+    if (isSubmittingRef.current) {
+      console.log('Already submitting, ignoring duplicate request');
+      return;
+    }
+    
+    isSubmittingRef.current = true;
     setLoading(true);
+    
     try {
       const response = await merchantApi.addMerchantTag({ tag: tag.trim() });
 
-      if (response.success) {
+      console.log('🏷️ Tag creation response:', JSON.stringify(response, null, 2));
+
+      // Check for success - backend returns status 200 and message on success
+      // The response structure is: { data: { merchant, tag }, message: "...", status: 200 }
+      const isSuccess = response.status === 200 || 
+                        response.message?.includes('successfully') ||
+                        response.data?.merchant?.tag;
+      
+      if (isSuccess) {
         await completeOnboarding();
-        Alert.alert('Success', 'Merchant tag created successfully!', [
+        Alert.alert('Success', response.message || 'Merchant tag created successfully!', [
           {
             text: 'Continue',
             onPress: () => router.replace('/auth/setup/bank_setup'),
           },
         ]);
       } else {
-        Alert.alert('Error', response.error || 'Failed to create tag');
+        // Check if the error is "Merchant already has a tag" - this means success in a way
+        if (response.error?.includes('already has a tag') || response.data?.error?.includes('already has a tag')) {
+          await completeOnboarding();
+          Alert.alert('Success', 'Merchant tag already exists!', [
+            {
+              text: 'Continue',
+              onPress: () => router.replace('/auth/setup/bank_setup'),
+            },
+          ]);
+        } else {
+          const errorMsg = response.error || response.data?.error || response.message || 'Failed to create tag';
+          Alert.alert('Error', errorMsg);
+        }
       }
     } catch (error) {
+      console.error('🏷️ Tag creation error:', error);
       const err = merchantApi.handleError(error);
-      Alert.alert('Error', err.error);
+      // Check if the error is "Merchant already has a tag"
+      if (err.error?.includes('already has a tag')) {
+        await completeOnboarding();
+        Alert.alert('Success', 'Merchant tag already exists!', [
+          {
+            text: 'Continue',
+            onPress: () => router.replace('/auth/setup/bank_setup'),
+          },
+        ]);
+      } else {
+        Alert.alert('Error', err.error);
+      }
     } finally {
       setLoading(false);
+      isSubmittingRef.current = false;
     }
   };
 
