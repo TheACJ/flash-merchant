@@ -193,8 +193,9 @@ class MerchantApiService {
   async registerComplete(data: MerchantRegistrationComplete): Promise<ApiResponse> {
     console.log('✅ Completing registration with session:', data.session_token.substring(0, 10) + '...');
     const response = await this.api.post('/register/complete/', data);
-    if (response.data.token) {
-      await this.setAuthToken(response.data.token);
+    // Backend returns 'access' token (JWT), not 'token'
+    if (response.data.access) {
+      await this.setAuthToken(response.data.access);
     }
     return response.data;
   }
@@ -208,8 +209,9 @@ class MerchantApiService {
   async loginComplete(data: MerchantLoginComplete): Promise<ApiResponse> {
     console.log('🔓 Completing login for:', data.phone_number);
     const response = await this.api.post('/login/complete/', data);
-    if (response.data.token) {
-      await this.setAuthToken(response.data.token);
+    // Backend returns 'access' token (JWT), not 'token'
+    if (response.data.access) {
+      await this.setAuthToken(response.data.access);
     }
     return response.data;
   }

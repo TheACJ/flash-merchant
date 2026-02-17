@@ -89,7 +89,7 @@ export default function CreateTag() {
         Alert.alert('Success', 'Merchant tag created successfully!', [
           {
             text: 'Continue',
-            onPress: () => router.replace('/(tabs)/home'),
+            onPress: () => router.replace('/auth/setup/bank_setup'),
           },
         ]);
       } else {

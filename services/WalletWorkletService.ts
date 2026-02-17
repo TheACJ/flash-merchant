@@ -2,7 +2,6 @@ import { STORAGE_KEYS } from '@/constants/storage';
 import { Mnemonic, Wallet } from 'ethers';
 import * as Crypto from 'expo-crypto';
 import * as SecureStore from 'expo-secure-store';
-import { defaultContext, runOnJS, WorkletsContext } from 'react-native-worklets';
 import { v4 as uuidv4 } from 'uuid';
 import { setPrivateKeyAsync } from '../utils/SecureStoreWrapper';
 import binanceService from './BinanceService';
@@ -55,13 +54,23 @@ class WalletWorkletService {
    */
   subscribe(listener: (status: WalletGenerationStatus) => void): () => void {
     this.listeners.push(listener);
-    // Immediately notify with current status
-    listener(this.generationStatus);
     
-    // Return unsubscribe function
-    return () => {
+    // Create unsubscribe function first
+    let unsubscribed = false;
+    const unsubscribe = () => {
+      if (unsubscribed) return;
+      unsubscribed = true;
       this.listeners = this.listeners.filter(l => l !== listener);
     };
+    
+    // Notify with current status asynchronously so unsubscribe is defined first
+    setTimeout(() => {
+      if (!unsubscribed) {
+        listener(this.generationStatus);
+      }
+    }, 0);
+    
+    return unsubscribe;
   }
 
   /**

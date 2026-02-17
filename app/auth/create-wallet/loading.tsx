@@ -7,7 +7,7 @@ import {
   spacing,
   typography,
 } from '@/constants/theme';
-import MerchantWalletService from '@/services/MerchantWalletService';
+import walletWorkletService from '@/services/WalletWorkletService';
 import { addWallet } from '@/store/slices/merchantWalletSlice';
 import { setOnboardingStep } from '@/utils/onboarding';
 import { router } from 'expo-router';
@@ -89,17 +89,23 @@ export default function LoadingWalletsScreen() {
   }, [progress, progressAnim]);
 
   useEffect(() => {
-    createWallets();
+    finalizeWalletSetup();
   }, []);
 
-  const createWallets = async () => {
+  const finalizeWalletSetup = async () => {
     try {
       setCurrentChain('Ethereum');
       setProgress(0.15);
 
-      const wallets = await MerchantWalletService.createWallet();
+      // Check if wallets are already generated (from background process)
+      let wallets = walletWorkletService.getStatus().wallets;
+      
+      if (!wallets) {
+        // Wait for background wallet generation to complete
+        wallets = await walletWorkletService.waitForCompletion();
+      }
 
-      // Simulate step-by-step progress
+      // Animate step-by-step progress for UX
       setCompletedSteps(['ethereum']);
       setCurrentChain('Solana');
       setProgress(0.4);
@@ -127,8 +133,36 @@ export default function LoadingWalletsScreen() {
       await delay(600);
       router.replace('/auth/create-wallet/seed_phrase');
     } catch (error) {
-      console.error('Failed to create wallets:', error);
-      router.back();
+      console.error('Failed to finalize wallet setup:', error);
+      // Check if wallets exist before trying to recreate
+      const existingWallets = walletWorkletService.getStatus().wallets;
+      if (existingWallets) {
+        // Wallets exist, just proceed
+        dispatch(addWallet(existingWallets.ethereum));
+        dispatch(addWallet(existingWallets.solana));
+        dispatch(addWallet(existingWallets.bitcoin));
+        dispatch(addWallet(existingWallets.bnb));
+        await setOnboardingStep(ONBOARDING_STEPS.tag);
+        router.replace('/auth/create-wallet/seed_phrase');
+        return;
+      }
+      
+      // Only create new wallets if none exist
+      try {
+        const wallets = await walletWorkletService.createWalletAsync();
+        
+        // Dispatch wallets
+        dispatch(addWallet(wallets.ethereum));
+        dispatch(addWallet(wallets.solana));
+        dispatch(addWallet(wallets.bitcoin));
+        dispatch(addWallet(wallets.bnb));
+        
+        await setOnboardingStep(ONBOARDING_STEPS.tag);
+        router.replace('/auth/create-wallet/seed_phrase');
+      } catch (retryError) {
+        console.error('Retry also failed:', retryError);
+        router.back();
+      }
     }
   };
 

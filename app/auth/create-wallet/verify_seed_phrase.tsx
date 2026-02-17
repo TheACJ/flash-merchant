@@ -100,7 +100,7 @@ export default function VerifySeedPhrase() {
           [
             {
               text: 'Continue',
-              onPress: () => router.replace('/(tabs)/home'),
+              onPress: () => router.replace('/auth/create-wallet/notice'),
             },
           ]
         );
