@@ -24,7 +24,6 @@ import {
   ActivityIndicator,
   Alert,
   Keyboard,
-  SafeAreaView,
   StatusBar,
   StyleSheet,
   Text,
@@ -33,6 +32,8 @@ import {
   TouchableWithoutFeedback,
   View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+
 
 const TAKEN_TAGS = ['admin', 'flash', 'merchant', 'test', 'user'];
 
@@ -82,16 +83,16 @@ export default function CreateTag() {
 
   const handleNext = async () => {
     if (tagStatus !== 'available') return;
-    
+
     // Prevent double submission
     if (isSubmittingRef.current) {
       console.log('Already submitting, ignoring duplicate request');
       return;
     }
-    
+
     isSubmittingRef.current = true;
     setLoading(true);
-    
+
     try {
       const response = await merchantApi.addMerchantTag({ tag: tag.trim() });
 
@@ -99,10 +100,10 @@ export default function CreateTag() {
 
       // Check for success - backend returns status 200 and message on success
       // The response structure is: { data: { merchant, tag }, message: "...", status: 200 }
-      const isSuccess = response.status === 200 || 
-                        response.message?.includes('successfully') ||
-                        response.data?.merchant?.tag;
-      
+      const isSuccess = response.status === 200 ||
+        response.message?.includes('successfully') ||
+        response.data?.merchant?.tag;
+
       if (isSuccess) {
         await setOnboardingStep(ONBOARDING_STEPS.bank_setup);
         Alert.alert('Success', response.message || 'Merchant tag created successfully!', [
@@ -172,8 +173,9 @@ export default function CreateTag() {
   const statusConfig = getStatusConfig();
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="dark-content" backgroundColor={colors.background} />
+    <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
+      <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent />
+
 
       {/* Header */}
       <View style={styles.header}>
@@ -297,7 +299,7 @@ export default function CreateTag() {
               style={[
                 styles.nextButton,
                 (tagStatus !== 'available' || loading) &&
-                  styles.buttonDisabled,
+                styles.buttonDisabled,
               ]}
               onPress={handleNext}
               disabled={tagStatus !== 'available' || loading}

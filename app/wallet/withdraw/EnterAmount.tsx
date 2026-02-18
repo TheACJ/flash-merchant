@@ -2,12 +2,15 @@ import { ArrowLeft, Delete, User } from 'lucide-react-native';
 import React, { useCallback, useState } from 'react';
 import {
   Platform,
+  StatusBar,
   StyleSheet,
   Text,
   TouchableOpacity,
   Vibration,
   View,
 } from 'react-native';
+
+
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Asset, CustomerInfo } from './types';
 
@@ -43,14 +46,14 @@ export default function EnterAmount({
 
   const formatDisplayAmount = (value: string): string => {
     if (!value || value === '0') return '$0';
-    
+
     const numValue = parseFloat(value);
     if (isNaN(numValue)) return '$0';
-    
+
     // Format with commas for thousands
     const parts = value.split('.');
     const integerPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-    
+
     if (parts.length > 1) {
       return `$${integerPart}.${parts[1]}`;
     }
@@ -103,7 +106,7 @@ export default function EnterAmount({
 
   const handleSubmit = () => {
     const numAmount = parseFloat(amount);
-    
+
     if (isNaN(numAmount) || numAmount <= 0) {
       setError('Please enter a valid amount');
       return;
@@ -126,6 +129,8 @@ export default function EnterAmount({
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
+      <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent />
+
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity

@@ -25,12 +25,14 @@ import {
 import React, { useState } from 'react';
 import {
   ScrollView,
+  StatusBar,
   StyleSheet,
   Switch,
   Text,
   TouchableOpacity,
   View,
 } from 'react-native';
+
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSelector } from 'react-redux';
 
@@ -106,18 +108,20 @@ const SectionHeader: React.FC<{ title: string }> = ({ title }) => (
 export default function SettingsScreen() {
   const router = useRouter();
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
-  
+
   // Get merchant profile from Redux (loaded from API)
   const merchantProfile = useSelector(
     (state: RootState) => state.merchantAuth.merchantProfile
   );
-  
+
   // Derived values from API data
   const displayName = merchantProfile?.tag || 'Merchant';
-  const isVerified = merchantProfile?.kyc_status === 'verified';
+  const isVerified = merchantProfile?.kycStatus === 'verified';
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
+      <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent />
+
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Header */}
         <View style={styles.header}>

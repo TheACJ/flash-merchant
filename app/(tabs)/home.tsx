@@ -27,15 +27,16 @@ import {
 import React, { useState } from 'react';
 import {
   Dimensions,
-  Platform,
   ScrollView,
   StatusBar,
   StyleSheet,
   Text,
   TouchableOpacity,
-  View,
+  View
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useSelector } from 'react-redux';
+
 import { RootState } from '../../store';
 
 const { width } = Dimensions.get('window');
@@ -56,12 +57,14 @@ interface SummaryCard {
 }
 
 const HomeScreen: React.FC = () => {
+  const insets = useSafeAreaInsets();
   const [balanceVisible, setBalanceVisible] = useState<boolean>(true);
   const router = useRouter();
 
+
   // Get currency from Redux (loaded from API)
   const { code: currencyCode, formatCurrency, isLoading: currencyLoading } = usePreferredCurrency();
-  
+
   // Get balance from cache (loaded from API)
   const { totalBalance, isLoading: balanceLoading } = useTotalBalance();
 
@@ -157,11 +160,13 @@ const HomeScreen: React.FC = () => {
       <StatusBar
         barStyle="light-content"
         backgroundColor={colors.primary}
-        translucent={false}
+        translucent
       />
 
+
       {/* Header */}
-      <View style={styles.headerContainer}>
+      <View style={[styles.headerContainer, { paddingTop: Math.max(insets.top, spacing.md) }]}>
+
         {/* Top Row */}
         <View style={styles.topRow}>
           <TouchableOpacity
@@ -388,11 +393,11 @@ const styles = StyleSheet.create({
   // Header
   headerContainer: {
     backgroundColor: colors.primary,
-    paddingTop: Platform.OS === 'ios' ? 50 : 20,
     paddingBottom: spacing.xl,
     borderBottomLeftRadius: borderRadius['3xl'],
     borderBottomRightRadius: borderRadius['3xl'],
   },
+
   topRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',

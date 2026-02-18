@@ -25,11 +25,13 @@ import {
   Modal,
   Platform,
   RefreshControl,
+  StatusBar,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from 'react-native';
+
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
@@ -284,7 +286,9 @@ function TransactionDetailModal({
       onRequestClose={onClose}
     >
       <SafeAreaView style={styles.modalContainer}>
+        <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent />
         {/* Header */}
+
         <View style={styles.modalHeader}>
           <TouchableOpacity
             style={styles.modalBackButton}
@@ -423,7 +427,9 @@ export default function HistoryScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
+      <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent />
       {/* Header */}
+
       <View style={styles.header}>
         <TouchableOpacity
           style={styles.backButton}

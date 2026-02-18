@@ -130,6 +130,8 @@ function RootLayoutContent() {
     <SafeAreaProvider>
       <StatusBar
         barStyle={colorScheme === 'dark' ? 'light-content' : 'dark-content'}
+        backgroundColor="transparent"
+        translucent
       />
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="index" />

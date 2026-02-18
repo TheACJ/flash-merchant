@@ -21,6 +21,8 @@ import {
   View,
   ViewToken,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
 
 const { width, height } = Dimensions.get('window');
 
@@ -54,9 +56,11 @@ const SLIDE_DOT_SIZE = 8;
 const SLIDE_DOT_ACTIVE_WIDTH = 28;
 
 const WelcomeScreen: React.FC = () => {
+  const insets = useSafeAreaInsets();
   const router = useRouter();
   const [currentIndex, setCurrentIndex] = useState(0);
   const scrollX = useRef(new Animated.Value(0)).current;
+
   const slidesRef = useRef<any>(null);
   const lottieRefs = useRef<(LottieView | null)[]>([]);
 
@@ -113,7 +117,8 @@ const WelcomeScreen: React.FC = () => {
       });
 
       return (
-        <View style={[styles.slideContainer, { width }]}>
+        <View style={[styles.slideContainer, { width, paddingTop: Math.max(insets.top, spacing['3xl']) }]}>
+
           <Animated.View
             style={[
               styles.illustrationContainer,
@@ -183,7 +188,8 @@ const WelcomeScreen: React.FC = () => {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor={colors.background} />
+      <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent />
+
 
       <Animated.FlatList
         data={slides}
@@ -240,8 +246,8 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingTop: spacing['3xl'],
   },
+
   illustrationContainer: {
     flex: 0.55,
     justifyContent: 'center',
