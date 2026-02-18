@@ -7,6 +7,11 @@ import {
   spacing,
   typography,
 } from '@/constants/theme';
+import { useAssetCache } from '@/hooks';
+import { usePreferredCurrency } from '@/hooks/useCurrency';
+import useExchangeRates from '@/hooks/useExchangeRates';
+import { assetInfoOrchestrator } from '@/services/AssetInfoOrchestrator';
+import { priceCache } from '@/services/PriceCache';
 import { useRouter } from 'expo-router';
 import {
   ArrowLeft,
@@ -14,8 +19,9 @@ import {
   ChevronRight,
   TrendingUp,
 } from 'lucide-react-native';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
+  ActivityIndicator,
   ScrollView,
   StyleSheet,
   Text,
@@ -25,20 +31,49 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 interface CryptoRate {
+  id: string;
   symbol: string;
   name: string;
   yourRate: string;
   marketRate: string;
 }
 
-const CRYPTO_RATES: CryptoRate[] = [
-  { symbol: 'SOL', name: 'Solana', yourRate: '$2,500.00', marketRate: '$2,670.00' },
-  { symbol: 'ZEC', name: 'Zcash', yourRate: '$2,500.00', marketRate: '$2,670.00' },
-  { symbol: 'BTC', name: 'Bitcoin', yourRate: '$2,500.00', marketRate: '$2,670.00' },
-];
-
 export default function ExchangeRateScreen() {
   const router = useRouter();
+  const [assetIds, setAssetIds] = useState<string[]>([]);
+  const { assets, isLoading: assetsLoading } = useAssetCache(assetIds);
+  const { rates, isLoading: ratesLoading } = useExchangeRates();
+  const { code: preferredCurrency } = usePreferredCurrency();
+  const [cryptoRates, setCryptoRates] = useState<CryptoRate[]>([]);
+
+  // Get asset IDs from orchestrator
+  useEffect(() => {
+    const ids = assetInfoOrchestrator.getAssetIds();
+    if (ids.length > 0) {
+      setAssetIds(ids);
+    }
+  }, []);
+
+  // Build crypto rates from assets and prices
+  useEffect(() => {
+    if (assets.length > 0) {
+      const ratesList: CryptoRate[] = assets.map(asset => {
+        const priceData = priceCache.getPrice(asset.id);
+        const price = priceData?.usd;
+        const formattedPrice = price ? `$${price.toFixed(2)}` : 'N/A';
+        return {
+          id: asset.id,
+          symbol: asset.symbol.toUpperCase(),
+          name: asset.name,
+          yourRate: formattedPrice, // In a real app, this would be merchant's custom rate
+          marketRate: formattedPrice,
+        };
+      });
+      setCryptoRates(ratesList);
+    }
+  }, [assets, preferredCurrency]);
+
+  const isLoading = assetsLoading || ratesLoading || assetIds.length === 0;
 
   return (
     <SafeAreaView style={styles.container}>
@@ -59,48 +94,59 @@ export default function ExchangeRateScreen() {
         <View style={{ width: layout.minTouchTarget }} />
       </View>
 
-      <ScrollView
-        contentContainerStyle={styles.content}
-        showsVerticalScrollIndicator={false}
-      >
-        {CRYPTO_RATES.map((crypto) => (
-          <View key={crypto.name} style={styles.cryptoCard}>
-            {/* Crypto Header */}
-            <View style={styles.cryptoHeader}>
-              <View style={styles.cryptoIcon}>
-                <Text style={styles.cryptoSymbol}>{crypto.symbol}</Text>
+      {isLoading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={colors.primary} />
+          <Text style={styles.loadingText}>Loading exchange rates...</Text>
+        </View>
+      ) : cryptoRates.length === 0 ? (
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>No assets available</Text>
+        </View>
+      ) : (
+        <ScrollView
+          contentContainerStyle={styles.content}
+          showsVerticalScrollIndicator={false}
+        >
+          {cryptoRates.map((crypto) => (
+            <View key={crypto.id} style={styles.cryptoCard}>
+              {/* Crypto Header */}
+              <View style={styles.cryptoHeader}>
+                <View style={styles.cryptoIcon}>
+                  <Text style={styles.cryptoSymbol}>{crypto.symbol}</Text>
+                </View>
+                <Text style={styles.cryptoName}>{crypto.name}</Text>
               </View>
-              <Text style={styles.cryptoName}>{crypto.name}</Text>
-            </View>
 
-            {/* Your Rate */}
-            <View style={styles.rateSection}>
-              <Text style={styles.rateLabel}>Your Rate</Text>
-              <TouchableOpacity style={styles.rateInput} activeOpacity={0.7}>
-                <Text style={styles.rateValue}>{crypto.yourRate}</Text>
-                <ArrowRightLeft
-                  size={14}
-                  color={colors.primary}
-                  strokeWidth={1.8}
-                />
-              </TouchableOpacity>
-            </View>
-
-            {/* Market Rate */}
-            <View style={styles.marketRow}>
-              <View style={styles.marketLabelRow}>
-                <TrendingUp
-                  size={12}
-                  color={colors.success}
-                  strokeWidth={2}
-                />
-                <Text style={styles.marketLabel}>Market Rate</Text>
+              {/* Your Rate */}
+              <View style={styles.rateSection}>
+                <Text style={styles.rateLabel}>Your Rate</Text>
+                <TouchableOpacity style={styles.rateInput} activeOpacity={0.7}>
+                  <Text style={styles.rateValue}>{crypto.yourRate}</Text>
+                  <ArrowRightLeft
+                    size={14}
+                    color={colors.primary}
+                    strokeWidth={1.8}
+                  />
+                </TouchableOpacity>
               </View>
-              <Text style={styles.marketValue}>{crypto.marketRate}</Text>
+
+              {/* Market Rate */}
+              <View style={styles.marketRow}>
+                <View style={styles.marketLabelRow}>
+                  <TrendingUp
+                    size={12}
+                    color={colors.success}
+                    strokeWidth={2}
+                  />
+                  <Text style={styles.marketLabel}>Market Rate</Text>
+                </View>
+                <Text style={styles.marketValue}>{crypto.marketRate}</Text>
+              </View>
             </View>
-          </View>
-        ))}
-      </ScrollView>
+          ))}
+        </ScrollView>
+      )}
 
       {/* Save Button */}
       <View style={styles.buttonContainer}>
@@ -245,5 +291,26 @@ const styles = StyleSheet.create({
     fontSize: typography.fontSize.md,
     fontWeight: typography.fontWeight.semibold,
     color: colors.textWhite,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: spacing.md,
+  },
+  loadingText: {
+    fontSize: typography.fontSize.md,
+    color: colors.textSecondary,
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: layout.screenPaddingHorizontal,
+  },
+  errorText: {
+    fontSize: typography.fontSize.md,
+    color: colors.error,
+    textAlign: 'center',
   },
 });

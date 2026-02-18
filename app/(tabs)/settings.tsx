@@ -7,6 +7,7 @@ import {
   spacing,
   typography,
 } from '@/constants/theme';
+import { RootState } from '@/store';
 import { useRouter } from 'expo-router';
 import {
   ArrowRightLeft,
@@ -31,6 +32,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSelector } from 'react-redux';
 
 // ─── Settings Item ──────────────────────────────────────────────────────────
 
@@ -104,6 +106,15 @@ const SectionHeader: React.FC<{ title: string }> = ({ title }) => (
 export default function SettingsScreen() {
   const router = useRouter();
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+  
+  // Get merchant profile from Redux (loaded from API)
+  const merchantProfile = useSelector(
+    (state: RootState) => state.merchantAuth.merchantProfile
+  );
+  
+  // Derived values from API data
+  const displayName = merchantProfile?.tag || 'Merchant';
+  const isVerified = merchantProfile?.kyc_status === 'verified';
 
   return (
     <SafeAreaView style={styles.container}>
@@ -128,23 +139,27 @@ export default function SettingsScreen() {
                   strokeWidth={1.8}
                 />
               </View>
-              <View style={styles.verifiedBadge}>
-                <BadgeCheck
-                  size={16}
-                  color={colors.success}
-                  strokeWidth={2.5}
-                  fill={colors.successLight}
-                />
-              </View>
+              {isVerified && (
+                <View style={styles.verifiedBadge}>
+                  <BadgeCheck
+                    size={16}
+                    color={colors.success}
+                    strokeWidth={2.5}
+                    fill={colors.successLight}
+                  />
+                </View>
+              )}
             </View>
             <View style={styles.profileInfo}>
               <View style={styles.profileNameRow}>
-                <Text style={styles.profileName}>Cryptoguru</Text>
-                <BadgeCheck
-                  size={14}
-                  color={colors.success}
-                  strokeWidth={2.5}
-                />
+                <Text style={styles.profileName}>{displayName}</Text>
+                {isVerified && (
+                  <BadgeCheck
+                    size={14}
+                    color={colors.success}
+                    strokeWidth={2.5}
+                  />
+                )}
               </View>
               <Text style={styles.profileRole}>Merchant</Text>
             </View>

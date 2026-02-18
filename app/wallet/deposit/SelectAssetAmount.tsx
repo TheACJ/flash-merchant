@@ -1,5 +1,8 @@
+import { borderRadius, colors, layout, typography } from '@/constants/theme';
+import { useAssetCache } from '@/hooks';
+import { assetInfoOrchestrator } from '@/services/AssetInfoOrchestrator';
 import { ArrowLeft, ChevronDown } from 'lucide-react-native';
-import React, { useCallback, useRef, useState } from 'react';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
 import {
   Keyboard,
   KeyboardAvoidingView,
@@ -9,12 +12,11 @@ import {
   TextInput,
   TouchableOpacity,
   TouchableWithoutFeedback,
-  View,
+  View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { borderRadius, colors, layout, typography } from '@/constants/theme';
 import AssetSelector from './AssetSelector';
-import { Asset, ASSETS } from './types';
+import { Asset, convertAPIAsset } from './types';
 
 interface SelectAssetAmountProps {
   initialAsset?: Asset | null;
@@ -35,6 +37,30 @@ export default function SelectAssetAmount({
   const [amountError, setAmountError] = useState('');
   const [isAmountFocused, setIsAmountFocused] = useState(false);
   const amountInputRef = useRef<TextInput>(null);
+
+  // Get asset IDs from orchestrator (fetched dynamically from API)
+  const assetIds = assetInfoOrchestrator.getAssetIds();
+  
+  // Fetch assets from API using the dynamic asset IDs
+  // No hardcoded fallback - if no asset IDs, pass empty array
+  const { assets: apiAssets, isLoading: isLoadingAssets } = useAssetCache(assetIds);
+
+  // Convert API assets to local format - no hardcoded fallback
+  const assets = useMemo(() => {
+    if (apiAssets.length > 0) {
+      return apiAssets.map(apiAsset => convertAPIAsset({
+        id: apiAsset.id,
+        name: apiAsset.name,
+        symbol: apiAsset.symbol,
+        icon_url: apiAsset.icon_url || '',
+        chains: [],
+        price: apiAsset.price,
+        price24hChange: apiAsset.price24hChange,
+      }));
+    }
+    // Return empty array if no assets - no hardcoded fallback
+    return [];
+  }, [apiAssets]);
 
   const formatAmount = (value: string): string => {
     // Remove non-numeric characters except decimal point
@@ -209,7 +235,7 @@ export default function SelectAssetAmount({
       {/* Asset Selector Modal */}
       <AssetSelector
         visible={showAssetSelector}
-        assets={ASSETS}
+        assets={assets}
         selectedAsset={selectedAsset}
         onSelect={handleAssetSelect}
         onClose={() => setShowAssetSelector(false)}
@@ -246,6 +272,10 @@ function AssetIcon({ asset, size = 40 }: AssetIconProps) {
         return <Text style={[styles.iconText, { color: '#8247E5' }]}>⬡</Text>;
       case 'zcash':
         return <Text style={[styles.iconText, { color: colors.background }]}>Z</Text>;
+      case 'usdt':
+        return <Text style={[styles.iconText, { color: colors.textWhite }]}>₮</Text>;
+      case 'bnb':
+        return <Text style={[styles.iconText, { color: colors.background }]}>B</Text>;
       default:
         return <Text style={styles.iconText}>{asset.symbol[0]}</Text>;
     }

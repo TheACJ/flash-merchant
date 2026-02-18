@@ -1,22 +1,22 @@
 import { router, useRouter } from 'expo-router';
 import {
-    ArrowLeft,
-    BadgeCheck,
-    Eye,
-    EyeOff,
-    Lock,
-    Plus,
-    Star,
-    User,
-    Wallet
+  ArrowLeft,
+  BadgeCheck,
+  Eye,
+  EyeOff,
+  Lock,
+  Plus,
+  Star,
+  User,
+  Wallet
 } from 'lucide-react-native';
 import React, { useState } from 'react';
 import {
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 

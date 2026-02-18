@@ -1,4 +1,5 @@
 // auth/setup/tag.tsx
+import { ONBOARDING_STEPS } from '@/constants/storage';
 import {
   borderRadius,
   colors,
@@ -8,7 +9,7 @@ import {
   typography,
 } from '@/constants/theme';
 import merchantApi from '@/services/MerchantApiService';
-import { completeOnboarding } from '@/utils/onboarding';
+import { setOnboardingStep } from '@/utils/onboarding';
 import { useRouter } from 'expo-router';
 import {
   ArrowLeft,
@@ -103,7 +104,7 @@ export default function CreateTag() {
                         response.data?.merchant?.tag;
       
       if (isSuccess) {
-        await completeOnboarding();
+        await setOnboardingStep(ONBOARDING_STEPS.bank_setup);
         Alert.alert('Success', response.message || 'Merchant tag created successfully!', [
           {
             text: 'Continue',
@@ -113,7 +114,7 @@ export default function CreateTag() {
       } else {
         // Check if the error is "Merchant already has a tag" - this means success in a way
         if (response.error?.includes('already has a tag') || response.data?.error?.includes('already has a tag')) {
-          await completeOnboarding();
+          await setOnboardingStep(ONBOARDING_STEPS.bank_setup);
           Alert.alert('Success', 'Merchant tag already exists!', [
             {
               text: 'Continue',
@@ -130,7 +131,7 @@ export default function CreateTag() {
       const err = merchantApi.handleError(error);
       // Check if the error is "Merchant already has a tag"
       if (err.error?.includes('already has a tag')) {
-        await completeOnboarding();
+        await setOnboardingStep(ONBOARDING_STEPS.bank_setup);
         Alert.alert('Success', 'Merchant tag already exists!', [
           {
             text: 'Continue',

@@ -1,4 +1,5 @@
 // auth/login/loading.tsx
+import { ONBOARDING_STEPS } from '@/constants/storage';
 import {
   borderRadius,
   colors,
@@ -6,6 +7,7 @@ import {
   spacing,
   typography,
 } from '@/constants/theme';
+import { setOnboardingStep } from '@/utils/onboarding';
 import { router, useLocalSearchParams } from 'expo-router';
 import {
   CheckCircle2,
@@ -25,7 +27,6 @@ import {
 import { useDispatch } from 'react-redux';
 import MerchantWalletService from '../../../services/MerchantWalletService';
 import { addWallet } from '../../../store/slices/merchantWalletSlice';
-import { completeOnboarding } from '../../../utils/onboarding';
 
 interface ChainStep {
   label: string;
@@ -140,10 +141,10 @@ export default function LoadingImportScreen() {
       setProgress(1);
       dispatch(addWallet(wallets.bnb));
 
-      await completeOnboarding();
+      await setOnboardingStep(ONBOARDING_STEPS.notice);
 
       await delay(600);
-      router.replace('/(tabs)/home');
+      router.replace('/auth/login/notice');
     } catch (error) {
       console.error('Failed to import wallets:', error);
       Alert.alert(
@@ -287,6 +288,8 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
     marginBottom: spacing.sm,
     letterSpacing: typography.letterSpacing.tight,
+    width: '100%',
+    textAlign: 'center'
   },
   subtitle: {
     fontSize: typography.fontSize.base,

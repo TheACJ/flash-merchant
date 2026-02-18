@@ -38,9 +38,12 @@ export const ONBOARDING_STEPS = {
   disclaimer: 'disclaimer',
   create_wallet: 'create_wallet',
   import_wallet: 'import_wallet',
+  seed_phrase: 'seed_phrase',
+  verify_seed: 'verify_seed',
+  notice: 'notice',
   tag: 'tag',
-  pin: 'pin',
   bank_setup: 'bank_setup',
+  pin: 'pin',
   kyc: 'kyc',
   complete: 'complete',
 } as const;

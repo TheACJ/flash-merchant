@@ -1,20 +1,25 @@
-import 'react-native-get-random-values';
-import React, { useEffect, useState } from 'react';
+import { ONBOARDING_STEPS } from '@/constants/storage';
+import { useAppInitialization } from '@/hooks/useAppInitialization';
 import { Stack, useRouter } from 'expo-router';
-import { StatusBar, useColorScheme } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { ActivityIndicator, StatusBar, useColorScheme, View } from 'react-native';
+import 'react-native-get-random-values';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { Provider, useDispatch } from 'react-redux';
-import { store } from '../store';
-import { getOnboardingStep } from '../utils/onboarding';
-import { ONBOARDING_STEPS } from '@/constants/storage';
 import MerchantWalletService from '../services/MerchantWalletService';
+import { store } from '../store';
 import { addWallet } from '../store/slices/merchantWalletSlice';
+import { getOnboardingStep } from '../utils/onboarding';
 
 const ROUTE_MAP = {
   welcome: '/(welcome)',
   disclaimer: '/(welcome)/disclaimer',
   createWallet: '/auth/create-wallet',
   importWallet: '/auth/login/import-wallet',
+  seedPhrase: '/auth/create-wallet/seed_phrase',
+  verifySeed: '/auth/create-wallet/verify_seed_phrase',
+  notice: '/auth/create-wallet/notice',
+  loginNotice: '/auth/login/notice',
   tag: '/auth/setup/tag',
   pin: '/auth/setup/pin',
   bankSetup: '/auth/setup/bank_setup',
@@ -36,6 +41,12 @@ const routeFromStep = (step: string | null): RoutePath => {
       return ROUTE_MAP.createWallet;
     case ONBOARDING_STEPS.import_wallet:
       return ROUTE_MAP.importWallet;
+    case ONBOARDING_STEPS.seed_phrase:
+      return ROUTE_MAP.seedPhrase;
+    case ONBOARDING_STEPS.verify_seed:
+      return ROUTE_MAP.verifySeed;
+    case ONBOARDING_STEPS.notice:
+      return ROUTE_MAP.notice;
     case ONBOARDING_STEPS.tag:
       return ROUTE_MAP.tag;
     case ONBOARDING_STEPS.pin:
@@ -57,6 +68,9 @@ function RootLayoutContent() {
   const dispatch = useDispatch();
   const [initialRoute, setInitialRoute] = useState<RoutePath | null>(null);
   const [isReady, setIsReady] = useState(false);
+
+  // Initialize all cache orchestrators and services in background
+  useAppInitialization();
 
   // Load wallets from storage on app launch
   useEffect(() => {
@@ -100,6 +114,17 @@ function RootLayoutContent() {
       router.replace(initialRoute);
     }
   }, [isReady, initialRoute, router]);
+
+  // Show loading indicator while checking onboarding status
+  if (!isReady) {
+    return (
+      <SafeAreaProvider>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F5F5F5' }}>
+          <ActivityIndicator size="large" color="#0066FF" />
+        </View>
+      </SafeAreaProvider>
+    );
+  }
 
   return (
     <SafeAreaProvider>

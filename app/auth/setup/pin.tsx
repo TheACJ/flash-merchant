@@ -1,4 +1,5 @@
 // auth/setup/pin.tsx
+import { ONBOARDING_STEPS } from '@/constants/storage';
 import {
   borderRadius,
   colors,
@@ -7,6 +8,7 @@ import {
   spacing,
   typography,
 } from '@/constants/theme';
+import { setOnboardingStep } from '@/utils/onboarding';
 import * as LocalAuthentication from 'expo-local-authentication';
 import { useRouter } from 'expo-router';
 import {
@@ -196,11 +198,13 @@ export default function CreatePin() {
     }
   };
 
-  const navigateToKYC = () => {
+  const navigateToKYC = async () => {
+    await setOnboardingStep(ONBOARDING_STEPS.kyc);
     router.push('/auth/setup/kyc' as const);
   };
 
-  const handleSkip = () => {
+  const handleSkip = async () => {
+    await setOnboardingStep(ONBOARDING_STEPS.kyc);
     router.push('/auth/setup/kyc' as const);
   };
 

@@ -1,4 +1,5 @@
 // auth/create-wallet/notice.tsx
+import { ONBOARDING_STEPS } from '@/constants/storage';
 import {
   borderRadius,
   colors,
@@ -7,6 +8,7 @@ import {
   spacing,
   typography,
 } from '@/constants/theme';
+import { setOnboardingStep } from '@/utils/onboarding';
 import { useRouter } from 'expo-router';
 import {
   AlertCircle,
@@ -74,8 +76,9 @@ export default function ImportantNotice() {
     });
   };
 
-  const handleContinue = () => {
+  const handleContinue = async () => {
     if (allChecked) {
+      await setOnboardingStep(ONBOARDING_STEPS.tag);
       router.push('/auth/setup/tag');
     }
   };

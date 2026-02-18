@@ -1,5 +1,8 @@
+import { borderRadius, colors, layout, spacing, typography } from '@/constants/theme';
+import { useAssetCache } from '@/hooks';
+import { assetInfoOrchestrator } from '@/services/AssetInfoOrchestrator';
 import { ArrowLeft, AtSign, ChevronDown } from 'lucide-react-native';
-import React, { useRef, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import {
   Keyboard,
   KeyboardAvoidingView,
@@ -12,10 +15,9 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { borderRadius, colors, layout, spacing, typography } from '@/constants/theme';
 import AssetSelector from '../deposit/AssetSelector';
 import { AssetIcon } from '../deposit/SelectAssetAmount';
-import { Asset, ASSETS } from './types';
+import { Asset, convertAPIAsset } from './types';
 
 interface SelectFlashTagAssetProps {
   initialFlashTag?: string;
@@ -36,6 +38,30 @@ export default function SelectFlashTagAsset({
   const [flashTagError, setFlashTagError] = useState('');
   const [isFocused, setIsFocused] = useState(false);
   const inputRef = useRef<TextInput>(null);
+
+  // Get asset IDs from orchestrator (fetched dynamically from API)
+  const assetIds = assetInfoOrchestrator.getAssetIds();
+  
+  // Fetch assets from API using the dynamic asset IDs
+  // No hardcoded fallback - if no asset IDs, pass empty array
+  const { assets: apiAssets } = useAssetCache(assetIds);
+
+  // Convert API assets to local format - no hardcoded fallback
+  const assets = useMemo(() => {
+    if (apiAssets.length > 0) {
+      return apiAssets.map(apiAsset => convertAPIAsset({
+        id: apiAsset.id,
+        name: apiAsset.name,
+        symbol: apiAsset.symbol,
+        icon_url: apiAsset.icon_url || '',
+        chains: [],
+        price: apiAsset.price,
+        price24hChange: apiAsset.price24hChange,
+      }));
+    }
+    // Return empty array if no assets - no hardcoded fallback
+    return [];
+  }, [apiAssets]);
 
   const validateFlashTag = (tag: string): boolean => {
     if (!tag.trim()) {
@@ -181,7 +207,7 @@ export default function SelectFlashTagAsset({
       {/* Asset Selector Modal */}
       <AssetSelector
         visible={showAssetSelector}
-        assets={ASSETS}
+        assets={assets}
         selectedAsset={selectedAsset}
         onSelect={handleAssetSelect}
         onClose={() => setShowAssetSelector(false)}

@@ -7,6 +7,7 @@ import {
   spacing,
   typography,
 } from '@/constants/theme';
+import { completeOnboarding } from '@/utils/onboarding';
 import { router, useLocalSearchParams } from 'expo-router';
 import {
   AlertCircle,
@@ -82,7 +83,8 @@ export default function VerifyingScreen() {
     return () => clearTimeout(timer);
   }, []);
 
-  const handleContinue = () => {
+  const handleContinue = async () => {
+    await completeOnboarding();
     router.replace('/(tabs)/home');
   };
 

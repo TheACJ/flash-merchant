@@ -128,7 +128,7 @@ export default function LoadingWalletsScreen() {
       setProgress(1);
       dispatch(addWallet(wallets.bnb));
 
-      await setOnboardingStep(ONBOARDING_STEPS.tag);
+      await setOnboardingStep(ONBOARDING_STEPS.seed_phrase);
 
       await delay(600);
       router.replace('/auth/create-wallet/seed_phrase');

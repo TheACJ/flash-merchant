@@ -1,4 +1,5 @@
 // auth/setup/bank_setup.tsx
+import { ONBOARDING_STEPS } from '@/constants/storage';
 import {
   borderRadius,
   colors,
@@ -7,6 +8,7 @@ import {
   spacing,
   typography,
 } from '@/constants/theme';
+import { setOnboardingStep } from '@/utils/onboarding';
 import { useRouter } from 'expo-router';
 import {
   ArrowLeft,
@@ -378,8 +380,9 @@ export default function BankSetup() {
     }
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (isFormValid) {
+      await setOnboardingStep(ONBOARDING_STEPS.pin);
       router.push('/auth/setup/pin');
     }
   };

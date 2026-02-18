@@ -7,6 +7,7 @@ import {
   spacing,
   typography,
 } from '@/constants/theme';
+import { usePreferredCurrency, useTotalBalance } from '@/hooks';
 import { useRouter } from 'expo-router';
 import {
   ArrowDownToLine,
@@ -56,26 +57,30 @@ interface SummaryCard {
 
 const HomeScreen: React.FC = () => {
   const [balanceVisible, setBalanceVisible] = useState<boolean>(true);
-  const [selectedCurrency, setSelectedCurrency] = useState<string>('USD');
   const router = useRouter();
+
+  // Get currency from Redux (loaded from API)
+  const { code: currencyCode, formatCurrency, isLoading: currencyLoading } = usePreferredCurrency();
+  
+  // Get balance from cache (loaded from API)
+  const { totalBalance, isLoading: balanceLoading } = useTotalBalance();
 
   const wallets = useSelector(
     (state: RootState) => state.merchantWallet.wallets
   );
 
-  const walletBalance = 50000;
-  const userName = '@TheACJ';
-  const notificationCount = 3;
-  const messageCount = 3;
+  // Get merchant profile from Redux
+  const merchantProfile = useSelector(
+    (state: RootState) => state.merchantAuth.merchantProfile
+  );
 
-  const formatCurrency = (amount: number): string => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: selectedCurrency,
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(amount);
-  };
+  // TODO: These should come from API/notification service
+  const notificationCount = 0;
+  const messageCount = 0;
+
+  // Derived values from API data
+  const userName = merchantProfile?.tag ? `@${merchantProfile.tag}` : '@User';
+  const walletBalance = totalBalance || 0;
 
   const quickActions: QuickAction[] = [
     {
@@ -98,39 +103,41 @@ const HomeScreen: React.FC = () => {
     },
   ];
 
+  // TODO: These statistics should come from a merchant dashboard API endpoint
+  // For now, showing placeholder values until API integration is complete
   const summaryCards: SummaryCard[] = [
     {
       id: 'deposits',
       label: 'Total Deposits',
-      value: '$2,000',
+      value: formatCurrency(0), // TODO: Fetch from API
       icon: ArrowDownToLine,
       iconColor: colors.success,
     },
     {
       id: 'withdrawals',
       label: 'Total Withdrawals',
-      value: '$2,000',
+      value: formatCurrency(0), // TODO: Fetch from API
       icon: ArrowUpFromLine,
       iconColor: colors.error,
     },
     {
       id: 'transactions',
       label: 'Transactions',
-      value: '24',
+      value: '0', // TODO: Fetch from API
       icon: CreditCard,
       iconColor: colors.primary,
     },
     {
       id: 'success',
       label: 'Success Rate',
-      value: '100%',
+      value: '0%', // TODO: Fetch from API
       icon: Star,
       iconColor: colors.warning,
     },
     {
       id: 'pending',
       label: 'Pending',
-      value: '20',
+      value: '0', // TODO: Fetch from API
       icon: Timer,
       iconColor: colors.info,
     },
@@ -214,12 +221,16 @@ const HomeScreen: React.FC = () => {
           <TouchableOpacity
             style={styles.currencySelector}
             activeOpacity={0.7}
-            accessibilityLabel={`Currency: ${selectedCurrency}`}
+            accessibilityLabel={`Currency: ${currencyCode || 'Loading...'}`}
           >
             <View style={styles.currencyFlag}>
-              <Text style={styles.currencyFlagText}>$</Text>
+              <Text style={styles.currencyFlagText}>
+                {currencyLoading ? '...' : (currencyCode?.charAt(0) || '$')}
+              </Text>
             </View>
-            <Text style={styles.currencyText}>{selectedCurrency}</Text>
+            <Text style={styles.currencyText}>
+              {currencyLoading ? 'Loading...' : (currencyCode || 'USD')}
+            </Text>
             <ChevronDown size={14} color={colors.textLight} strokeWidth={2} />
           </TouchableOpacity>
 

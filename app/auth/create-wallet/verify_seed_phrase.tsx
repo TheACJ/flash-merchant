@@ -1,5 +1,5 @@
 // auth/create-wallet/verify_seed_phrase.tsx
-import { STORAGE_KEYS } from '@/constants/storage';
+import { ONBOARDING_STEPS, STORAGE_KEYS } from '@/constants/storage';
 import {
   borderRadius,
   colors,
@@ -8,7 +8,7 @@ import {
   spacing,
   typography,
 } from '@/constants/theme';
-import { completeOnboarding } from '@/utils/onboarding';
+import { setOnboardingStep } from '@/utils/onboarding';
 import { router } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
 import {
@@ -93,7 +93,7 @@ export default function VerifySeedPhrase() {
 
     if (isCorrect) {
       try {
-        await completeOnboarding();
+        await setOnboardingStep(ONBOARDING_STEPS.notice);
         Alert.alert(
           'Wallet Secured',
           'Your recovery phrase has been verified successfully.',
@@ -105,7 +105,7 @@ export default function VerifySeedPhrase() {
           ]
         );
       } catch (error) {
-        console.error('Failed to complete onboarding:', error);
+        console.error('Failed to save progress:', error);
         Alert.alert('Error', 'Failed to complete setup. Please try again.');
       }
     } else {

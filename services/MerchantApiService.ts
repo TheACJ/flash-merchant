@@ -3,7 +3,8 @@ import axios, { AxiosError, AxiosInstance } from 'axios';
 import * as SecureStore from 'expo-secure-store';
 
 // API Configuration
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8000/api/agents';
+const FLASH_API_BASE_URL = process.env.EXPO_PUBLIC_FLASH_API_URL || 'https://flashback.koyeb.app/api/v1';
+
 
 // Types
 interface ApiResponse<T = any> {
@@ -105,7 +106,7 @@ class MerchantApiService {
 
   constructor() {
     this.api = axios.create({
-      baseURL: API_BASE_URL,
+      baseURL: FLASH_API_BASE_URL,
       timeout: 30000,
       headers: {
         'Content-Type': 'application/json',
@@ -212,13 +213,13 @@ class MerchantApiService {
 
   async registerInitiate(data: MerchantRegistrationInitiate): Promise<ApiResponse> {
     console.log('📝 Initiating registration for:', data.phone_number);
-    const response = await this.api.post('/register/initiate/', data);
+    const response = await this.api.post('/merchant/register/initiate/', data);
     return response.data;
   }
 
   async registerComplete(data: MerchantRegistrationComplete): Promise<ApiResponse> {
     console.log('✅ Completing registration with session:', data.session_token.substring(0, 10) + '...');
-    const response = await this.api.post('/register/complete/', data);
+    const response = await this.api.post('/merchant/register/complete/', data);
     // Backend returns 'access' token (JWT), not 'token'
     if (response.data.access) {
       await this.setAuthToken(response.data.access);
@@ -228,13 +229,13 @@ class MerchantApiService {
 
   async loginInitiate(data: MerchantLoginInitiate): Promise<ApiResponse> {
     console.log('🔐 Initiating login for:', data.phone_number);
-    const response = await this.api.post('/login/initiate/', data);
+    const response = await this.api.post('/merchant/login/initiate/', data);
     return response.data;
   }
 
   async loginComplete(data: MerchantLoginComplete): Promise<ApiResponse> {
     console.log('🔓 Completing login for:', data.phone_number);
-    const response = await this.api.post('/login/complete/', data);
+    const response = await this.api.post('/merchant/login/complete/', data);
     // Backend returns 'access' token (JWT), not 'token'
     if (response.data.access) {
       await this.setAuthToken(response.data.access);
@@ -244,79 +245,79 @@ class MerchantApiService {
 
   async addMerchantTag(data: AddMerchantTag): Promise<ApiResponse> {
     console.log('🏷️ Adding merchant tag:', data.tag);
-    const response = await this.api.post('/add-tag/', data);
+    const response = await this.api.post('/merchant/add-tag/', data);
     return response.data;
   }
 
   // ==================== Tag Endpoints ====================
 
   async updateMerchantTag(data: UpdateMerchantTag): Promise<ApiResponse> {
-    const response = await this.api.post('/tag/update-tag/', data);
+    const response = await this.api.post('/merchant/tag/update-tag/', data);
     return response.data;
   }
 
   async checkTagAvailability(tag: string): Promise<ApiResponse<{ available: boolean }>> {
     // This is a public endpoint - don't require auth
-    const response = await this.api.get('/tag/check-tag/', { params: { tag }, skipAuth: true } as any);
+    const response = await this.api.get('/merchant/tag/check-tag/', { params: { tag }, skipAuth: true } as any);
     return response.data;
   }
 
   async resolveTag(tag: string): Promise<ApiResponse> {
-    const response = await this.api.get('/tag/resolve/', { params: { tag } });
+    const response = await this.api.get('/merchant/tag/resolve/', { params: { tag } });
     return response.data;
   }
 
   // ==================== Merchant Details Endpoints ====================
 
-  async getMerchantList(params?: { page?: number; search?: string }): Promise<ApiResponse> {
+  /* async getMerchantList(params?: { page?: number; search?: string }): Promise<ApiResponse> {
     const response = await this.api.get('/list/', { params });
     return response.data;
-  }
+  } */ // Merchants do not need to see the list of Merchants
 
   async addBankDetails(data: AddBankDetails): Promise<ApiResponse> {
-    const response = await this.api.post('/bank/add/', data);
+    const response = await this.api.post('/merchant/bank/add/', data);
     return response.data;
   }
 
   async getMerchantProfile(): Promise<ApiResponse> {
-    const response = await this.api.get('/profile/');
+    const response = await this.api.get('/merchant/profile/');
     return response.data;
   }
 
   async getMerchantPublicProfile(id: string): Promise<ApiResponse> {
-    const response = await this.api.get(`/profile/${id}/`);
+    const response = await this.api.get(`/merchant/profile/${id}/`);
     return response.data;
   }
 
   async getMerchantDashboard(): Promise<ApiResponse> {
-    const response = await this.api.get('/dashboard/');
+    const response = await this.api.get('/merchant/dashboard/');
     return response.data;
   }
 
   // ==================== Transaction Endpoints ====================
 
   async initiatePhysicalWithdrawal(data: PhysicalWithdrawalInitiate): Promise<ApiResponse> {
-    const response = await this.api.post('/physical/withdrawal/initiate/', data);
+    const response = await this.api.post('/merchant/physical/withdrawal/initiate/', data);
     return response.data;
   }
 
   async initiatePhysicalDeposit(data: PhysicalDepositInitiate): Promise<ApiResponse> {
-    const response = await this.api.post('/physical/deposit/initiate/', data);
+    const response = await this.api.post('/merchant/physical/deposit/initiate/', data);
     return response.data;
   }
 
   async confirmPhysicalDeposit(data: PhysicalDepositConfirm): Promise<ApiResponse> {
-    const response = await this.api.post('/physical/deposit/confirm/', data);
+    const response = await this.api.post('/merchant/physical/deposit/confirm/', data);
     return response.data;
   }
 
   async confirmRemoteWithdrawal(data: RemoteWithdrawalConfirm): Promise<ApiResponse> {
-    const response = await this.api.post('/remote/withdrawal/confirm/', data);
+    const response = await this.api.post('/merchant/remote/withdrawal/confirm/', data);
     return response.data;
   }
 
   async confirmRemoteDeposit(data: RemoteDepositConfirm): Promise<ApiResponse> {
-    const response = await this.api.post('/remote/deposit/confirm/', data);
+    const response = await this.api.post('/merchant/remote/deposit/confirm/', data);
     return response.data;
   }
 
@@ -325,53 +326,53 @@ class MerchantApiService {
     status?: string;
     type?: string;
   }): Promise<ApiResponse> {
-    const response = await this.api.get('/transactions/', { params });
+    const response = await this.api.get('/merchant/transactions/', { params });
     return response.data;
   }
 
   // ==================== Public Endpoints ====================
 
   async getActiveMerchants(params?: { page?: number }): Promise<ApiResponse> {
-    const response = await this.api.get('/active-merchants/', { params });
+    const response = await this.api.get('/merchant/active-merchants/', { params });
     return response.data;
   }
 
   // ==================== OTP Endpoints ====================
 
   async sendOTP(phone_number: string): Promise<ApiResponse> {
-    const response = await this.api.post('/otp/send/', { phone_number });
+    const response = await this.api.post('/merchant/otp/send/', { phone_number });
     return response.data;
   }
 
   async verifyOTP(phone_number: string, otp: string): Promise<ApiResponse> {
-    const response = await this.api.post('/otp/verify/', { phone_number, otp });
+    const response = await this.api.post('/merchant/otp/verify/', { phone_number, otp });
     return response.data;
   }
 
   async resendOTP(phone_number: string): Promise<ApiResponse> {
-    const response = await this.api.post('/otp/resend/', { phone_number });
+    const response = await this.api.post('/merchant/otp/resend/', { phone_number });
     return response.data;
   }
 
   // ==================== Staking Endpoints ====================
 
   async getStakingStatus(): Promise<ApiResponse> {
-    const response = await this.api.get('/staking/status/');
+    const response = await this.api.get('/merchant/staking/status/');
     return response.data;
   }
 
   async stakeTokens(data: StakeTokens): Promise<ApiResponse> {
-    const response = await this.api.post('/staking/stake/', data);
+    const response = await this.api.post('/merchant/staking/stake/', data);
     return response.data;
   }
 
   async unstakeTokens(stake_id: string): Promise<ApiResponse> {
-    const response = await this.api.post('/staking/unstake/', { stake_id });
+    const response = await this.api.post('/merchant/staking/unstake/', { stake_id });
     return response.data;
   }
 
   async claimStakingRewards(stake_id: string): Promise<ApiResponse> {
-    const response = await this.api.post('/staking/claim-rewards/', { stake_id });
+    const response = await this.api.post('/merchant/staking/claim-rewards/', { stake_id });
     return response.data;
   }
 

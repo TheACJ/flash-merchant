@@ -6,13 +6,17 @@ import {
   spacing,
   typography,
 } from '@/constants/theme';
+import { useCurrencies, usePreferredCurrency } from '@/hooks';
+import { AppDispatch } from '@/store';
+import { setPreferredCurrency } from '@/store/slices/currencySlice';
 import { useRouter } from 'expo-router';
 import {
   ArrowLeft,
   Check
 } from 'lucide-react-native';
-import React, { useState } from 'react';
+import React from 'react';
 import {
+  ActivityIndicator,
   ScrollView,
   StyleSheet,
   Text,
@@ -20,27 +24,19 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-
-interface Currency {
-  code: string;
-  name: string;
-  symbol: string;
-}
-
-const CURRENCIES: Currency[] = [
-  { code: 'USD', name: 'United States Dollar', symbol: '$' },
-  { code: 'NGN', name: 'Nigerian Naira', symbol: '₦' },
-  { code: 'EUR', name: 'Euro', symbol: '€' },
-  { code: 'GBP', name: 'British Pound Sterling', symbol: '£' },
-  { code: 'JPY', name: 'Japanese Yen', symbol: '¥' },
-  { code: 'CAD', name: 'Canadian Dollar', symbol: 'C$' },
-  { code: 'BRL', name: 'Brazilian Real', symbol: 'R$' },
-  { code: 'AUD', name: 'Australian Dollar', symbol: 'A$' },
-];
+import { useDispatch } from 'react-redux';
 
 export default function CurrencyScreen() {
   const router = useRouter();
-  const [selectedCurrency, setSelectedCurrency] = useState('USD');
+  const dispatch = useDispatch<AppDispatch>();
+  
+  // Get currencies from API
+  const { currencies, isLoading, error } = useCurrencies();
+  const { code: selectedCurrency } = usePreferredCurrency();
+
+  const handleCurrencySelect = async (currencyCode: string) => {
+    dispatch(setPreferredCurrency(currencyCode));
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -61,58 +57,69 @@ export default function CurrencyScreen() {
         <View style={{ width: layout.minTouchTarget }} />
       </View>
 
-      <ScrollView
-        contentContainerStyle={styles.content}
-        showsVerticalScrollIndicator={false}
-      >
-        {CURRENCIES.map((currency) => {
-          const isSelected = selectedCurrency === currency.code;
+      {isLoading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={colors.primary} />
+          <Text style={styles.loadingText}>Loading currencies...</Text>
+        </View>
+      ) : error ? (
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>{error}</Text>
+        </View>
+      ) : (
+        <ScrollView
+          contentContainerStyle={styles.content}
+          showsVerticalScrollIndicator={false}
+        >
+          {currencies.map((currency) => {
+            const isSelected = selectedCurrency === currency.code;
 
-          return (
-            <TouchableOpacity
-              key={currency.code}
-              style={[
-                styles.currencyItem,
-                isSelected && styles.currencyItemSelected,
-              ]}
-              onPress={() => setSelectedCurrency(currency.code)}
-              activeOpacity={0.7}
-            >
-              <View style={styles.currencyLeft}>
-                <View
-                  style={[
-                    styles.symbolContainer,
-                    isSelected && styles.symbolContainerSelected,
-                  ]}
-                >
-                  <Text
+            return (
+              <TouchableOpacity
+                key={currency.code}
+                style={[
+                  styles.currencyItem,
+                  isSelected && styles.currencyItemSelected,
+                ]}
+                onPress={() => handleCurrencySelect(currency.code)}
+                activeOpacity={0.7}
+              >
+                <View style={styles.currencyLeft}>
+                  <View
                     style={[
-                      styles.symbolText,
-                      isSelected && styles.symbolTextSelected,
+                      styles.symbolContainer,
+                      isSelected && styles.symbolContainerSelected,
                     ]}
                   >
-                    {currency.symbol}
-                  </Text>
+                    <Text
+                      style={[
+                        styles.symbolText,
+                        isSelected && styles.symbolTextSelected,
+                      ]}
+                    >
+                      {currency.symbol}
+                    </Text>
+                  </View>
+                  <View style={styles.currencyInfo}>
+                    <Text style={styles.currencyCode}>{currency.code}</Text>
+                    <Text style={styles.currencyName}>{currency.name}</Text>
+                  </View>
                 </View>
-                <View style={styles.currencyInfo}>
-                  <Text style={styles.currencyCode}>{currency.code}</Text>
-                  <Text style={styles.currencyName}>{currency.name}</Text>
-                </View>
-              </View>
 
-              {isSelected && (
-                <View style={styles.checkContainer}>
-                  <Check
-                    size={layout.iconSize.sm}
-                    color={colors.primary}
-                    strokeWidth={2.5}
-                  />
-                </View>
-              )}
-            </TouchableOpacity>
-          );
-        })}
-      </ScrollView>
+                {isSelected && (
+                  <View style={styles.checkContainer}>
+                    <Check
+                      size={layout.iconSize.sm}
+                      color={colors.primary}
+                      strokeWidth={2.5}
+                    />
+                  </View>
+                )}
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
+      )}
     </SafeAreaView>
   );
 }
@@ -207,5 +214,26 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primaryLight,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: spacing.md,
+  },
+  loadingText: {
+    fontSize: typography.fontSize.md,
+    color: colors.textSecondary,
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: layout.screenPaddingHorizontal,
+  },
+  errorText: {
+    fontSize: typography.fontSize.md,
+    color: colors.error,
+    textAlign: 'center',
   },
 });

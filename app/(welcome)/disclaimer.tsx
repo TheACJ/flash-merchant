@@ -1,21 +1,20 @@
 // welcome/disclaimer.tsx
 import { ONBOARDING_STEPS } from '@/constants/storage';
 import {
+  animation,
   borderRadius,
   colors,
   layout,
   shadows,
   spacing,
   typography,
-  animation,
 } from '@/constants/theme';
 import { useRouter } from 'expo-router';
 import {
   ArrowLeft,
   Check,
   ChevronRight,
-  Shield,
-  ShieldCheck,
+  Shield
 } from 'lucide-react-native';
 import React, { useCallback, useRef, useState } from 'react';
 import {

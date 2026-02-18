@@ -1,5 +1,4 @@
 // welcome/index.tsx
-import { ONBOARDING_STEPS } from '@/constants/storage';
 import {
   borderRadius,
   colors,
@@ -8,8 +7,8 @@ import {
   spacing,
   typography,
 } from '@/constants/theme';
-import LottieView from 'lottie-react-native';
 import { useRouter } from 'expo-router';
+import LottieView from 'lottie-react-native';
 import { ArrowRight } from 'lucide-react-native';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
@@ -22,7 +21,6 @@ import {
   View,
   ViewToken,
 } from 'react-native';
-import { setOnboardingStep } from '../../utils/onboarding';
 
 const { width, height } = Dimensions.get('window');
 
@@ -62,10 +60,6 @@ const WelcomeScreen: React.FC = () => {
   const slidesRef = useRef<any>(null);
   const lottieRefs = useRef<(LottieView | null)[]>([]);
 
-  useEffect(() => {
-    setOnboardingStep(ONBOARDING_STEPS.welcome);
-  }, []);
-
   // Play the Lottie animation for the current slide
   useEffect(() => {
     lottieRefs.current[currentIndex]?.play();
@@ -81,12 +75,12 @@ const WelcomeScreen: React.FC = () => {
 
   const viewConfig = useRef({ viewAreaCoveragePercentThreshold: 50 }).current;
 
-  const scrollTo = useCallback(async () => {
+  const scrollTo = useCallback(() => {
     if (currentIndex < slides.length - 1) {
       slidesRef.current?.scrollToIndex({ index: currentIndex + 1 });
     } else {
-      await setOnboardingStep(ONBOARDING_STEPS.disclaimer);
-      router.push('(welcome)/disclaimer');
+      // Navigate to disclaimer - the disclaimer screen will set the onboarding step
+      router.push('/(welcome)/disclaimer');
     }
   }, [currentIndex, router]);
 
