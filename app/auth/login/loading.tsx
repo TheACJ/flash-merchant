@@ -7,6 +7,7 @@ import {
   spacing,
   typography,
 } from '@/constants/theme';
+import walletWorkletService from '@/services/WalletWorkletService';
 import { setOnboardingStep } from '@/utils/onboarding';
 import { router, useLocalSearchParams } from 'expo-router';
 import {
@@ -25,7 +26,6 @@ import {
   View,
 } from 'react-native';
 import { useDispatch } from 'react-redux';
-import MerchantWalletService from '../../../services/MerchantWalletService';
 import { addWallet } from '../../../store/slices/merchantWalletSlice';
 
 interface ChainStep {
@@ -115,7 +115,8 @@ export default function LoadingImportScreen() {
       setCurrentChain('Ethereum');
       setProgress(0.15);
 
-      const wallets = await MerchantWalletService.importWalletFromMnemonic(
+      // Use WalletWorkletService for non-blocking import
+      const wallets = await walletWorkletService.importWalletFromMnemonicAsync(
         mnemonic
       );
 

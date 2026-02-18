@@ -58,13 +58,9 @@ export class MerchantWalletService {
       this.createBNBWallet(entropy, mnemonic, now)
     ]);
 
-    // Store all wallets in parallel
-    await Promise.all([
-      this.saveWalletToStorage(ethWallet),
-      this.saveWalletToStorage(solWallet),
-      this.saveWalletToStorage(btcWallet),
-      this.saveWalletToStorage(bnbWallet)
-    ]);
+    // Save all wallets in a single atomic write to avoid race condition
+    // Using Promise.all with individual saves causes data loss
+    await this.saveAllWalletsToStorage([ethWallet, solWallet, btcWallet, bnbWallet]);
 
     return { ethereum: ethWallet, solana: solWallet, bitcoin: btcWallet, bnb: bnbWallet };
   }
@@ -145,13 +141,9 @@ export class MerchantWalletService {
       this.importBNBWallet(mnemonic, now)
     ]);
 
-    // Store all wallets in parallel
-    await Promise.all([
-      this.saveWalletToStorage(ethWallet),
-      this.saveWalletToStorage(solWallet),
-      this.saveWalletToStorage(btcWallet),
-      this.saveWalletToStorage(bnbWallet)
-    ]);
+    // Save all wallets in a single atomic write to avoid race condition
+    // Using Promise.all with individual saves causes data loss
+    await this.saveAllWalletsToStorage([ethWallet, solWallet, btcWallet, bnbWallet]);
 
     return { ethereum: ethWallet, solana: solWallet, bitcoin: btcWallet, bnb: bnbWallet };
   }
@@ -226,6 +218,14 @@ export class MerchantWalletService {
     const wallets = walletsStr ? JSON.parse(walletsStr) : [];
     wallets.push(wallet);
     await SecureStore.setItemAsync(this.WALLETS_STORAGE_KEY, JSON.stringify(wallets));
+  }
+
+  /**
+   * Save all wallets to storage in a single atomic operation
+   * This prevents race conditions when saving multiple wallets
+   */
+  async saveAllWalletsToStorage(walletsList: WalletCreationResult[]): Promise<void> {
+    await SecureStore.setItemAsync(this.WALLETS_STORAGE_KEY, JSON.stringify(walletsList));
   }
 
   async getAllWallets(): Promise<WalletCreationResult[]> {
