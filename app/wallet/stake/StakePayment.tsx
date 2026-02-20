@@ -1,4 +1,12 @@
 import QRCodeDisplay from '@/components/QRCodeDisplay';
+import {
+  borderRadius,
+  colors,
+  layout,
+  shadows,
+  spacing,
+  typography,
+} from '@/constants/theme';
 import * as Clipboard from 'expo-clipboard';
 import {
   ArrowLeft,
@@ -6,12 +14,15 @@ import {
   Clock,
   Coins,
   Copy,
-  TrendingUp
+  QrCode,
+  Shield,
+  TrendingUp,
 } from 'lucide-react-native';
 import React, { useCallback, useState } from 'react';
 import {
   Alert,
   Platform,
+  ScrollView,
   Share,
   StyleSheet,
   Text,
@@ -37,24 +48,34 @@ interface SummaryItemProps {
   label: string;
   value: string;
   iconColor?: string;
+  isLast?: boolean;
 }
 
 function SummaryItem({
   icon: Icon,
   label,
   value,
-  iconColor = '#0F6EC0',
+  iconColor = colors.primary,
+  isLast = false,
 }: SummaryItemProps) {
   return (
-    <View style={styles.summaryItem}>
-      <View style={styles.summaryItemLeft}>
-        <View style={[styles.summaryIcon, { backgroundColor: `${iconColor}15` }]}>
-          <Icon size={16} color={iconColor} strokeWidth={2} />
+    <>
+      <View style={styles.summaryItem}>
+        <View style={styles.summaryItemLeft}>
+          <View
+            style={[
+              styles.summaryIcon,
+              { backgroundColor: `${iconColor}15` },
+            ]}
+          >
+            <Icon size={layout.iconSize.xs} color={iconColor} strokeWidth={2} />
+          </View>
+          <Text style={styles.summaryLabel}>{label}</Text>
         </View>
-        <Text style={styles.summaryLabel}>{label}</Text>
+        <Text style={styles.summaryValue}>{value}</Text>
       </View>
-      <Text style={styles.summaryValue}>{value}</Text>
-    </View>
+      {!isLast && <View style={styles.summaryDivider} />}
+    </>
   );
 }
 
@@ -92,11 +113,6 @@ export default function StakePayment({
     }
   }, [amount, walletAddress]);
 
-  const truncateAddress = (address: string): string => {
-    if (address.length <= 20) return address;
-    return address; // Show full address in this case
-  };
-
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       {/* Header */}
@@ -107,89 +123,143 @@ export default function StakePayment({
           activeOpacity={0.7}
           accessibilityLabel="Go back"
         >
-          <ArrowLeft size={24} color="#000000" strokeWidth={2} />
+          <ArrowLeft
+            size={layout.iconSize.md}
+            color={colors.textPrimary}
+            strokeWidth={2}
+          />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Stake</Text>
+        <Text style={styles.headerTitle}>Payment</Text>
         <View style={styles.headerSpacer} />
       </View>
 
-      {/* Content */}
-      <View style={styles.content}>
-        {/* Amount Display */}
-        <View style={styles.amountContainer}>
-          <Text style={styles.amountLabel}>Amount to stake</Text>
+      {/* Step Indicator */}
+      <View style={styles.stepIndicator}>
+        <View style={[styles.stepDot, styles.stepDotCompleted]} />
+        <View style={[styles.stepLine, styles.stepLineCompleted]} />
+        <View style={[styles.stepDot, styles.stepDotActive]} />
+      </View>
+
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        bounces
+      >
+        {/* Amount Hero Card */}
+        <View style={styles.amountCard}>
+          <Text style={styles.amountLabel}>AMOUNT TO STAKE</Text>
           <Text style={styles.amountValue}>${amount}</Text>
+          <View style={styles.amountReturnsBadge}>
+            <TrendingUp size={14} color={colors.textWhite} strokeWidth={2} />
+            <Text style={styles.amountReturnsText}>
+              Est. Returns: {estimatedReturns}
+            </Text>
+          </View>
         </View>
 
         {/* QR Code Section */}
-        <View style={styles.qrContainer}>
+        <View style={styles.qrSection}>
+          <View style={styles.qrSectionHeader}>
+            <QrCode
+              size={layout.iconSize.sm}
+              color={colors.textTertiary}
+              strokeWidth={1.8}
+            />
+            <Text style={styles.qrSectionTitle}>Scan to Pay</Text>
+          </View>
+
           <View style={styles.qrCodeWrapper}>
             <QRCodeDisplay
               value={qrCodeData || walletAddress}
               size={180}
-              backgroundColor="#FFFFFF"
-              color="#323333"
+              backgroundColor={colors.backgroundCard}
+              color={colors.textPrimary}
               logoSize={45}
             />
           </View>
+
           <Text style={styles.qrHint}>
-            Scan this QR code to make the payment
+            Scan this QR code with your wallet app to complete the payment
           </Text>
         </View>
 
-        {/* Wallet Address Section */}
+        {/* Wallet Address */}
         <View style={styles.addressSection}>
+          <Text style={styles.addressLabel}>WALLET ADDRESS</Text>
           <View style={styles.addressContainer}>
             <Text style={styles.addressText} numberOfLines={1}>
-              {truncateAddress(walletAddress)}
+              {walletAddress}
             </Text>
             <TouchableOpacity
-              style={styles.copyButton}
+              style={[
+                styles.copyButton,
+                copied && styles.copyButtonCopied,
+              ]}
               onPress={handleCopyAddress}
               activeOpacity={0.7}
               accessibilityLabel={copied ? 'Copied' : 'Copy address'}
             >
               {copied ? (
-                <Check size={22} color="#22C55E" strokeWidth={2.5} />
+                <Check
+                  size={layout.iconSize.sm}
+                  color={colors.success}
+                  strokeWidth={2.5}
+                />
               ) : (
-                <Copy size={22} color="#0F6EC0" strokeWidth={2} />
+                <Copy
+                  size={layout.iconSize.sm}
+                  color={colors.primary}
+                  strokeWidth={2}
+                />
               )}
             </TouchableOpacity>
           </View>
           {copied && (
-            <Text style={styles.copiedText}>Address copied to clipboard!</Text>
+            <Text style={styles.copiedText}>
+              Address copied to clipboard
+            </Text>
           )}
         </View>
 
         {/* Staking Summary */}
-        <View style={styles.summaryContainer}>
-          <Text style={styles.summaryTitle}>Staking Summary</Text>
+        <View style={styles.summaryCard}>
+          <View style={styles.summaryCardHeader}>
+            <Shield
+              size={layout.iconSize.sm}
+              color={colors.primary}
+              strokeWidth={1.8}
+            />
+            <Text style={styles.summaryTitle}>Staking Summary</Text>
+          </View>
+
           <SummaryItem
             icon={Coins}
             label="Staking Amount"
             value={`$${amount}`}
-            iconColor="#0F6EC0"
+            iconColor={colors.primary}
           />
           <SummaryItem
             icon={TrendingUp}
             label="APR"
             value={apr}
-            iconColor="#22C55E"
+            iconColor={colors.success}
           />
           <SummaryItem
             icon={Clock}
             label="Lock Period"
             value={stakingPeriod}
-            iconColor="#F59E0B"
+            iconColor={colors.warning}
           />
           <SummaryItem
             icon={TrendingUp}
             label="Estimated Returns"
             value={estimatedReturns}
-            iconColor="#22C55E"
+            iconColor={colors.success}
+            isLast
           />
         </View>
-      </View>
+      </ScrollView>
 
       {/* Bottom Buttons */}
       <View style={styles.bottomContainer}>
@@ -199,7 +269,12 @@ export default function StakePayment({
           activeOpacity={0.8}
           accessibilityLabel="Confirm payment sent"
         >
-          <Text style={styles.confirmButtonText}>I have sent it</Text>
+          <Check
+            size={layout.iconSize.md}
+            color={colors.textWhite}
+            strokeWidth={2}
+          />
+          <Text style={styles.confirmButtonText}>I Have Sent It</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -218,207 +293,292 @@ export default function StakePayment({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F5F5',
+    backgroundColor: colors.background,
   },
+
+  // Header
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
+    paddingHorizontal: layout.screenPaddingHorizontal,
+    paddingVertical: spacing.base,
   },
   backButton: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: '#F4F6F5',
+    width: layout.avatarSize.md,
+    height: layout.avatarSize.md,
+    borderRadius: borderRadius.full,
+    backgroundColor: colors.backgroundCard,
     justifyContent: 'center',
     alignItems: 'center',
+    ...shadows.xs,
   },
   headerTitle: {
-    fontSize: 25,
-    fontWeight: '600',
-    color: '#000000',
-    textAlign: 'center',
+    fontSize: typography.fontSize.lg,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.textPrimary,
+    letterSpacing: typography.letterSpacing.wide,
   },
   headerSpacer: {
-    width: 50,
+    width: layout.avatarSize.md,
   },
-  content: {
-    flex: 1,
-    paddingHorizontal: 52,
-  },
-  amountContainer: {
+
+  // Step Indicator
+  stepIndicator: {
+    flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 25,
+    justifyContent: 'center',
+    paddingHorizontal: layout.screenPaddingHorizontal * 3,
+    paddingVertical: spacing.md,
+    gap: spacing.xs,
+  },
+  stepDot: {
+    width: 10,
+    height: 10,
+    borderRadius: borderRadius.full,
+    backgroundColor: colors.borderLight,
+  },
+  stepDotActive: {
+    backgroundColor: colors.primary,
+    width: 12,
+    height: 12,
+  },
+  stepDotCompleted: {
+    backgroundColor: colors.success,
+  },
+  stepLine: {
+    flex: 1,
+    height: 2,
+    backgroundColor: colors.borderLight,
+  },
+  stepLineCompleted: {
+    backgroundColor: colors.success,
+  },
+
+  // Scroll
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingHorizontal: layout.screenPaddingHorizontal,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.xl,
+  },
+
+  // Amount Hero Card
+  amountCard: {
+    backgroundColor: colors.primary,
+    borderRadius: borderRadius.xl,
+    padding: spacing.xl,
+    alignItems: 'center',
+    marginBottom: spacing.xl,
+    ...shadows.md,
   },
   amountLabel: {
-    fontSize: 14,
-    color: '#657084',
-    marginBottom: 4,
+    fontSize: typography.fontSize.xs,
+    fontWeight: typography.fontWeight.semibold,
+    color: 'rgba(255, 255, 255, 0.75)',
+    letterSpacing: typography.letterSpacing.wider,
+    marginBottom: spacing.sm,
   },
   amountValue: {
-    fontSize: 32,
-    fontWeight: '700',
-    color: '#0F6EC0',
+    fontSize: typography.fontSize['6xl'],
+    fontWeight: typography.fontWeight.bold,
+    color: colors.textWhite,
+    letterSpacing: typography.letterSpacing.tight,
+    marginBottom: spacing.md,
   },
-  qrContainer: {
+  amountReturnsBadge: {
+    flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 25,
+    gap: spacing.xs,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    paddingHorizontal: spacing.base,
+    paddingVertical: spacing.xs,
+    borderRadius: borderRadius.full,
+  },
+  amountReturnsText: {
+    fontSize: typography.fontSize.xs,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.textWhite,
+  },
+
+  // QR Section
+  qrSection: {
+    alignItems: 'center',
+    marginBottom: spacing.xl,
+  },
+  qrSectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    marginBottom: spacing.lg,
+  },
+  qrSectionTitle: {
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.textTertiary,
+    letterSpacing: typography.letterSpacing.wide,
+    textTransform: 'uppercase',
   },
   qrCodeWrapper: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    padding: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 6,
-  },
-  qrCode: {
-    width: 200,
-    height: 200,
-    backgroundColor: '#F4F6F5',
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-    position: 'relative',
-  },
-  qrCodeInner: {
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  qrLogoContainer: {
-    position: 'absolute',
-    top: '50%',
-    left: '50%',
-    marginTop: -25,
-    marginLeft: -25,
-  },
-  qrLogo: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: '#0F6EC0',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  qrLogoText: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: '#FFFFFF',
+    backgroundColor: colors.backgroundCard,
+    borderRadius: borderRadius.xl,
+    padding: spacing.xl,
+    ...shadows.md,
   },
   qrHint: {
-    fontSize: 13,
-    color: '#657084',
-    marginTop: 12,
+    fontSize: typography.fontSize.xs,
+    color: colors.textTertiary,
+    marginTop: spacing.md,
     textAlign: 'center',
+    lineHeight: typography.fontSize.xs * typography.lineHeight.relaxed,
+    paddingHorizontal: spacing.xl,
   },
+
+  // Address
   addressSection: {
-    marginBottom: 20,
+    marginBottom: spacing.xl,
+  },
+  addressLabel: {
+    fontSize: typography.fontSize.xs,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.textTertiary,
+    letterSpacing: typography.letterSpacing.wider,
+    marginBottom: spacing.sm,
   },
   addressContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F4F6F5',
-    borderWidth: 1,
-    borderColor: '#D2D6E1',
-    borderRadius: 15,
-    height: 60,
-    paddingHorizontal: 16,
+    backgroundColor: colors.backgroundCard,
+    borderWidth: 1.5,
+    borderColor: colors.borderLight,
+    borderRadius: borderRadius.lg,
+    height: layout.inputHeight,
+    paddingLeft: spacing.base,
+    paddingRight: spacing.xs,
+    ...shadows.xs,
   },
   addressText: {
     flex: 1,
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#000000',
-    marginRight: 10,
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.textPrimary,
+    fontFamily: typography.fontFamilyMono,
+    marginRight: spacing.sm,
   },
   copyButton: {
     width: 40,
     height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(15, 110, 192, 0.1)',
+    borderRadius: borderRadius.md,
+    backgroundColor: colors.primaryLight,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  copiedText: {
-    fontSize: 12,
-    color: '#22C55E',
-    textAlign: 'center',
-    marginTop: 8,
+  copyButtonCopied: {
+    backgroundColor: colors.successLight,
   },
-  summaryContainer: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 15,
-    padding: 16,
-    gap: 12,
+  copiedText: {
+    fontSize: typography.fontSize.xs,
+    color: colors.success,
+    fontWeight: typography.fontWeight.medium,
+    textAlign: 'center',
+    marginTop: spacing.sm,
+  },
+
+  // Summary Card
+  summaryCard: {
+    backgroundColor: colors.backgroundCard,
+    borderRadius: borderRadius.lg,
+    padding: spacing.lg,
+    ...shadows.sm,
+  },
+  summaryCardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginBottom: spacing.base,
+    paddingBottom: spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.divider,
   },
   summaryTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#657084',
-    marginBottom: 4,
+    fontSize: typography.fontSize.base,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.textPrimary,
+    letterSpacing: typography.letterSpacing.wide,
   },
   summaryItem: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    paddingVertical: spacing.md,
   },
   summaryItemLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: spacing.md,
   },
   summaryIcon: {
     width: 32,
     height: 32,
-    borderRadius: 16,
+    borderRadius: borderRadius.md,
     justifyContent: 'center',
     alignItems: 'center',
   },
   summaryLabel: {
-    fontSize: 14,
-    color: '#657084',
+    fontSize: typography.fontSize.sm,
+    color: colors.textTertiary,
+    fontWeight: typography.fontWeight.regular,
   },
   summaryValue: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#000000',
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.textPrimary,
   },
+  summaryDivider: {
+    height: 1,
+    backgroundColor: colors.divider,
+  },
+
+  // Bottom
   bottomContainer: {
-    paddingHorizontal: 52,
-    paddingBottom: Platform.OS === 'ios' ? 40 : 30,
-    gap: 12,
+    paddingHorizontal: layout.screenPaddingHorizontal,
+    paddingBottom: Platform.OS === 'ios' ? spacing['3xl'] : spacing['2xl'],
+    paddingTop: spacing.base,
+    gap: spacing.md,
+    borderTopWidth: 1,
+    borderTopColor: colors.divider,
+    backgroundColor: colors.backgroundElevated,
   },
   confirmButton: {
-    backgroundColor: '#0F6EC0',
-    borderRadius: 15,
-    height: 60,
+    backgroundColor: colors.primary,
+    borderRadius: borderRadius.lg,
+    height: layout.buttonHeight,
+    flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#0F6EC0',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 6,
+    gap: spacing.sm,
+    ...shadows.button,
   },
   confirmButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#F5F5F5',
+    fontSize: typography.fontSize.md,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.textWhite,
+    letterSpacing: typography.letterSpacing.wide,
   },
   cancelButton: {
-    backgroundColor: 'rgba(15, 110, 192, 0.1)',
-    borderRadius: 15,
-    height: 60,
+    backgroundColor: colors.backgroundCard,
+    borderRadius: borderRadius.lg,
+    height: layout.buttonHeight,
     justifyContent: 'center',
     alignItems: 'center',
+    borderWidth: 1.5,
+    borderColor: colors.borderLight,
   },
   cancelButtonText: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#000000',
+    fontSize: typography.fontSize.md,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.textSecondary,
   },
 });

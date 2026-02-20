@@ -1,4 +1,12 @@
-import { ArrowLeft, Delete } from 'lucide-react-native';
+import {
+  borderRadius,
+  colors,
+  layout,
+  shadows,
+  spacing,
+  typography,
+} from '@/constants/theme';
+import { ArrowLeft, Delete, Lock, Shield } from 'lucide-react-native';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Animated,
@@ -10,7 +18,6 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { borderRadius, colors, layout, spacing, typography } from '@/constants/theme';
 import { TransactionSummary } from './types';
 
 interface EnterPinProps {
@@ -25,20 +32,37 @@ const KEYPAD_KEYS = [
   ['1', '2', '3'],
   ['4', '5', '6'],
   ['7', '8', '9'],
-  ['#', '0', 'delete'],
+  ['', '0', 'delete'],
 ];
 
 interface SummaryRowProps {
   label: string;
   value: string;
+  isHighlighted?: boolean;
+  isLast?: boolean;
 }
 
-function SummaryRow({ label, value }: SummaryRowProps) {
+function SummaryRow({
+  label,
+  value,
+  isHighlighted = false,
+  isLast = false,
+}: SummaryRowProps) {
   return (
-    <View style={styles.summaryRow}>
-      <Text style={styles.summaryLabel}>{label}</Text>
-      <Text style={styles.summaryValue}>{value}</Text>
-    </View>
+    <>
+      <View style={styles.summaryRow}>
+        <Text style={styles.summaryLabel}>{label}</Text>
+        <Text
+          style={[
+            styles.summaryValue,
+            isHighlighted && styles.summaryValueHighlighted,
+          ]}
+        >
+          {value}
+        </Text>
+      </View>
+      {!isLast && <View style={styles.summaryDivider} />}
+    </>
   );
 }
 
@@ -49,7 +73,6 @@ export default function EnterPin({ summary, onSubmit, onBack }: EnterPinProps) {
 
   useEffect(() => {
     if (pin.length === PIN_LENGTH) {
-      // Auto-submit when PIN is complete
       handleSubmit();
     }
   }, [pin]);
@@ -84,54 +107,53 @@ export default function EnterPin({ summary, onSubmit, onBack }: EnterPinProps) {
     ]).start();
   };
 
-  const handleKeyPress = useCallback((key: string) => {
-    Vibration.vibrate(10);
-    setError('');
+  const handleKeyPress = useCallback(
+    (key: string) => {
+      if (!key) return;
+      Vibration.vibrate(10);
+      setError('');
 
-    if (key === 'delete') {
-      setPin((prev) => prev.slice(0, -1));
-      return;
-    }
+      if (key === 'delete') {
+        setPin((prev) => prev.slice(0, -1));
+        return;
+      }
 
-    if (key === '#') {
-      // Handle special character or ignore
-      return;
-    }
-
-    if (pin.length < PIN_LENGTH) {
-      setPin((prev) => prev + key);
-    }
-  }, [pin]);
+      if (pin.length < PIN_LENGTH) {
+        setPin((prev) => prev + key);
+      }
+    },
+    [pin]
+  );
 
   const handleSubmit = () => {
     if (pin.length !== PIN_LENGTH) {
-      setError('Please enter complete PIN');
+      setError('Please enter your complete PIN');
       triggerShake();
       return;
     }
-
-    // In real app, validate PIN here
     onSubmit(pin);
   };
 
-  const renderPinBoxes = () => {
-    const boxes = [];
+  const renderPinDots = () => {
+    const dots = [];
     for (let i = 0; i < PIN_LENGTH; i++) {
       const isFilled = i < pin.length;
-      boxes.push(
+      const isNext = i === pin.length;
+      dots.push(
         <Animated.View
           key={i}
           style={[
-            styles.pinBox,
-            isFilled && styles.pinBoxFilled,
+            styles.pinDotContainer,
+            isFilled && styles.pinDotContainerFilled,
+            isNext && styles.pinDotContainerNext,
             { transform: [{ translateX: shakeAnim }] },
           ]}
         >
-          {isFilled && <View style={styles.pinDot} />}
+          {isFilled && <View style={styles.pinDotInner} />}
         </Animated.View>
       );
     }
-    return boxes;
+    return dots;
   };
 
   return (
@@ -144,72 +166,103 @@ export default function EnterPin({ summary, onSubmit, onBack }: EnterPinProps) {
           activeOpacity={0.7}
           accessibilityLabel="Go back"
         >
-          <ArrowLeft size={24} color={colors.textPrimary} strokeWidth={2} />
+          <ArrowLeft
+            size={layout.iconSize.md}
+            color={colors.textPrimary}
+            strokeWidth={2}
+          />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Enter your pin</Text>
+        <Text style={styles.headerTitle}>Confirm</Text>
         <View style={styles.headerSpacer} />
+      </View>
+
+      {/* Step Indicator */}
+      <View style={styles.stepIndicator}>
+        <View style={[styles.stepDot, styles.stepDotCompleted]} />
+        <View style={[styles.stepLine, styles.stepLineCompleted]} />
+        <View style={[styles.stepDot, styles.stepDotCompleted]} />
+        <View style={[styles.stepLine, styles.stepLineCompleted]} />
+        <View style={[styles.stepDot, styles.stepDotActive]} />
       </View>
 
       {/* Summary Card */}
       <View style={styles.summaryCard}>
-        <Text style={styles.summaryTitle}>Summary</Text>
+        <View style={styles.summaryCardHeader}>
+          <Shield
+            size={layout.iconSize.sm}
+            color={colors.primary}
+            strokeWidth={1.8}
+          />
+          <Text style={styles.summaryTitle}>Transaction Summary</Text>
+        </View>
+
         <SummaryRow label="Amount" value={summary.amount} />
-        <SummaryRow label="Exchange rate" value={summary.exchangeRate} />
-        <SummaryRow label="Customer receives" value={summary.customerReceives} />
-        <SummaryRow label="Network fee" value={summary.networkFee} />
+        <SummaryRow label="Exchange Rate" value={summary.exchangeRate} />
+        <SummaryRow
+          label="Customer Receives"
+          value={summary.customerReceives}
+          isHighlighted
+        />
+        <SummaryRow
+          label="Network Fee"
+          value={summary.networkFee}
+          isLast
+        />
       </View>
 
-      {/* PIN Input */}
-      <View style={styles.pinContainer}>
-        <View style={styles.pinBoxesContainer}>{renderPinBoxes()}</View>
+      {/* PIN Section */}
+      <View style={styles.pinSection}>
+        <View style={styles.pinIconRow}>
+          <View style={styles.lockIconContainer}>
+            <Lock
+              size={layout.iconSize.sm}
+              color={colors.primary}
+              strokeWidth={2}
+            />
+          </View>
+        </View>
+        <Text style={styles.pinTitle}>Enter your PIN</Text>
+        <Text style={styles.pinSubtitle}>
+          Enter your 6-digit security PIN to confirm
+        </Text>
+
+        <View style={styles.pinDotsContainer}>{renderPinDots()}</View>
+
         {error ? <Text style={styles.errorText}>{error}</Text> : null}
-      </View>
-
-      {/* Submit Button */}
-      <View style={styles.submitButtonContainer}>
-        <TouchableOpacity
-          style={[
-            styles.submitButton,
-            pin.length !== PIN_LENGTH && styles.submitButtonDisabled,
-          ]}
-          onPress={handleSubmit}
-          disabled={pin.length !== PIN_LENGTH}
-          activeOpacity={0.8}
-          accessibilityLabel="Confirm transaction"
-        >
-          <Text
-            style={[
-              styles.submitButtonText,
-              pin.length !== PIN_LENGTH && styles.submitButtonTextDisabled,
-            ]}
-          >
-            Next
-          </Text>
-        </TouchableOpacity>
       </View>
 
       {/* Keypad */}
       <View style={styles.keypadContainer}>
         {KEYPAD_KEYS.map((row, rowIndex) => (
           <View key={rowIndex} style={styles.keypadRow}>
-            {row.map((key) => (
+            {row.map((key, keyIndex) => (
               <TouchableOpacity
-                key={key}
+                key={`${rowIndex}-${keyIndex}`}
                 style={[
                   styles.keypadKey,
-                  key === 'delete' && styles.keypadKeyDelete,
+                  key === 'delete' && styles.keypadKeySpecial,
+                  key === '' && styles.keypadKeyEmpty,
                 ]}
                 onPress={() => handleKeyPress(key)}
-                activeOpacity={0.6}
+                activeOpacity={key ? 0.5 : 1}
+                disabled={!key}
                 accessibilityLabel={
-                  key === 'delete' ? 'Delete' : key === '#' ? 'Hash' : key
+                  key === 'delete'
+                    ? 'Delete'
+                    : key
+                      ? key
+                      : undefined
                 }
               >
                 {key === 'delete' ? (
-                  <Delete size={24} color={colors.textPrimary} strokeWidth={2} />
-                ) : (
+                  <Delete
+                    size={layout.iconSize.md}
+                    color={colors.textPrimary}
+                    strokeWidth={1.8}
+                  />
+                ) : key ? (
                   <Text style={styles.keypadKeyText}>{key}</Text>
-                )}
+                ) : null}
               </TouchableOpacity>
             ))}
           </View>
@@ -224,143 +277,217 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
   },
+
+  // Header
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
+    paddingHorizontal: layout.screenPaddingHorizontal,
+    paddingVertical: spacing.base,
   },
   backButton: {
-    width: 50,
-    height: 50,
+    width: layout.avatarSize.md,
+    height: layout.avatarSize.md,
     borderRadius: borderRadius.full,
-    backgroundColor: colors.backgroundInput,
+    backgroundColor: colors.backgroundCard,
     justifyContent: 'center',
     alignItems: 'center',
+    ...shadows.xs,
   },
   headerTitle: {
-    fontSize: typography.fontSize['4xl'],
+    fontSize: typography.fontSize.lg,
     fontWeight: typography.fontWeight.semibold,
     color: colors.textPrimary,
-    textAlign: 'center',
+    letterSpacing: typography.letterSpacing.wide,
   },
   headerSpacer: {
-    width: 50,
+    width: layout.avatarSize.md,
   },
+
+  // Step Indicator
+  stepIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: layout.screenPaddingHorizontal * 2,
+    paddingVertical: spacing.md,
+    gap: spacing.xs,
+  },
+  stepDot: {
+    width: 10,
+    height: 10,
+    borderRadius: borderRadius.full,
+    backgroundColor: colors.borderLight,
+  },
+  stepDotActive: {
+    backgroundColor: colors.primary,
+    width: 12,
+    height: 12,
+  },
+  stepDotCompleted: {
+    backgroundColor: colors.success,
+  },
+  stepLine: {
+    flex: 1,
+    height: 2,
+    backgroundColor: colors.borderLight,
+  },
+  stepLineCompleted: {
+    backgroundColor: colors.success,
+  },
+
+  // Summary Card
   summaryCard: {
-    marginHorizontal: spacing['3xl'],
-    marginTop: spacing.lg,
-    padding: spacing.md,
-    backgroundColor: colors.backgroundInput,
-    borderRadius: borderRadius.md,
-    gap: spacing.md,
+    marginHorizontal: layout.screenPaddingHorizontal,
+    marginTop: spacing.sm,
+    backgroundColor: colors.backgroundCard,
+    borderRadius: borderRadius.lg,
+    padding: spacing.lg,
+    ...shadows.sm,
+  },
+  summaryCardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginBottom: spacing.base,
+    paddingBottom: spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.divider,
   },
   summaryTitle: {
-    fontSize: typography.fontSize.md,
+    fontSize: typography.fontSize.base,
     fontWeight: typography.fontWeight.bold,
-    color: colors.textSecondary,
+    color: colors.textPrimary,
+    letterSpacing: typography.letterSpacing.wide,
   },
   summaryRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    paddingVertical: spacing.sm,
   },
   summaryLabel: {
-    fontSize: typography.fontSize.md,
-    color: colors.textSecondary,
+    fontSize: typography.fontSize.sm,
+    color: colors.textTertiary,
     fontWeight: typography.fontWeight.regular,
   },
   summaryValue: {
-    fontSize: typography.fontSize.md,
+    fontSize: typography.fontSize.sm,
     color: colors.textPrimary,
-    fontWeight: typography.fontWeight.medium,
+    fontWeight: typography.fontWeight.semibold,
+    textAlign: 'right',
+    maxWidth: '55%',
   },
-  pinContainer: {
+  summaryValueHighlighted: {
+    color: colors.primary,
+    fontWeight: typography.fontWeight.bold,
+  },
+  summaryDivider: {
+    height: 1,
+    backgroundColor: colors.divider,
+  },
+
+  // PIN Section
+  pinSection: {
     alignItems: 'center',
-    paddingVertical: spacing['2xl'],
-    paddingHorizontal: spacing['3xl'],
+    paddingVertical: spacing.xl,
+    paddingHorizontal: layout.screenPaddingHorizontal,
   },
-  pinBoxesContainer: {
-    flexDirection: 'row',
-    gap: spacing.sm,
+  pinIconRow: {
+    marginBottom: spacing.md,
   },
-  pinBox: {
-    width: 70,
-    height: 70,
-    backgroundColor: colors.backgroundInput,
-    borderRadius: borderRadius.md,
+  lockIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: borderRadius.full,
+    backgroundColor: colors.primaryLight,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  pinBoxFilled: {
-    backgroundColor: colors.primaryLight,
-    borderWidth: 2,
-    borderColor: colors.primary,
+  pinTitle: {
+    fontSize: typography.fontSize.lg,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.textPrimary,
+    marginBottom: spacing.xs,
   },
-  pinDot: {
-    width: 16,
-    height: 16,
+  pinSubtitle: {
+    fontSize: typography.fontSize.sm,
+    color: colors.textTertiary,
+    fontWeight: typography.fontWeight.regular,
+    marginBottom: spacing.xl,
+  },
+  pinDotsContainer: {
+    flexDirection: 'row',
+    gap: spacing.md,
+  },
+  pinDotContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: borderRadius.md,
+    backgroundColor: colors.backgroundCard,
+    borderWidth: 1.5,
+    borderColor: colors.borderLight,
+    justifyContent: 'center',
+    alignItems: 'center',
+    ...shadows.xs,
+  },
+  pinDotContainerFilled: {
+    backgroundColor: colors.primaryLight,
+    borderColor: colors.primary,
+    borderWidth: 2,
+  },
+  pinDotContainerNext: {
+    borderColor: colors.primaryMedium,
+    borderStyle: 'dashed',
+  },
+  pinDotInner: {
+    width: 14,
+    height: 14,
     borderRadius: borderRadius.full,
     backgroundColor: colors.primary,
   },
   errorText: {
-    fontSize: typography.fontSize.base,
+    fontSize: typography.fontSize.sm,
     color: colors.error,
+    fontWeight: typography.fontWeight.medium,
     marginTop: spacing.md,
     textAlign: 'center',
   },
-  submitButtonContainer: {
-    paddingHorizontal: spacing['3xl'],
-    marginBottom: spacing.md,
-  },
-  submitButton: {
-    backgroundColor: colors.primary,
-    borderRadius: borderRadius.lg,
-    height: layout.buttonHeight,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  submitButtonDisabled: {
-    backgroundColor: colors.primaryDisabled,
-  },
-  submitButtonText: {
-    fontSize: typography.fontSize.md,
-    fontWeight: typography.fontWeight.medium,
-    color: colors.textLight,
-  },
-  submitButtonTextDisabled: {
-    color: colors.textLight,
-    opacity: 0.7,
-  },
+
+  // Keypad
   keypadContainer: {
     flex: 1,
     justifyContent: 'flex-end',
-    paddingHorizontal: spacing['3xl'],
+    paddingHorizontal: layout.screenPaddingHorizontal,
     paddingBottom: Platform.OS === 'ios' ? spacing.xl : spacing.md,
-    gap: spacing.md,
+    gap: spacing.sm,
   },
   keypadRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    gap: spacing.md,
+    gap: spacing.sm,
   },
   keypadKey: {
     flex: 1,
-    height: 58,
-    backgroundColor: colors.primaryLight,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: borderRadius.sm,
+    height: 56,
+    backgroundColor: colors.backgroundCard,
+    borderRadius: borderRadius.md,
     justifyContent: 'center',
     alignItems: 'center',
+    ...shadows.xs,
   },
-  keypadKeyDelete: {
-    backgroundColor: colors.primaryLight,
+  keypadKeySpecial: {
+    backgroundColor: colors.backgroundInput,
+  },
+  keypadKeyEmpty: {
+    backgroundColor: 'transparent',
+    shadowOpacity: 0,
+    elevation: 0,
   },
   keypadKeyText: {
-    fontSize: typography.fontSize.lg,
-    fontWeight: typography.fontWeight.medium,
+    fontSize: typography.fontSize.xl,
+    fontWeight: typography.fontWeight.semibold,
     color: colors.textPrimary,
   },
 });

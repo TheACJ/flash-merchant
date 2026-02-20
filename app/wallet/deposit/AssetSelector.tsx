@@ -1,5 +1,12 @@
-import { borderRadius, colors, typography } from '@/constants/theme';
-import { Check } from 'lucide-react-native';
+import {
+  borderRadius,
+  colors,
+  layout,
+  shadows,
+  spacing,
+  typography,
+} from '@/constants/theme';
+import { Check, X } from 'lucide-react-native';
 import React, { useEffect, useRef } from 'react';
 import {
   Animated,
@@ -16,7 +23,7 @@ import { AssetIcon } from './SelectAssetAmount';
 import { Asset } from './types';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
-const MODAL_HEIGHT = 680;
+const MODAL_HEIGHT = SCREEN_HEIGHT * 0.7;
 
 interface AssetSelectorProps {
   visible: boolean;
@@ -88,7 +95,7 @@ export default function AssetSelector({
             {
               opacity: backdropAnim.interpolate({
                 inputRange: [0, 1],
-                outputRange: [0, 0.25],
+                outputRange: [0, 0.5],
               }),
             },
           ]}
@@ -99,9 +106,7 @@ export default function AssetSelector({
         <Animated.View
           style={[
             styles.bottomSheet,
-            {
-              transform: [{ translateY: slideAnim }],
-            },
+            { transform: [{ translateY: slideAnim }] },
           ]}
         >
           {/* Handle */}
@@ -109,12 +114,27 @@ export default function AssetSelector({
             <View style={styles.handle} />
           </View>
 
-          {/* Title */}
-          <Text style={styles.title}>Assets</Text>
+          {/* Header */}
+          <View style={styles.sheetHeader}>
+            <Text style={styles.title}>Select Asset</Text>
+            <TouchableOpacity
+              style={styles.closeButton}
+              onPress={onClose}
+              activeOpacity={0.7}
+              accessibilityLabel="Close"
+            >
+              <X
+                size={layout.iconSize.sm}
+                color={colors.textTertiary}
+                strokeWidth={2}
+              />
+            </TouchableOpacity>
+          </View>
 
           {/* Asset List */}
           <ScrollView
             style={styles.assetList}
+            contentContainerStyle={styles.assetListContent}
             showsVerticalScrollIndicator={false}
             bounces={false}
           >
@@ -128,12 +148,12 @@ export default function AssetSelector({
                     isSelected && styles.assetItemSelected,
                   ]}
                   onPress={() => handleAssetPress(asset)}
-                  activeOpacity={0.7}
+                  activeOpacity={0.6}
                   accessibilityLabel={`Select ${asset.name}`}
                   accessibilityState={{ selected: isSelected }}
                 >
                   <View style={styles.assetLeft}>
-                    <AssetIcon asset={asset} size={40} />
+                    <AssetIcon asset={asset} size={44} />
                     <View style={styles.assetInfo}>
                       <Text style={styles.assetSymbol}>{asset.symbol}</Text>
                       <Text style={styles.assetName}>{asset.name}</Text>
@@ -141,7 +161,11 @@ export default function AssetSelector({
                   </View>
                   {isSelected && (
                     <View style={styles.checkContainer}>
-                      <Check size={20} color={colors.primary} strokeWidth={3} />
+                      <Check
+                        size={16}
+                        color={colors.textWhite}
+                        strokeWidth={3}
+                      />
                     </View>
                   )}
                 </TouchableOpacity>
@@ -149,7 +173,7 @@ export default function AssetSelector({
             })}
           </ScrollView>
 
-          {/* Cancel Button */}
+          {/* Cancel */}
           <View style={styles.cancelContainer}>
             <TouchableOpacity
               style={styles.cancelButton}
@@ -179,86 +203,117 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   bottomSheet: {
-    backgroundColor: colors.backgroundInput,
-    borderTopLeftRadius: borderRadius.xl,
-    borderTopRightRadius: borderRadius.xl,
+    backgroundColor: colors.backgroundElevated,
+    borderTopLeftRadius: borderRadius['2xl'],
+    borderTopRightRadius: borderRadius['2xl'],
     maxHeight: MODAL_HEIGHT,
-    paddingBottom: 30,
+    paddingBottom: spacing['3xl'],
+    ...shadows.lg,
   },
   handleContainer: {
     alignItems: 'center',
-    paddingVertical: 12,
+    paddingVertical: spacing.md,
   },
   handle: {
     width: 40,
     height: 4,
     backgroundColor: colors.border,
-    borderRadius: 2,
+    borderRadius: borderRadius.full,
+  },
+
+  // Header
+  sheetHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: layout.screenPaddingHorizontal,
+    paddingBottom: spacing.lg,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.divider,
   },
   title: {
-    fontSize: typography.fontSize['4xl'],
-    fontWeight: typography.fontWeight.medium,
+    fontSize: typography.fontSize.xl,
+    fontWeight: typography.fontWeight.bold,
     color: colors.textPrimary,
-    textAlign: 'center',
-    marginBottom: 20,
+    letterSpacing: typography.letterSpacing.tight,
   },
+  closeButton: {
+    width: 36,
+    height: 36,
+    borderRadius: borderRadius.full,
+    backgroundColor: colors.backgroundInput,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  // Asset List
   assetList: {
-    paddingHorizontal: 52,
-    maxHeight: 400,
+    maxHeight: MODAL_HEIGHT * 0.6,
+  },
+  assetListContent: {
+    paddingHorizontal: layout.screenPaddingHorizontal,
+    paddingTop: spacing.base,
+    paddingBottom: spacing.sm,
   },
   assetItem: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: colors.background,
-    borderRadius: borderRadius.sm,
-    padding: 12,
-    marginBottom: 16,
+    backgroundColor: colors.backgroundCard,
+    borderRadius: borderRadius.lg,
+    padding: spacing.base,
+    marginBottom: spacing.sm,
+    borderWidth: 1.5,
+    borderColor: colors.borderLight,
   },
   assetItemSelected: {
-    backgroundColor: '#E8F4FD',
-    borderWidth: 1,
     borderColor: colors.primary,
+    backgroundColor: colors.primaryLight,
   },
   assetLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: spacing.md,
   },
   assetInfo: {
-    gap: 3,
+    gap: spacing['2xs'],
   },
   assetSymbol: {
     fontSize: typography.fontSize.md,
-    fontWeight: typography.fontWeight.medium,
+    fontWeight: typography.fontWeight.bold,
     color: colors.textPrimary,
   },
   assetName: {
-    fontSize: typography.fontSize.base,
-    color: colors.textSecondary,
+    fontSize: typography.fontSize.sm,
+    color: colors.textTertiary,
+    fontWeight: typography.fontWeight.regular,
   },
   checkContainer: {
     width: 28,
     height: 28,
-    borderRadius: 14,
-    backgroundColor: colors.primaryLight,
+    borderRadius: borderRadius.full,
+    backgroundColor: colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
   },
+
+  // Cancel
   cancelContainer: {
-    paddingHorizontal: 52,
-    paddingTop: 20,
+    paddingHorizontal: layout.screenPaddingHorizontal,
+    paddingTop: spacing.base,
   },
   cancelButton: {
-    backgroundColor: colors.primaryLight,
+    backgroundColor: colors.backgroundInput,
     borderRadius: borderRadius.lg,
-    height: 60,
+    height: layout.buttonHeight,
     justifyContent: 'center',
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: colors.borderLight,
   },
   cancelButtonText: {
     fontSize: typography.fontSize.md,
     fontWeight: typography.fontWeight.medium,
-    color: colors.textPrimary,
+    color: colors.textSecondary,
   },
 });

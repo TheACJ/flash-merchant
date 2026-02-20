@@ -1,4 +1,5 @@
 import { globalCacheOrchestrator } from '@/services/GlobalCacheOrchestrator';
+import { merchantProfileOrchestrator } from '@/services/MerchantProfileOrchestrator';
 import { loadPreferredCurrency } from '@/store/slices/currencySlice';
 import { useEffect, useRef } from 'react';
 import { useDispatch } from 'react-redux';
@@ -21,8 +22,15 @@ export function useAppInitialization() {
       console.log('[useAppInitialization] Starting app initialization...');
 
       try {
+        // Initialize global caches (prices, assets, etc.)
         await globalCacheOrchestrator.initialize();
+
+        // Load preferred currency from storage
         dispatch(loadPreferredCurrency());
+
+        // Warm merchant profile cache from storage/API
+        await merchantProfileOrchestrator.warmCache();
+
         console.log('[useAppInitialization] App initialization complete');
       } catch (error) {
         console.error('[useAppInitialization] Initialization failed:', error);

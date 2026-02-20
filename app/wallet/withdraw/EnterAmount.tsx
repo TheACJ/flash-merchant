@@ -1,4 +1,12 @@
-import { ArrowLeft, Delete, User } from 'lucide-react-native';
+import {
+  borderRadius,
+  colors,
+  layout,
+  shadows,
+  spacing,
+  typography,
+} from '@/constants/theme';
+import { ArrowLeft, Delete, User, Wallet } from 'lucide-react-native';
 import React, { useCallback, useState } from 'react';
 import {
   Platform,
@@ -9,8 +17,6 @@ import {
   Vibration,
   View,
 } from 'react-native';
-
-
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Asset, CustomerInfo } from './types';
 
@@ -32,8 +38,6 @@ const KEYPAD_KEYS = [
 const MAX_AMOUNT = 100000;
 const MAX_DECIMALS = 2;
 
-import { borderRadius, colors, layout, spacing, typography } from '@/constants/theme';
-
 export default function EnterAmount({
   customer,
   asset,
@@ -46,11 +50,9 @@ export default function EnterAmount({
 
   const formatDisplayAmount = (value: string): string => {
     if (!value || value === '0') return '$0';
-
     const numValue = parseFloat(value);
     if (isNaN(numValue)) return '$0';
 
-    // Format with commas for thousands
     const parts = value.split('.');
     const integerPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 
@@ -60,63 +62,56 @@ export default function EnterAmount({
     return `$${integerPart}`;
   };
 
-  const handleKeyPress = useCallback((key: string) => {
-    Vibration.vibrate(10);
-    setError('');
+  const handleKeyPress = useCallback(
+    (key: string) => {
+      Vibration.vibrate(10);
+      setError('');
 
-    if (key === 'delete') {
+      if (key === 'delete') {
+        setAmount((prev) => {
+          if (prev.length <= 1) return '0';
+          const newValue = prev.slice(0, -1);
+          return newValue || '0';
+        });
+        return;
+      }
+
+      if (key === '.') {
+        setAmount((prev) => {
+          if (prev.includes('.')) return prev;
+          return prev + '.';
+        });
+        return;
+      }
+
       setAmount((prev) => {
-        if (prev.length <= 1) return '0';
-        const newValue = prev.slice(0, -1);
-        return newValue || '0';
+        if (prev === '0' && key !== '.') return key;
+
+        const parts = prev.split('.');
+        if (parts.length > 1 && parts[1].length >= MAX_DECIMALS) return prev;
+
+        const newValue = prev + key;
+        if (parseFloat(newValue) > MAX_AMOUNT) {
+          setError(`Maximum amount is $${MAX_AMOUNT.toLocaleString()}`);
+          return prev;
+        }
+
+        return newValue;
       });
-      return;
-    }
-
-    if (key === '.') {
-      setAmount((prev) => {
-        if (prev.includes('.')) return prev;
-        return prev + '.';
-      });
-      return;
-    }
-
-    setAmount((prev) => {
-      // Handle initial zero
-      if (prev === '0' && key !== '.') {
-        return key;
-      }
-
-      // Check decimal places
-      const parts = prev.split('.');
-      if (parts.length > 1 && parts[1].length >= MAX_DECIMALS) {
-        return prev;
-      }
-
-      // Check max amount
-      const newValue = prev + key;
-      if (parseFloat(newValue) > MAX_AMOUNT) {
-        setError(`Maximum amount is $${MAX_AMOUNT.toLocaleString()}`);
-        return prev;
-      }
-
-      return newValue;
-    });
-  }, []);
+    },
+    []
+  );
 
   const handleSubmit = () => {
     const numAmount = parseFloat(amount);
-
     if (isNaN(numAmount) || numAmount <= 0) {
       setError('Please enter a valid amount');
       return;
     }
-
     if (numAmount < 1) {
       setError('Minimum amount is $1.00');
       return;
     }
-
     onSubmit(amount);
   };
 
@@ -129,7 +124,11 @@ export default function EnterAmount({
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent />
+      <StatusBar
+        barStyle="dark-content"
+        backgroundColor="transparent"
+        translucent
+      />
 
       {/* Header */}
       <View style={styles.header}>
@@ -139,20 +138,44 @@ export default function EnterAmount({
           activeOpacity={0.7}
           accessibilityLabel="Go back"
         >
-          <ArrowLeft size={24} color={colors.textPrimary} strokeWidth={2} />
+          <ArrowLeft
+            size={layout.iconSize.md}
+            color={colors.textPrimary}
+            strokeWidth={2}
+          />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Physical withdrawal</Text>
+        <Text style={styles.headerTitle}>Withdrawal</Text>
         <View style={styles.headerSpacer} />
+      </View>
+
+      {/* Step Indicator */}
+      <View style={styles.stepIndicator}>
+        <View style={[styles.stepDot, styles.stepDotCompleted]} />
+        <View style={[styles.stepLine, styles.stepLineCompleted]} />
+        <View style={[styles.stepDot, styles.stepDotActive]} />
+        <View style={styles.stepLine} />
+        <View style={styles.stepDot} />
       </View>
 
       {/* Customer Info Card */}
       <View style={styles.customerCard}>
-        <Text style={styles.cardLabel}>To:</Text>
+        <View style={styles.customerCardHeader}>
+          <View style={styles.recipientBadge}>
+            <Wallet
+              size={layout.iconSize.xs}
+              color={colors.primary}
+              strokeWidth={2}
+            />
+            <Text style={styles.recipientBadgeText}>Recipient</Text>
+          </View>
+        </View>
         <View style={styles.customerInfo}>
           <View style={styles.avatarContainer}>
-            <View style={styles.avatar}>
-              <User size={20} color={colors.textTertiary} strokeWidth={2} />
-            </View>
+            <User
+              size={layout.iconSize.sm}
+              color={colors.textWhite}
+              strokeWidth={2}
+            />
           </View>
           <View style={styles.customerDetails}>
             <Text style={styles.customerName}>{customer.name}</Text>
@@ -175,7 +198,11 @@ export default function EnterAmount({
         >
           {formatDisplayAmount(amount)}
         </Text>
-        {error ? <Text style={styles.errorText}>{error}</Text> : null}
+        {error ? <Text style={styles.errorText}>{error}</Text> : (
+          <Text style={styles.assetHint}>
+            Withdrawing {asset.symbol} • {asset.name}
+          </Text>
+        )}
       </View>
 
       {/* Continue Button */}
@@ -196,7 +223,7 @@ export default function EnterAmount({
               isButtonDisabled && styles.continueButtonTextDisabled,
             ]}
           >
-            Next
+            Continue
           </Text>
         </TouchableOpacity>
       </View>
@@ -210,16 +237,24 @@ export default function EnterAmount({
                 key={key}
                 style={[
                   styles.keypadKey,
-                  key === 'delete' && styles.keypadKeyDelete,
+                  key === 'delete' && styles.keypadKeySpecial,
                 ]}
                 onPress={() => handleKeyPress(key)}
-                activeOpacity={0.6}
+                activeOpacity={0.5}
                 accessibilityLabel={
-                  key === 'delete' ? 'Delete' : key === '.' ? 'Decimal point' : key
+                  key === 'delete'
+                    ? 'Delete'
+                    : key === '.'
+                      ? 'Decimal point'
+                      : key
                 }
               >
                 {key === 'delete' ? (
-                  <Delete size={24} color={colors.textPrimary} strokeWidth={2} />
+                  <Delete
+                    size={layout.iconSize.md}
+                    color={colors.textPrimary}
+                    strokeWidth={1.8}
+                  />
                 ) : (
                   <Text style={styles.keypadKeyText}>{key}</Text>
                 )}
@@ -237,101 +272,158 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
   },
+
+  // Header
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
+    paddingHorizontal: layout.screenPaddingHorizontal,
+    paddingVertical: spacing.base,
   },
   backButton: {
-    width: 50,
-    height: 50,
+    width: layout.avatarSize.md,
+    height: layout.avatarSize.md,
     borderRadius: borderRadius.full,
-    backgroundColor: colors.backgroundInput,
+    backgroundColor: colors.backgroundCard,
     justifyContent: 'center',
     alignItems: 'center',
+    ...shadows.xs,
   },
   headerTitle: {
-    fontSize: typography.fontSize['4xl'],
+    fontSize: typography.fontSize.lg,
     fontWeight: typography.fontWeight.semibold,
     color: colors.textPrimary,
-    textAlign: 'center',
+    letterSpacing: typography.letterSpacing.wide,
   },
   headerSpacer: {
-    width: 50,
+    width: layout.avatarSize.md,
   },
+
+  // Step Indicator
+  stepIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: layout.screenPaddingHorizontal * 2,
+    paddingVertical: spacing.md,
+    gap: spacing.xs,
+  },
+  stepDot: {
+    width: 10,
+    height: 10,
+    borderRadius: borderRadius.full,
+    backgroundColor: colors.borderLight,
+  },
+  stepDotActive: {
+    backgroundColor: colors.primary,
+    width: 12,
+    height: 12,
+  },
+  stepDotCompleted: {
+    backgroundColor: colors.success,
+  },
+  stepLine: {
+    flex: 1,
+    height: 2,
+    backgroundColor: colors.borderLight,
+  },
+  stepLineCompleted: {
+    backgroundColor: colors.success,
+  },
+
+  // Customer Card
   customerCard: {
-    marginHorizontal: spacing['3xl'],
-    marginTop: spacing.xl,
-    padding: spacing.lg,
-    backgroundColor: colors.backgroundInput,
-    borderRadius: borderRadius.md,
+    marginHorizontal: layout.screenPaddingHorizontal,
+    marginTop: spacing.base,
+    backgroundColor: colors.backgroundCard,
+    borderRadius: borderRadius.lg,
+    padding: spacing.base,
+    ...shadows.sm,
   },
-  cardLabel: {
-    fontSize: typography.fontSize.md,
+  customerCardHeader: {
+    marginBottom: spacing.md,
+  },
+  recipientBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    backgroundColor: colors.primaryLight,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing['2xs'],
+    borderRadius: borderRadius.full,
+    alignSelf: 'flex-start',
+  },
+  recipientBadgeText: {
+    fontSize: typography.fontSize.xs,
     fontWeight: typography.fontWeight.semibold,
-    color: colors.textPrimary,
-    marginBottom: spacing.sm,
+    color: colors.primary,
+    textTransform: 'uppercase',
+    letterSpacing: typography.letterSpacing.wider,
   },
   customerInfo: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: spacing.md,
   },
   avatarContainer: {
     width: layout.avatarSize.md,
     height: layout.avatarSize.md,
     borderRadius: borderRadius.full,
-    backgroundColor: colors.background,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  avatar: {
-    width: 30,
-    height: 30,
-    borderRadius: borderRadius.full,
-    backgroundColor: colors.textTertiary,
+    backgroundColor: colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
   },
   customerDetails: {
     flex: 1,
-    gap: 4,
+    gap: spacing['2xs'],
   },
   customerName: {
     fontSize: typography.fontSize.md,
-    fontWeight: typography.fontWeight.medium,
+    fontWeight: typography.fontWeight.semibold,
     color: colors.textPrimary,
   },
   customerAddress: {
-    fontSize: typography.fontSize.base,
-    color: colors.textSecondary,
+    fontSize: typography.fontSize.sm,
+    color: colors.textTertiary,
+    fontFamily: typography.fontFamilyMono,
   },
+
+  // Amount Display
   amountContainer: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: spacing['3xl'],
-    paddingHorizontal: spacing['3xl'],
+    paddingVertical: spacing.xl,
+    paddingHorizontal: layout.screenPaddingHorizontal,
   },
   amountText: {
-    fontSize: 50,
+    fontSize: typography.fontSize['7xl'],
     fontWeight: typography.fontWeight.bold,
-    color: colors.textTertiary,
+    color: colors.textPlaceholder,
     textAlign: 'center',
+    letterSpacing: typography.letterSpacing.tight,
   },
   amountTextActive: {
     color: colors.textPrimary,
   },
+  assetHint: {
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.textTertiary,
+    marginTop: spacing.sm,
+  },
   errorText: {
-    fontSize: typography.fontSize.base,
+    fontSize: typography.fontSize.sm,
     color: colors.error,
+    fontWeight: typography.fontWeight.medium,
     marginTop: spacing.sm,
     textAlign: 'center',
   },
+
+  // Continue Button
   continueButtonContainer: {
-    paddingHorizontal: spacing['3xl'],
-    marginBottom: spacing.md,
+    paddingHorizontal: layout.screenPaddingHorizontal,
+    marginBottom: spacing.lg,
   },
   continueButton: {
     backgroundColor: colors.primary,
@@ -339,47 +431,51 @@ const styles = StyleSheet.create({
     height: layout.buttonHeight,
     justifyContent: 'center',
     alignItems: 'center',
+    ...shadows.button,
   },
   continueButtonDisabled: {
     backgroundColor: colors.primaryDisabled,
+    shadowOpacity: 0,
+    elevation: 0,
   },
   continueButtonText: {
     fontSize: typography.fontSize.md,
-    fontWeight: typography.fontWeight.medium,
-    color: colors.textLight,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.textWhite,
+    letterSpacing: typography.letterSpacing.wide,
   },
   continueButtonTextDisabled: {
-    color: colors.textLight,
-    opacity: 0.7,
+    color: 'rgba(255, 255, 255, 0.6)',
   },
+
+  // Keypad
   keypadContainer: {
     flex: 1,
     justifyContent: 'flex-end',
-    paddingHorizontal: spacing['3xl'],
+    paddingHorizontal: layout.screenPaddingHorizontal,
     paddingBottom: Platform.OS === 'ios' ? spacing.xl : spacing.md,
-    gap: spacing.md,
+    gap: spacing.sm,
   },
   keypadRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    gap: spacing.md,
+    gap: spacing.sm,
   },
   keypadKey: {
     flex: 1,
-    height: 58,
-    backgroundColor: colors.primaryLight,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: borderRadius.sm,
+    height: 56,
+    backgroundColor: colors.backgroundCard,
+    borderRadius: borderRadius.md,
     justifyContent: 'center',
     alignItems: 'center',
+    ...shadows.xs,
   },
-  keypadKeyDelete: {
-    backgroundColor: colors.primaryLight,
+  keypadKeySpecial: {
+    backgroundColor: colors.backgroundInput,
   },
   keypadKeyText: {
-    fontSize: typography.fontSize.lg,
-    fontWeight: typography.fontWeight.medium,
+    fontSize: typography.fontSize.xl,
+    fontWeight: typography.fontWeight.semibold,
     color: colors.textPrimary,
   },
 });

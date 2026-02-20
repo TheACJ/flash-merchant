@@ -7,6 +7,8 @@ import {
   spacing,
   typography,
 } from '@/constants/theme';
+import { merchantProfileOrchestrator } from '@/services/MerchantProfileOrchestrator';
+import { logout } from '@/store/slices/merchantAuthSlice';
 import { useRouter } from 'expo-router';
 import { LogOut } from 'lucide-react-native';
 import React from 'react';
@@ -17,9 +19,22 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useDispatch } from 'react-redux';
 
 export default function LogoutScreen() {
   const router = useRouter();
+  const dispatch = useDispatch();
+
+  const handleLogout = async () => {
+    // Clear merchant profile from storage, cache, and stop refresh timer
+    await merchantProfileOrchestrator.clear();
+
+    // Clear Redux state
+    dispatch(logout());
+
+    // Navigate to login
+    router.replace('/auth/login' as any);
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -42,7 +57,7 @@ export default function LogoutScreen() {
       <View style={styles.buttonContainer}>
         <TouchableOpacity
           style={styles.logoutButton}
-          onPress={() => router.replace('/auth/login' as any)}
+          onPress={handleLogout}
           activeOpacity={0.85}
         >
           <LogOut

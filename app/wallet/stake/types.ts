@@ -28,5 +28,4 @@ export const STAKING_CONFIG: StakingInfo = {
   lockPeriodDays: 30,
 };
 
-// Mock wallet address for staking
 export const STAKING_WALLET_ADDRESS = '1FzWZ3X9kP4u7hTqL8dY5sVb9Qm2RxA7Gp';

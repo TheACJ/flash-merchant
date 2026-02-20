@@ -1,23 +1,31 @@
 import {
-    ArrowLeft,
-    Clock,
-    Coins,
-    Info,
-    Percent,
-    TrendingUp,
+  borderRadius,
+  colors,
+  layout,
+  shadows,
+  spacing,
+  typography,
+} from '@/constants/theme';
+import {
+  ArrowLeft,
+  Clock,
+  Coins,
+  Info,
+  Percent,
+  TrendingUp,
 } from 'lucide-react-native';
 import React, { useRef, useState } from 'react';
 import {
-    Keyboard,
-    KeyboardAvoidingView,
-    Platform,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    TouchableWithoutFeedback,
-    View,
+  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  TouchableWithoutFeedback,
+  View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StakingInfo } from './types';
@@ -36,11 +44,21 @@ interface InfoCardProps {
   iconColor?: string;
 }
 
-function InfoCard({ icon: Icon, label, value, iconColor = '#0F6EC0' }: InfoCardProps) {
+function InfoCard({
+  icon: Icon,
+  label,
+  value,
+  iconColor = colors.primary,
+}: InfoCardProps) {
   return (
     <View style={styles.infoCard}>
-      <View style={styles.infoCardIcon}>
-        <Icon size={20} color={iconColor} strokeWidth={2} />
+      <View
+        style={[
+          styles.infoCardIcon,
+          { backgroundColor: `${iconColor}15` },
+        ]}
+      >
+        <Icon size={layout.iconSize.sm} color={iconColor} strokeWidth={2} />
       </View>
       <View style={styles.infoCardContent}>
         <Text style={styles.infoCardLabel}>{label}</Text>
@@ -62,20 +80,14 @@ export default function EnterStakeAmount({
   const inputRef = useRef<TextInput>(null);
 
   const formatAmount = (value: string): string => {
-    // Remove non-numeric characters except decimal
     const cleaned = value.replace(/[^0-9.]/g, '');
-    
-    // Ensure only one decimal point
     const parts = cleaned.split('.');
     if (parts.length > 2) {
       return parts[0] + '.' + parts.slice(1).join('');
     }
-    
-    // Limit decimal places to 2
     if (parts[1]?.length > 2) {
       return parts[0] + '.' + parts[1].slice(0, 2);
     }
-    
     return cleaned;
   };
 
@@ -87,22 +99,20 @@ export default function EnterStakeAmount({
 
   const validateAmount = (): boolean => {
     const numAmount = parseFloat(amount);
-    
     if (!amount || isNaN(numAmount)) {
       setError('Please enter a valid amount');
       return false;
     }
-    
     if (numAmount < stakingConfig.minAmount) {
       setError(`Minimum stake amount is $${stakingConfig.minAmount}`);
       return false;
     }
-    
     if (numAmount > stakingConfig.maxAmount) {
-      setError(`Maximum stake amount is $${stakingConfig.maxAmount.toLocaleString()}`);
+      setError(
+        `Maximum stake amount is $${stakingConfig.maxAmount.toLocaleString()}`
+      );
       return false;
     }
-    
     return true;
   };
 
@@ -144,10 +154,21 @@ export default function EnterStakeAmount({
               activeOpacity={0.7}
               accessibilityLabel="Go back"
             >
-              <ArrowLeft size={24} color="#000000" strokeWidth={2} />
+              <ArrowLeft
+                size={layout.iconSize.md}
+                color={colors.textPrimary}
+                strokeWidth={2}
+              />
             </TouchableOpacity>
             <Text style={styles.headerTitle}>Stake</Text>
             <View style={styles.headerSpacer} />
+          </View>
+
+          {/* Step Indicator */}
+          <View style={styles.stepIndicator}>
+            <View style={[styles.stepDot, styles.stepDotActive]} />
+            <View style={styles.stepLine} />
+            <View style={styles.stepDot} />
           </View>
 
           <ScrollView
@@ -155,10 +176,18 @@ export default function EnterStakeAmount({
             contentContainerStyle={styles.scrollContent}
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"
+            bounces
           >
             {/* Amount Input Section */}
             <View style={styles.inputSection}>
-              <Text style={styles.inputLabel}>How much do you want to stake</Text>
+              <Text style={styles.inputTitle}>
+                How much do you want to stake?
+              </Text>
+              <Text style={styles.inputDescription}>
+                Enter the amount of FLA$H tokens to stake and start earning
+                rewards.
+              </Text>
+
               <View
                 style={[
                   styles.inputContainer,
@@ -166,14 +195,28 @@ export default function EnterStakeAmount({
                   error ? styles.inputContainerError : null,
                 ]}
               >
-                <Text style={styles.currencyPrefix}>$</Text>
+                <View
+                  style={[
+                    styles.currencyBadge,
+                    isFocused && styles.currencyBadgeFocused,
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.currencyPrefix,
+                      isFocused && styles.currencyPrefixFocused,
+                    ]}
+                  >
+                    $
+                  </Text>
+                </View>
                 <TextInput
                   ref={inputRef}
                   style={styles.input}
                   value={amount}
                   onChangeText={handleAmountChange}
                   placeholder="0.00"
-                  placeholderTextColor="#AFAFB0"
+                  placeholderTextColor={colors.textPlaceholder}
                   keyboardType="decimal-pad"
                   returnKeyType="done"
                   onFocus={() => setIsFocused(true)}
@@ -181,56 +224,65 @@ export default function EnterStakeAmount({
                   onSubmitEditing={handleSubmit}
                   accessibilityLabel="Stake amount input"
                 />
-                <Text style={styles.currencySuffix}>Flash</Text>
+                <View style={styles.currencySuffixBadge}>
+                  <Text style={styles.currencySuffix}>FLA$H</Text>
+                </View>
               </View>
-              {error ? <Text style={styles.errorText}>{error}</Text> : null}
+
+              {error ? (
+                <View style={styles.errorRow}>
+                  <Info size={14} color={colors.error} strokeWidth={2} />
+                  <Text style={styles.errorText}>{error}</Text>
+                </View>
+              ) : null}
             </View>
 
             {/* Quick Amount Buttons */}
             <View style={styles.quickAmountsContainer}>
-              <Text style={styles.quickAmountsLabel}>Quick select</Text>
+              <Text style={styles.quickAmountsLabel}>QUICK SELECT</Text>
               <View style={styles.quickAmountsRow}>
-                {quickAmounts.map((quickAmount) => (
-                  <TouchableOpacity
-                    key={quickAmount}
-                    style={[
-                      styles.quickAmountButton,
-                      parseFloat(amount) === quickAmount &&
-                        styles.quickAmountButtonActive,
-                    ]}
-                    onPress={() => handleQuickAmount(quickAmount)}
-                    activeOpacity={0.7}
-                  >
-                    <Text
+                {quickAmounts.map((quickAmount) => {
+                  const isActive = parseFloat(amount) === quickAmount;
+                  return (
+                    <TouchableOpacity
+                      key={quickAmount}
                       style={[
-                        styles.quickAmountText,
-                        parseFloat(amount) === quickAmount &&
-                          styles.quickAmountTextActive,
+                        styles.quickAmountButton,
+                        isActive && styles.quickAmountButtonActive,
                       ]}
+                      onPress={() => handleQuickAmount(quickAmount)}
+                      activeOpacity={0.7}
                     >
-                      ${quickAmount.toLocaleString()}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
+                      <Text
+                        style={[
+                          styles.quickAmountText,
+                          isActive && styles.quickAmountTextActive,
+                        ]}
+                      >
+                        ${quickAmount.toLocaleString()}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
               </View>
             </View>
 
             {/* Staking Info Cards */}
             <View style={styles.infoCardsContainer}>
-              <Text style={styles.infoCardsTitle}>Staking Details</Text>
-              
+              <Text style={styles.sectionTitle}>Staking Details</Text>
+
               <View style={styles.infoCardsGrid}>
                 <InfoCard
                   icon={Percent}
                   label="APR"
                   value={`${stakingConfig.apr}%`}
-                  iconColor="#22C55E"
+                  iconColor={colors.success}
                 />
                 <InfoCard
                   icon={Clock}
                   label="Lock Period"
                   value={`${stakingConfig.lockPeriodDays} days`}
-                  iconColor="#F59E0B"
+                  iconColor={colors.warning}
                 />
               </View>
 
@@ -239,23 +291,28 @@ export default function EnterStakeAmount({
                   icon={Coins}
                   label="Min Stake"
                   value={`$${stakingConfig.minAmount}`}
-                  iconColor="#0F6EC0"
+                  iconColor={colors.primary}
                 />
                 <InfoCard
                   icon={TrendingUp}
                   label="Est. Returns"
                   value={calculateEstimatedReturns()}
-                  iconColor="#22C55E"
+                  iconColor={colors.success}
                 />
               </View>
             </View>
 
             {/* Info Notice */}
             <View style={styles.noticeContainer}>
-              <Info size={18} color="#657084" strokeWidth={2} />
+              <Info
+                size={layout.iconSize.sm}
+                color={colors.info}
+                strokeWidth={1.8}
+              />
               <Text style={styles.noticeText}>
-                Your staked funds will be locked for {stakingConfig.lockPeriodDays} days.
-                You'll earn {stakingConfig.apr}% APR on your staked amount.
+                Your staked funds will be locked for{' '}
+                {stakingConfig.lockPeriodDays} days. You'll earn{' '}
+                {stakingConfig.apr}% APR on your staked amount.
               </Text>
             </View>
           </ScrollView>
@@ -291,213 +348,296 @@ export default function EnterStakeAmount({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F5F5',
+    backgroundColor: colors.background,
   },
   keyboardView: {
     flex: 1,
   },
+
+  // Header
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
+    paddingHorizontal: layout.screenPaddingHorizontal,
+    paddingVertical: spacing.base,
   },
   backButton: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: '#F4F6F5',
+    width: layout.avatarSize.md,
+    height: layout.avatarSize.md,
+    borderRadius: borderRadius.full,
+    backgroundColor: colors.backgroundCard,
     justifyContent: 'center',
     alignItems: 'center',
+    ...shadows.xs,
   },
   headerTitle: {
-    fontSize: 25,
-    fontWeight: '600',
-    color: '#000000',
-    textAlign: 'center',
+    fontSize: typography.fontSize.lg,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.textPrimary,
+    letterSpacing: typography.letterSpacing.wide,
   },
   headerSpacer: {
-    width: 50,
+    width: layout.avatarSize.md,
   },
+
+  // Step Indicator
+  stepIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: layout.screenPaddingHorizontal * 3,
+    paddingVertical: spacing.lg,
+    gap: spacing.xs,
+  },
+  stepDot: {
+    width: 10,
+    height: 10,
+    borderRadius: borderRadius.full,
+    backgroundColor: colors.borderLight,
+  },
+  stepDotActive: {
+    backgroundColor: colors.primary,
+    width: 12,
+    height: 12,
+  },
+  stepLine: {
+    flex: 1,
+    height: 2,
+    backgroundColor: colors.borderLight,
+  },
+
+  // Scroll
   scrollView: {
     flex: 1,
   },
   scrollContent: {
-    paddingHorizontal: 52,
-    paddingTop: 30,
-    paddingBottom: 20,
+    paddingHorizontal: layout.screenPaddingHorizontal,
+    paddingTop: spacing.lg,
+    paddingBottom: spacing.xl,
   },
+
+  // Input Section
   inputSection: {
-    gap: 15,
-    marginBottom: 30,
+    gap: spacing.md,
+    marginBottom: spacing['2xl'],
   },
-  inputLabel: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#000000',
-    lineHeight: 22,
+  inputTitle: {
+    fontSize: typography.fontSize.xl,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.textPrimary,
+    letterSpacing: typography.letterSpacing.tight,
+  },
+  inputDescription: {
+    fontSize: typography.fontSize.base,
+    color: colors.textTertiary,
+    lineHeight: typography.fontSize.base * typography.lineHeight.relaxed,
+    marginBottom: spacing.xs,
   },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F4F6F5',
-    borderWidth: 1,
-    borderColor: '#D2D6E1',
-    borderRadius: 15,
-    height: 60,
-    paddingHorizontal: 16,
+    backgroundColor: colors.backgroundCard,
+    borderWidth: 1.5,
+    borderColor: colors.borderLight,
+    borderRadius: borderRadius.lg,
+    height: layout.inputHeightLarge,
+    paddingHorizontal: spacing.base,
+    ...shadows.xs,
   },
   inputContainerFocused: {
-    borderColor: '#0F6EC0',
+    borderColor: colors.borderActive,
     borderWidth: 2,
+    backgroundColor: colors.backgroundElevated,
   },
   inputContainerError: {
-    borderColor: '#C31D1E',
+    borderColor: colors.error,
+    borderWidth: 2,
+  },
+  currencyBadge: {
+    width: 36,
+    height: 36,
+    borderRadius: borderRadius.md,
+    backgroundColor: colors.backgroundInput,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: spacing.md,
+  },
+  currencyBadgeFocused: {
+    backgroundColor: colors.primaryLight,
   },
   currencyPrefix: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#000000',
-    marginRight: 8,
+    fontSize: typography.fontSize.lg,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.textSecondary,
+  },
+  currencyPrefixFocused: {
+    color: colors.primary,
   },
   input: {
     flex: 1,
-    fontSize: 18,
-    color: '#000000',
+    fontSize: typography.fontSize.xl,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.textPrimary,
     height: '100%',
   },
+  currencySuffixBadge: {
+    backgroundColor: colors.primaryLight,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: borderRadius.full,
+    marginLeft: spacing.sm,
+  },
   currencySuffix: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#D2D6E1',
-    marginLeft: 8,
+    fontSize: typography.fontSize.xs,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.primary,
+    letterSpacing: typography.letterSpacing.wider,
+  },
+  errorRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
   },
   errorText: {
-    fontSize: 14,
-    color: '#C31D1E',
-    marginTop: -5,
+    fontSize: typography.fontSize.sm,
+    color: colors.error,
+    fontWeight: typography.fontWeight.medium,
   },
+
+  // Quick Amounts
   quickAmountsContainer: {
-    marginBottom: 30,
+    marginBottom: spacing['2xl'],
   },
   quickAmountsLabel: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#657084',
-    marginBottom: 12,
+    fontSize: typography.fontSize.xs,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.textTertiary,
+    letterSpacing: typography.letterSpacing.wider,
+    marginBottom: spacing.md,
   },
   quickAmountsRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 10,
+    gap: spacing.sm,
   },
   quickAmountButton: {
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    backgroundColor: 'rgba(15, 110, 192, 0.08)',
-    borderRadius: 25,
-    borderWidth: 1,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    backgroundColor: colors.primaryLight,
+    borderRadius: borderRadius.full,
+    borderWidth: 1.5,
     borderColor: 'transparent',
   },
   quickAmountButtonActive: {
-    backgroundColor: '#0F6EC0',
-    borderColor: '#0F6EC0',
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+    ...shadows.button,
   },
   quickAmountText: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#0F6EC0',
+    fontSize: typography.fontSize.base,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.primary,
   },
   quickAmountTextActive: {
-    color: '#FFFFFF',
+    color: colors.textWhite,
   },
+
+  // Info Cards
   infoCardsContainer: {
-    marginBottom: 20,
+    marginBottom: spacing.xl,
   },
-  infoCardsTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#000000',
-    marginBottom: 16,
+  sectionTitle: {
+    fontSize: typography.fontSize.lg,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.textPrimary,
+    letterSpacing: typography.letterSpacing.tight,
+    marginBottom: spacing.base,
   },
   infoCardsGrid: {
     flexDirection: 'row',
-    gap: 12,
-    marginBottom: 12,
+    gap: spacing.md,
+    marginBottom: spacing.md,
   },
   infoCard: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 14,
-    gap: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
+    backgroundColor: colors.backgroundCard,
+    borderRadius: borderRadius.lg,
+    padding: spacing.base,
+    gap: spacing.md,
+    ...shadows.sm,
   },
   infoCardIcon: {
     width: 40,
     height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(15, 110, 192, 0.1)',
+    borderRadius: borderRadius.md,
     justifyContent: 'center',
     alignItems: 'center',
   },
   infoCardContent: {
     flex: 1,
+    gap: spacing['2xs'],
   },
   infoCardLabel: {
-    fontSize: 12,
-    color: '#657084',
-    marginBottom: 2,
+    fontSize: typography.fontSize.xs,
+    color: colors.textTertiary,
+    fontWeight: typography.fontWeight.medium,
   },
   infoCardValue: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#000000',
+    fontSize: typography.fontSize.md,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.textPrimary,
   },
+
+  // Notice
   noticeContainer: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    backgroundColor: 'rgba(15, 110, 192, 0.05)',
-    borderRadius: 12,
-    padding: 14,
-    gap: 10,
+    gap: spacing.sm,
+    backgroundColor: colors.infoLight,
+    borderRadius: borderRadius.md,
+    padding: spacing.base,
+    borderLeftWidth: 3,
+    borderLeftColor: colors.info,
   },
   noticeText: {
     flex: 1,
-    fontSize: 13,
-    color: '#657084',
-    lineHeight: 20,
+    fontSize: typography.fontSize.xs,
+    color: colors.textSecondary,
+    lineHeight: typography.fontSize.xs * typography.lineHeight.relaxed,
   },
+
+  // Bottom
   bottomContainer: {
-    paddingHorizontal: 52,
-    paddingBottom: Platform.OS === 'ios' ? 40 : 30,
-    paddingTop: 10,
-    backgroundColor: '#F5F5F5',
+    paddingHorizontal: layout.screenPaddingHorizontal,
+    paddingBottom: Platform.OS === 'ios' ? spacing['3xl'] : spacing['2xl'],
+    paddingTop: spacing.md,
+    backgroundColor: colors.background,
+    borderTopWidth: 1,
+    borderTopColor: colors.divider,
   },
   stakeButton: {
-    backgroundColor: '#0F6EC0',
-    borderRadius: 15,
-    height: 60,
+    backgroundColor: colors.primary,
+    borderRadius: borderRadius.lg,
+    height: layout.buttonHeight,
     justifyContent: 'center',
     alignItems: 'center',
+    ...shadows.button,
   },
   stakeButtonDisabled: {
-    backgroundColor: 'rgba(15, 110, 192, 0.3)',
+    backgroundColor: colors.primaryDisabled,
+    shadowOpacity: 0,
+    elevation: 0,
   },
   stakeButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#F5F5F5',
+    fontSize: typography.fontSize.md,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.textWhite,
+    letterSpacing: typography.letterSpacing.wide,
   },
   stakeButtonTextDisabled: {
-    color: '#F5F5F5',
-    opacity: 0.7,
+    color: 'rgba(255, 255, 255, 0.6)',
   },
 });

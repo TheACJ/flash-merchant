@@ -1,7 +1,14 @@
-import { borderRadius, colors, layout, typography } from '@/constants/theme';
+import {
+  borderRadius,
+  colors,
+  layout,
+  shadows,
+  spacing,
+  typography,
+} from '@/constants/theme';
 import { useAssetCache } from '@/hooks';
 import { assetInfoOrchestrator } from '@/services/AssetInfoOrchestrator';
-import { ArrowLeft, ChevronDown } from 'lucide-react-native';
+import { ArrowLeft, ChevronDown, Info } from 'lucide-react-native';
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 import {
   Keyboard,
@@ -12,7 +19,7 @@ import {
   TextInput,
   TouchableOpacity,
   TouchableWithoutFeedback,
-  View
+  View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AssetSelector from './AssetSelector';
@@ -31,52 +38,45 @@ export default function SelectAssetAmount({
   onSubmit,
   onBack,
 }: SelectAssetAmountProps) {
-  const [selectedAsset, setSelectedAsset] = useState<Asset | null>(initialAsset);
+  const [selectedAsset, setSelectedAsset] = useState<Asset | null>(
+    initialAsset
+  );
   const [amount, setAmount] = useState(initialAmount);
   const [showAssetSelector, setShowAssetSelector] = useState(false);
   const [amountError, setAmountError] = useState('');
   const [isAmountFocused, setIsAmountFocused] = useState(false);
   const amountInputRef = useRef<TextInput>(null);
 
-  // Get asset IDs from orchestrator (fetched dynamically from API)
   const assetIds = assetInfoOrchestrator.getAssetIds();
-  
-  // Fetch assets from API using the dynamic asset IDs
-  // No hardcoded fallback - if no asset IDs, pass empty array
-  const { assets: apiAssets, isLoading: isLoadingAssets } = useAssetCache(assetIds);
+  const { assets: apiAssets, isLoading: isLoadingAssets } =
+    useAssetCache(assetIds);
 
-  // Convert API assets to local format - no hardcoded fallback
   const assets = useMemo(() => {
     if (apiAssets.length > 0) {
-      return apiAssets.map(apiAsset => convertAPIAsset({
-        id: apiAsset.id,
-        name: apiAsset.name,
-        symbol: apiAsset.symbol,
-        icon_url: apiAsset.icon_url || '',
-        chains: [],
-        price: apiAsset.price,
-        price24hChange: apiAsset.price24hChange,
-      }));
+      return apiAssets.map((apiAsset) =>
+        convertAPIAsset({
+          id: apiAsset.id,
+          name: apiAsset.name,
+          symbol: apiAsset.symbol,
+          icon_url: apiAsset.icon_url || '',
+          chains: [],
+          price: apiAsset.price,
+          price24hChange: apiAsset.price24hChange,
+        })
+      );
     }
-    // Return empty array if no assets - no hardcoded fallback
     return [];
   }, [apiAssets]);
 
   const formatAmount = (value: string): string => {
-    // Remove non-numeric characters except decimal point
     const cleaned = value.replace(/[^0-9.]/g, '');
-    
-    // Ensure only one decimal point
     const parts = cleaned.split('.');
     if (parts.length > 2) {
       return parts[0] + '.' + parts.slice(1).join('');
     }
-    
-    // Limit decimal places to 2
     if (parts[1]?.length > 2) {
       return parts[0] + '.' + parts[1].slice(0, 2);
     }
-    
     return cleaned;
   };
 
@@ -92,21 +92,16 @@ export default function SelectAssetAmount({
   }, []);
 
   const validateForm = (): boolean => {
-    if (!selectedAsset) {
-      return false;
-    }
-    
+    if (!selectedAsset) return false;
     const numAmount = parseFloat(amount);
     if (!amount || isNaN(numAmount) || numAmount <= 0) {
       setAmountError('Please enter a valid amount');
       return false;
     }
-    
     if (numAmount < 1) {
       setAmountError('Minimum amount is $1.00');
       return false;
     }
-    
     return true;
   };
 
@@ -134,49 +129,89 @@ export default function SelectAssetAmount({
               activeOpacity={0.7}
               accessibilityLabel="Go back"
             >
-              <ArrowLeft size={24} color={colors.textPrimary} strokeWidth={2} />
+              <ArrowLeft
+                size={layout.iconSize.md}
+                color={colors.textPrimary}
+                strokeWidth={2}
+              />
             </TouchableOpacity>
-            <Text style={styles.headerTitle}>Physical deposit</Text>
+            <Text style={styles.headerTitle}>Physical Deposit</Text>
             <View style={styles.headerSpacer} />
+          </View>
+
+          {/* Step Indicator */}
+          <View style={styles.stepIndicator}>
+            <View style={[styles.stepDot, styles.stepDotCompleted]} />
+            <View style={[styles.stepLine, styles.stepLineCompleted]} />
+            <View style={[styles.stepDot, styles.stepDotActive]} />
+            <View style={styles.stepLine} />
+            <View style={styles.stepDot} />
           </View>
 
           {/* Content */}
           <View style={styles.content}>
             {/* Select Asset */}
             <View style={styles.inputSection}>
-              <Text style={styles.inputLabel}>Select asset</Text>
+              <Text style={styles.inputLabel}>Select Asset</Text>
               <TouchableOpacity
-                style={styles.selectorContainer}
+                style={[
+                  styles.selectorContainer,
+                  selectedAsset && styles.selectorContainerSelected,
+                ]}
                 onPress={() => setShowAssetSelector(true)}
                 activeOpacity={0.7}
                 accessibilityLabel="Select cryptocurrency asset"
               >
                 {selectedAsset ? (
                   <View style={styles.selectedAsset}>
-                    <AssetIcon asset={selectedAsset} size={32} />
-                    <View style={styles.assetInfo}>
-                      <Text style={styles.assetSymbol}>{selectedAsset.symbol}</Text>
-                      <Text style={styles.assetName}>{selectedAsset.name}</Text>
+                    <AssetIcon asset={selectedAsset} size={36} />
+                    <View style={styles.assetTextInfo}>
+                      <Text style={styles.assetSymbol}>
+                        {selectedAsset.symbol}
+                      </Text>
+                      <Text style={styles.assetName}>
+                        {selectedAsset.name}
+                      </Text>
                     </View>
                   </View>
                 ) : (
                   <Text style={styles.placeholderText}>Choose an asset</Text>
                 )}
-                <ChevronDown size={24} color={colors.textPlaceholder} strokeWidth={2} />
+                <View style={styles.chevronContainer}>
+                  <ChevronDown
+                    size={layout.iconSize.sm}
+                    color={colors.textPlaceholder}
+                    strokeWidth={2}
+                  />
+                </View>
               </TouchableOpacity>
             </View>
 
             {/* Enter Amount */}
             <View style={styles.inputSection}>
-              <Text style={styles.inputLabel}>Select amount</Text>
+              <Text style={styles.inputLabel}>Enter Amount</Text>
               <View
                 style={[
-                  styles.inputContainer,
-                  isAmountFocused && styles.inputContainerFocused,
-                  amountError ? styles.inputContainerError : null,
+                  styles.amountContainer,
+                  isAmountFocused && styles.amountContainerFocused,
+                  amountError ? styles.amountContainerError : null,
                 ]}
               >
-                <Text style={styles.currencyPrefix}>$</Text>
+                <View
+                  style={[
+                    styles.currencyBadge,
+                    isAmountFocused && styles.currencyBadgeFocused,
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.currencyPrefix,
+                      isAmountFocused && styles.currencyPrefixFocused,
+                    ]}
+                  >
+                    $
+                  </Text>
+                </View>
                 <TextInput
                   ref={amountInputRef}
                   style={styles.amountInput}
@@ -193,7 +228,10 @@ export default function SelectAssetAmount({
                 />
               </View>
               {amountError ? (
-                <Text style={styles.errorText}>{amountError}</Text>
+                <View style={styles.errorRow}>
+                  <Info size={14} color={colors.error} strokeWidth={2} />
+                  <Text style={styles.errorText}>{amountError}</Text>
+                </View>
               ) : null}
             </View>
           </View>
@@ -216,7 +254,7 @@ export default function SelectAssetAmount({
                   isButtonDisabled && styles.nextButtonTextDisabled,
                 ]}
               >
-                Next
+                Continue
               </Text>
             </TouchableOpacity>
 
@@ -226,13 +264,12 @@ export default function SelectAssetAmount({
               activeOpacity={0.8}
               accessibilityLabel="Go back to previous step"
             >
-              <Text style={styles.goBackButtonText}>Go back</Text>
+              <Text style={styles.goBackButtonText}>Go Back</Text>
             </TouchableOpacity>
           </View>
         </KeyboardAvoidingView>
       </TouchableWithoutFeedback>
 
-      {/* Asset Selector Modal */}
       <AssetSelector
         visible={showAssetSelector}
         assets={assets}
@@ -254,30 +291,69 @@ function AssetIcon({ asset, size = 40 }: AssetIconProps) {
   const iconStyles = {
     width: size,
     height: size,
-    borderRadius: size / 8,
+    borderRadius: size / 5,
     backgroundColor: asset.iconBgColor,
     justifyContent: 'center' as const,
     alignItems: 'center' as const,
   };
 
   const getIconContent = () => {
+    const fontSize = size * 0.45;
     switch (asset.iconType) {
       case 'bitcoin':
-        return <Text style={[styles.iconText, { color: colors.textWhite }]}>₿</Text>;
+        return (
+          <Text style={[styles.iconText, { color: colors.textWhite, fontSize }]}>
+            ₿
+          </Text>
+        );
       case 'ethereum':
-        return <Text style={[styles.iconText, { color: colors.textTertiary }]}>Ξ</Text>;
+        return (
+          <Text
+            style={[styles.iconText, { color: colors.textTertiary, fontSize }]}
+          >
+            Ξ
+          </Text>
+        );
       case 'solana':
-        return <Text style={[styles.iconText, { color: '#14F195' }]}>◎</Text>;
+        return (
+          <Text style={[styles.iconText, { color: '#14F195', fontSize }]}>
+            ◎
+          </Text>
+        );
       case 'polygon':
-        return <Text style={[styles.iconText, { color: '#8247E5' }]}>⬡</Text>;
+        return (
+          <Text style={[styles.iconText, { color: '#8247E5', fontSize }]}>
+            ⬡
+          </Text>
+        );
       case 'zcash':
-        return <Text style={[styles.iconText, { color: colors.background }]}>Z</Text>;
+        return (
+          <Text
+            style={[styles.iconText, { color: colors.background, fontSize }]}
+          >
+            Z
+          </Text>
+        );
       case 'usdt':
-        return <Text style={[styles.iconText, { color: colors.textWhite }]}>₮</Text>;
+        return (
+          <Text style={[styles.iconText, { color: colors.textWhite, fontSize }]}>
+            ₮
+          </Text>
+        );
       case 'bnb':
-        return <Text style={[styles.iconText, { color: colors.background }]}>B</Text>;
+        return (
+          <Text
+            style={[styles.iconText, { color: colors.background, fontSize }]}
+          >
+            B
+          </Text>
+        );
       default:
-        return <Text style={styles.iconText}>{asset.symbol[0]}</Text>;
+        return (
+          <Text style={[styles.iconText, { fontSize }]}>
+            {asset.symbol[0]}
+          </Text>
+        );
     }
   };
 
@@ -294,115 +370,196 @@ const styles = StyleSheet.create({
   keyboardView: {
     flex: 1,
   },
+
+  // Header
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
+    paddingHorizontal: layout.screenPaddingHorizontal,
+    paddingVertical: spacing.base,
   },
   backButton: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: colors.backgroundInput,
+    width: layout.avatarSize.md,
+    height: layout.avatarSize.md,
+    borderRadius: borderRadius.full,
+    backgroundColor: colors.backgroundCard,
     justifyContent: 'center',
     alignItems: 'center',
+    ...shadows.xs,
   },
   headerTitle: {
-    fontSize: typography.fontSize['4xl'],
+    fontSize: typography.fontSize.lg,
     fontWeight: typography.fontWeight.semibold,
     color: colors.textPrimary,
-    textAlign: 'center',
+    letterSpacing: typography.letterSpacing.wide,
   },
   headerSpacer: {
-    width: 50,
+    width: layout.avatarSize.md,
   },
+
+  // Step Indicator
+  stepIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: layout.screenPaddingHorizontal * 2,
+    paddingVertical: spacing.lg,
+    gap: spacing.xs,
+  },
+  stepDot: {
+    width: 10,
+    height: 10,
+    borderRadius: borderRadius.full,
+    backgroundColor: colors.borderLight,
+  },
+  stepDotActive: {
+    backgroundColor: colors.primary,
+    width: 12,
+    height: 12,
+  },
+  stepDotCompleted: {
+    backgroundColor: colors.success,
+  },
+  stepLine: {
+    flex: 1,
+    height: 2,
+    backgroundColor: colors.borderLight,
+  },
+  stepLineCompleted: {
+    backgroundColor: colors.success,
+  },
+
+  // Content
   content: {
     flex: 1,
-    paddingHorizontal: 52,
-    paddingTop: 50,
-    gap: 25,
+    paddingHorizontal: layout.screenPaddingHorizontal,
+    paddingTop: spacing['2xl'],
+    gap: spacing.xl,
   },
   inputSection: {
-    gap: 15,
+    gap: spacing.md,
   },
   inputLabel: {
-    fontSize: typography.fontSize.md,
-    fontWeight: typography.fontWeight.medium,
+    fontSize: typography.fontSize.base,
+    fontWeight: typography.fontWeight.semibold,
     color: colors.textPrimary,
-    lineHeight: typography.lineHeight.normal,
+    letterSpacing: typography.letterSpacing.wide,
+    textTransform: 'uppercase',
   },
+
+  // Asset Selector
   selectorContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: colors.backgroundInput,
-    borderWidth: 1,
-    borderColor: colors.border,
+    backgroundColor: colors.backgroundCard,
+    borderWidth: 1.5,
+    borderColor: colors.borderLight,
     borderRadius: borderRadius.lg,
-    height: layout.inputHeight,
-    paddingHorizontal: 16,
+    height: layout.inputHeightLarge,
+    paddingHorizontal: spacing.base,
+    ...shadows.xs,
+  },
+  selectorContainerSelected: {
+    borderColor: colors.primaryMedium,
   },
   selectedAsset: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: spacing.md,
   },
-  assetInfo: {
-    gap: 2,
+  assetTextInfo: {
+    gap: spacing['2xs'],
   },
   assetSymbol: {
     fontSize: typography.fontSize.md,
-    fontWeight: typography.fontWeight.medium,
+    fontWeight: typography.fontWeight.bold,
     color: colors.textPrimary,
   },
   assetName: {
     fontSize: typography.fontSize.sm,
     color: colors.textTertiary,
+    fontWeight: typography.fontWeight.regular,
   },
   placeholderText: {
     fontSize: typography.fontSize.md,
     color: colors.textPlaceholder,
+    fontWeight: typography.fontWeight.regular,
   },
-  inputContainer: {
+  chevronContainer: {
+    width: 32,
+    height: 32,
+    borderRadius: borderRadius.sm,
+    backgroundColor: colors.backgroundInput,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  // Amount Input
+  amountContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.backgroundInput,
-    borderWidth: 1,
-    borderColor: colors.border,
+    backgroundColor: colors.backgroundCard,
+    borderWidth: 1.5,
+    borderColor: colors.borderLight,
     borderRadius: borderRadius.lg,
-    height: layout.inputHeight,
-    paddingHorizontal: 16,
+    height: layout.inputHeightLarge,
+    paddingHorizontal: spacing.base,
+    ...shadows.xs,
   },
-  inputContainerFocused: {
+  amountContainerFocused: {
     borderColor: colors.borderActive,
     borderWidth: 2,
+    backgroundColor: colors.backgroundElevated,
   },
-  inputContainerError: {
+  amountContainerError: {
     borderColor: colors.error,
+    borderWidth: 2,
+  },
+  currencyBadge: {
+    width: 36,
+    height: 36,
+    borderRadius: borderRadius.md,
+    backgroundColor: colors.backgroundInput,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: spacing.md,
+  },
+  currencyBadgeFocused: {
+    backgroundColor: colors.primaryLight,
   },
   currencyPrefix: {
     fontSize: typography.fontSize.lg,
-    fontWeight: typography.fontWeight.semibold,
-    color: colors.textPrimary,
-    marginRight: 8,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.textSecondary,
+  },
+  currencyPrefixFocused: {
+    color: colors.primary,
   },
   amountInput: {
     flex: 1,
-    fontSize: typography.fontSize.lg,
+    fontSize: typography.fontSize.xl,
+    fontWeight: typography.fontWeight.semibold,
     color: colors.textPrimary,
     height: '100%',
   },
-  errorText: {
-    fontSize: typography.fontSize.base,
-    color: colors.error,
-    marginTop: -5,
+  errorRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
   },
+  errorText: {
+    fontSize: typography.fontSize.sm,
+    color: colors.error,
+    fontWeight: typography.fontWeight.medium,
+  },
+
+  // Bottom
   bottomContainer: {
-    paddingHorizontal: 52,
-    paddingBottom: Platform.OS === 'ios' ? 40 : 30,
-    gap: 20,
+    paddingHorizontal: layout.screenPaddingHorizontal,
+    paddingBottom: Platform.OS === 'ios' ? spacing['3xl'] : spacing['2xl'],
+    gap: spacing.md,
   },
   nextButton: {
     backgroundColor: colors.primary,
@@ -410,32 +567,39 @@ const styles = StyleSheet.create({
     height: layout.buttonHeight,
     justifyContent: 'center',
     alignItems: 'center',
+    ...shadows.button,
   },
   nextButtonDisabled: {
-    backgroundColor: colors.borderLight,
+    backgroundColor: colors.primaryDisabled,
+    shadowOpacity: 0,
+    elevation: 0,
   },
   nextButtonText: {
     fontSize: typography.fontSize.md,
-    fontWeight: typography.fontWeight.medium,
-    color: colors.textLight,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.textWhite,
+    letterSpacing: typography.letterSpacing.wide,
   },
   nextButtonTextDisabled: {
-    color: colors.textPlaceholder,
+    color: 'rgba(255, 255, 255, 0.6)',
   },
   goBackButton: {
-    backgroundColor: colors.borderLight,
+    backgroundColor: colors.backgroundCard,
     borderRadius: borderRadius.lg,
     height: layout.buttonHeight,
     justifyContent: 'center',
     alignItems: 'center',
+    borderWidth: 1.5,
+    borderColor: colors.borderLight,
   },
   goBackButtonText: {
     fontSize: typography.fontSize.md,
     fontWeight: typography.fontWeight.medium,
-    color: colors.textPrimary,
+    color: colors.textSecondary,
   },
+
+  // Icon
   iconText: {
-    fontSize: typography.fontSize.xl,
     fontWeight: typography.fontWeight.bold,
   },
 });

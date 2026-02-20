@@ -1,8 +1,10 @@
-import { colors, layout, typography } from '@/constants/theme';
+import { colors, shadows, typography } from '@/constants/theme';
 import { FontAwesome } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
 import React from 'react';
-import { useColorScheme } from 'react-native';
+import { Platform, useColorScheme } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
 
 function TabBarIcon(props: {
   name: React.ComponentProps<typeof FontAwesome>['name'];
@@ -13,6 +15,7 @@ function TabBarIcon(props: {
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
+  const insets = useSafeAreaInsets();
 
   return (
     <Tabs
@@ -24,15 +27,24 @@ export default function TabLayout() {
           backgroundColor: colors.backgroundInput,
           borderTopColor: colors.border,
           borderTopWidth: 0.5,
-          height: layout.buttonHeight,
-          paddingTop: 10,
+          height: Platform.OS === 'ios' ? 88 : 70 + insets.bottom,
+          paddingTop: 12,
+          paddingBottom: Platform.OS === 'ios' ? 28 : insets.bottom + 8,
+          position: 'absolute',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          ...shadows.lg,
         },
         tabBarLabelStyle: {
-          fontFamily: typography.fontFamilySF,
+          fontFamily: typography.fontFamily,
           fontSize: typography.fontSize.xs,
-          fontWeight: typography.fontWeight.regular,
+
+          fontWeight: typography.fontWeight.medium,
+          marginBottom: Platform.OS === 'ios' ? 0 : 4,
         },
       }}>
+
       <Tabs.Screen
         name="home"
         options={{

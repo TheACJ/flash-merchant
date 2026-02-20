@@ -115,8 +115,8 @@ export default function SettingsScreen() {
   );
 
   // Derived values from API data
-  const displayName = merchantProfile?.tag || 'Merchant';
-  const isVerified = merchantProfile?.kycStatus === 'verified';
+  const displayName = merchantProfile?.normalizedTag || 'Merchant';
+  const isVerified = merchantProfile?.isVerified || merchantProfile?.status === 'verified';
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>

@@ -1,5 +1,6 @@
 import Success from '@/components/kyc/Success';
 import Verifying from '@/components/kyc/Verifying';
+import { colors } from '@/constants/theme';
 import { useRouter } from 'expo-router';
 import React, { useCallback, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
@@ -21,36 +22,38 @@ const initialDepositData: DepositData = {
 export default function DepositFlow() {
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState<DepositStep>('flashTag');
-  const [depositData, setDepositData] = useState<DepositData>(initialDepositData);
+  const [depositData, setDepositData] =
+    useState<DepositData>(initialDepositData);
 
   const handleFlashTagSubmit = useCallback((flashTag: string) => {
     setDepositData((prev) => ({ ...prev, flashTag }));
     setCurrentStep('selectAsset');
   }, []);
 
-  const handleAssetAmountSubmit = useCallback((asset: Asset, amount: string) => {
-    // Calculate values based on asset and amount
-    const exchangeRate = getExchangeRate(asset);
-    const amountNum = parseFloat(amount.replace(/[^0-9.]/g, '')) || 0;
-    const cryptoAmount = amountNum / exchangeRate;
-    const networkFee = 2.50;
+  const handleAssetAmountSubmit = useCallback(
+    (asset: Asset, amount: string) => {
+      const exchangeRate = getExchangeRate(asset);
+      const amountNum = parseFloat(amount.replace(/[^0-9.]/g, '')) || 0;
+      const cryptoAmount = amountNum / exchangeRate;
+      const networkFee = 2.5;
 
-    setDepositData((prev) => ({
-      ...prev,
-      asset,
-      amount,
-      exchangeRate: `1 ${asset.symbol}=$${exchangeRate.toLocaleString()}`,
-      customerReceives: `${cryptoAmount.toFixed(5)} ${asset.symbol}`,
-      networkFee: `$${networkFee.toFixed(2)}`,
-    }));
-    setCurrentStep('summary');
-  }, []);
+      setDepositData((prev) => ({
+        ...prev,
+        asset,
+        amount,
+        exchangeRate: `1 ${asset.symbol}=$${exchangeRate.toLocaleString()}`,
+        customerReceives: `${cryptoAmount.toFixed(5)} ${asset.symbol}`,
+        networkFee: `$${networkFee.toFixed(2)}`,
+      }));
+      setCurrentStep('summary');
+    },
+    []
+  );
 
   const handleConfirmDeposit = useCallback(async () => {
     setCurrentStep('processing');
-    
+
     try {
-      // Simulate API call
       await new Promise((resolve) => setTimeout(resolve, 3000));
       setCurrentStep('success');
     } catch (error) {
@@ -98,7 +101,7 @@ export default function DepositFlow() {
             onBack={() => router.back()}
           />
         );
-      
+
       case 'selectAsset':
         return (
           <SelectAssetAmount
@@ -108,7 +111,7 @@ export default function DepositFlow() {
             onBack={handleGoBack}
           />
         );
-      
+
       case 'summary':
         return (
           <TransactionSummary
@@ -125,7 +128,7 @@ export default function DepositFlow() {
             onBack={handleGoBack}
           />
         );
-      
+
       case 'processing':
         return (
           <Verifying
@@ -133,7 +136,7 @@ export default function DepositFlow() {
             message="Please wait while we process your transaction..."
           />
         );
-      
+
       case 'success':
         return (
           <Success
@@ -143,7 +146,7 @@ export default function DepositFlow() {
             primaryActionLabel="Go back home"
           />
         );
-      
+
       default:
         return null;
     }
@@ -155,6 +158,6 @@ export default function DepositFlow() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F5F5',
+    backgroundColor: colors.background,
   },
 });

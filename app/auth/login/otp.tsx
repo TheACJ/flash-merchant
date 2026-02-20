@@ -9,6 +9,11 @@ import {
   typography,
 } from '@/constants/theme';
 import merchantApi from '@/services/MerchantApiService';
+import { merchantProfileOrchestrator } from '@/services/MerchantProfileOrchestrator';
+import {
+  setAuthenticated,
+  setSessionToken,
+} from '@/store/slices/merchantAuthSlice';
 import { router, useLocalSearchParams } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
 import { ArrowLeft, ChevronRight, RefreshCw } from 'lucide-react-native';
@@ -25,6 +30,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { useDispatch } from 'react-redux';
 
 const { width } = Dimensions.get('window');
 const CODE_LENGTH = 6;
@@ -33,6 +39,7 @@ export default function EnterCodeScreen() {
   const params = useLocalSearchParams();
   const phoneNumber = params.phoneNumber as string;
   const sessionToken = params.sessionToken as string;
+  const dispatch = useDispatch();
   const [code, setCode] = useState('');
   const [resendTimer, setResendTimer] = useState(30);
   const [loading, setLoading] = useState(false);
@@ -75,9 +82,9 @@ export default function EnterCodeScreen() {
       console.log('🔐 Login complete response:', JSON.stringify(response, null, 2));
 
       // Check for success - backend returns status 200 and access token on success
-      const isSuccess = response.status === 200 || 
-                        response.access ||
-                        response.message?.includes('success');
+      const isSuccess = response.status === 200 ||
+        response.access ||
+        response.message?.includes('success');
 
       if (!isSuccess) {
         Alert.alert('Error', response.error || 'Invalid OTP');
@@ -85,6 +92,17 @@ export default function EnterCodeScreen() {
         inputRef.current?.focus();
         setLoading(false);
         return;
+      }
+
+      // Initialize Merchant Profile Orchestrator and sync Redux state
+      const merchantData = response.merchant || response.data?.merchant;
+      if (merchantData) {
+        await merchantProfileOrchestrator.initialize(merchantData);
+      }
+
+      if (response.access) {
+        dispatch(setAuthenticated(true));
+        dispatch(setSessionToken(response.access));
       }
 
       const existingMnemonic = await SecureStore.getItemAsync(
@@ -116,12 +134,12 @@ export default function EnterCodeScreen() {
     if (resendTimer > 0) return;
     try {
       const response = await merchantApi.resendOTP(phoneNumber);
-      
+
       // Check for success - backend returns status 200 on success
-      const isSuccess = response.status === 200 || 
-                        response.message?.includes('sent') ||
-                        response.otp;
-      
+      const isSuccess = response.status === 200 ||
+        response.message?.includes('sent') ||
+        response.otp;
+
       if (isSuccess) {
         setResendTimer(30);
         setCode('');

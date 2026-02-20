@@ -1,5 +1,6 @@
 import Success from '@/components/kyc/Success';
 import Verifying from '@/components/kyc/Verifying';
+import { colors } from '@/constants/theme';
 import { useRouter } from 'expo-router';
 import React, { useCallback, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
@@ -7,11 +8,11 @@ import EnterAmount from './EnterAmount';
 import EnterPin from './EnterPin';
 import SelectFlashTagAsset from './SelectFlashTagAsset';
 import {
-    Asset,
-    CustomerInfo,
-    EXCHANGE_RATES,
-    WithdrawalData,
-    WithdrawalStep,
+  Asset,
+  CustomerInfo,
+  EXCHANGE_RATES,
+  WithdrawalData,
+  WithdrawalStep,
 } from './types';
 
 const initialWithdrawalData: WithdrawalData = {
@@ -27,12 +28,14 @@ const initialWithdrawalData: WithdrawalData = {
 
 export default function WithdrawFlow() {
   const router = useRouter();
-  const [currentStep, setCurrentStep] = useState<WithdrawalStep>('selectFlashTagAsset');
-  const [withdrawalData, setWithdrawalData] = useState<WithdrawalData>(initialWithdrawalData);
+  const [currentStep, setCurrentStep] =
+    useState<WithdrawalStep>('selectFlashTagAsset');
+  const [withdrawalData, setWithdrawalData] =
+    useState<WithdrawalData>(initialWithdrawalData);
 
-  // Mock function to fetch customer info by flash tag
-  const fetchCustomerInfo = async (flashTag: string): Promise<CustomerInfo> => {
-    // Simulate API call
+  const fetchCustomerInfo = async (
+    flashTag: string
+  ): Promise<CustomerInfo> => {
     await new Promise((resolve) => setTimeout(resolve, 500));
     return {
       flashTag,
@@ -68,7 +71,7 @@ export default function WithdrawFlow() {
       const exchangeRate = EXCHANGE_RATES[withdrawalData.asset.id] || 1;
       const amountNum = parseFloat(amount) || 0;
       const cryptoAmount = amountNum / exchangeRate;
-      const networkFee = 2.50;
+      const networkFee = 2.5;
 
       setWithdrawalData((prev) => ({
         ...prev,
@@ -87,7 +90,6 @@ export default function WithdrawFlow() {
     setCurrentStep('processing');
 
     try {
-      // Simulate API call
       await new Promise((resolve) => setTimeout(resolve, 3000));
       setCurrentStep('success');
     } catch (error) {
@@ -180,6 +182,6 @@ export default function WithdrawFlow() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F5F5',
+    backgroundColor: colors.background,
   },
 });

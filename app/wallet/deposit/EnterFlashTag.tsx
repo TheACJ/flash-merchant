@@ -1,4 +1,12 @@
-import { ArrowLeft, AtSign } from 'lucide-react-native';
+import {
+  borderRadius,
+  colors,
+  layout,
+  shadows,
+  spacing,
+  typography,
+} from '@/constants/theme';
+import { ArrowLeft, AtSign, Info } from 'lucide-react-native';
 import React, { useRef, useState } from 'react';
 import {
   Keyboard,
@@ -12,8 +20,6 @@ import {
   TouchableWithoutFeedback,
   View,
 } from 'react-native';
-
-import { borderRadius, colors, layout, typography } from '@/constants/theme';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 interface EnterFlashTagProps {
@@ -42,7 +48,7 @@ export default function EnterFlashTag({
       return false;
     }
     if (!/^@?[a-zA-Z0-9_]+$/.test(tag)) {
-      setError('Flash tag can only contain letters, numbers, and underscores');
+      setError('Only letters, numbers, and underscores allowed');
       return false;
     }
     setError('');
@@ -66,7 +72,11 @@ export default function EnterFlashTag({
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent />
+      <StatusBar
+        barStyle="dark-content"
+        backgroundColor="transparent"
+        translucent
+      />
 
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <KeyboardAvoidingView
@@ -82,16 +92,34 @@ export default function EnterFlashTag({
               accessibilityLabel="Go back"
               accessibilityRole="button"
             >
-              <ArrowLeft size={24} color={colors.textPrimary} strokeWidth={2} />
+              <ArrowLeft
+                size={layout.iconSize.md}
+                color={colors.textPrimary}
+                strokeWidth={2}
+              />
             </TouchableOpacity>
-            <Text style={styles.headerTitle}>Physical deposit</Text>
+            <Text style={styles.headerTitle}>Physical Deposit</Text>
             <View style={styles.headerSpacer} />
+          </View>
+
+          {/* Step Indicator */}
+          <View style={styles.stepIndicator}>
+            <View style={[styles.stepDot, styles.stepDotActive]} />
+            <View style={styles.stepLine} />
+            <View style={styles.stepDot} />
+            <View style={styles.stepLine} />
+            <View style={styles.stepDot} />
           </View>
 
           {/* Content */}
           <View style={styles.content}>
             <View style={styles.inputSection}>
-              <Text style={styles.inputLabel}>Enter customer's flash tag</Text>
+              <Text style={styles.inputTitle}>Customer Flash Tag</Text>
+              <Text style={styles.inputDescription}>
+                Enter the customer's unique flash tag to send them crypto
+                directly.
+              </Text>
+
               <View
                 style={[
                   styles.inputContainer,
@@ -99,8 +127,17 @@ export default function EnterFlashTag({
                   error ? styles.inputContainerError : null,
                 ]}
               >
-                <View style={styles.inputPrefix}>
-                  <AtSign size={20} color={colors.textTertiary} strokeWidth={2} />
+                <View
+                  style={[
+                    styles.inputPrefix,
+                    isFocused && styles.inputPrefixFocused,
+                  ]}
+                >
+                  <AtSign
+                    size={layout.iconSize.sm}
+                    color={isFocused ? colors.primary : colors.textTertiary}
+                    strokeWidth={2}
+                  />
                 </View>
                 <TextInput
                   ref={inputRef}
@@ -118,10 +155,13 @@ export default function EnterFlashTag({
                   accessibilityLabel="Customer flash tag input"
                 />
               </View>
-              {error ? <Text style={styles.errorText}>{error}</Text> : null}
-              <Text style={styles.helperText}>
-                Enter the customer's unique flash tag to send them crypto
-              </Text>
+
+              {error ? (
+                <View style={styles.errorRow}>
+                  <Info size={14} color={colors.error} strokeWidth={2} />
+                  <Text style={styles.errorText}>{error}</Text>
+                </View>
+              ) : null}
             </View>
           </View>
 
@@ -144,7 +184,7 @@ export default function EnterFlashTag({
                   isButtonDisabled && styles.nextButtonTextDisabled,
                 ]}
               >
-                Next
+                Continue
               </Text>
             </TouchableOpacity>
           </View>
@@ -162,83 +202,135 @@ const styles = StyleSheet.create({
   keyboardView: {
     flex: 1,
   },
+
+  // Header
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
+    paddingHorizontal: layout.screenPaddingHorizontal,
+    paddingVertical: spacing.base,
   },
   backButton: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: colors.backgroundInput,
+    width: layout.avatarSize.md,
+    height: layout.avatarSize.md,
+    borderRadius: borderRadius.full,
+    backgroundColor: colors.backgroundCard,
     justifyContent: 'center',
     alignItems: 'center',
+    ...shadows.xs,
   },
   headerTitle: {
-    fontSize: typography.fontSize['4xl'],
+    fontSize: typography.fontSize.lg,
     fontWeight: typography.fontWeight.semibold,
     color: colors.textPrimary,
-    textAlign: 'center',
+    letterSpacing: typography.letterSpacing.wide,
   },
   headerSpacer: {
-    width: 50,
+    width: layout.avatarSize.md,
   },
+
+  // Step Indicator
+  stepIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: layout.screenPaddingHorizontal * 2,
+    paddingVertical: spacing.lg,
+    gap: spacing.xs,
+  },
+  stepDot: {
+    width: 10,
+    height: 10,
+    borderRadius: borderRadius.full,
+    backgroundColor: colors.borderLight,
+  },
+  stepDotActive: {
+    backgroundColor: colors.primary,
+    width: 12,
+    height: 12,
+  },
+  stepLine: {
+    flex: 1,
+    height: 2,
+    backgroundColor: colors.borderLight,
+  },
+
+  // Content
   content: {
     flex: 1,
-    paddingHorizontal: 52,
-    paddingTop: 50,
+    paddingHorizontal: layout.screenPaddingHorizontal,
+    paddingTop: spacing['2xl'],
   },
   inputSection: {
-    gap: 15,
+    gap: spacing.md,
   },
-  inputLabel: {
-    fontSize: typography.fontSize.md,
-    fontWeight: typography.fontWeight.medium,
+  inputTitle: {
+    fontSize: typography.fontSize.xl,
+    fontWeight: typography.fontWeight.bold,
     color: colors.textPrimary,
-    lineHeight: typography.lineHeight.normal,
+    letterSpacing: typography.letterSpacing.tight,
+  },
+  inputDescription: {
+    fontSize: typography.fontSize.base,
+    color: colors.textTertiary,
+    lineHeight: typography.fontSize.base * typography.lineHeight.relaxed,
+    marginBottom: spacing.sm,
   },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.backgroundInput,
-    borderWidth: 1,
-    borderColor: colors.border,
+    backgroundColor: colors.backgroundCard,
+    borderWidth: 1.5,
+    borderColor: colors.borderLight,
     borderRadius: borderRadius.lg,
     height: layout.inputHeight,
-    paddingHorizontal: 16,
+    paddingHorizontal: spacing.base,
+    ...shadows.xs,
   },
   inputContainerFocused: {
     borderColor: colors.borderActive,
     borderWidth: 2,
+    backgroundColor: colors.backgroundElevated,
   },
   inputContainerError: {
     borderColor: colors.error,
+    borderWidth: 2,
   },
   inputPrefix: {
-    marginRight: 10,
+    width: 36,
+    height: 36,
+    borderRadius: borderRadius.md,
+    backgroundColor: colors.backgroundInput,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: spacing.md,
+  },
+  inputPrefixFocused: {
+    backgroundColor: colors.primaryLight,
   },
   input: {
     flex: 1,
     fontSize: typography.fontSize.md,
     color: colors.textPrimary,
+    fontWeight: typography.fontWeight.medium,
     height: '100%',
   },
+  errorRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
   errorText: {
-    fontSize: typography.fontSize.base,
+    fontSize: typography.fontSize.sm,
     color: colors.error,
-    marginTop: -5,
+    fontWeight: typography.fontWeight.medium,
   },
-  helperText: {
-    fontSize: typography.fontSize.base,
-    color: colors.textTertiary,
-    lineHeight: typography.lineHeight.relaxed,
-  },
+
+  // Bottom
   bottomContainer: {
-    paddingHorizontal: 52,
-    paddingBottom: Platform.OS === 'ios' ? 40 : 30,
+    paddingHorizontal: layout.screenPaddingHorizontal,
+    paddingBottom: Platform.OS === 'ios' ? spacing['3xl'] : spacing['2xl'],
   },
   nextButton: {
     backgroundColor: colors.primary,
@@ -246,16 +338,20 @@ const styles = StyleSheet.create({
     height: layout.buttonHeight,
     justifyContent: 'center',
     alignItems: 'center',
+    ...shadows.button,
   },
   nextButtonDisabled: {
-    backgroundColor: colors.borderLight,
+    backgroundColor: colors.primaryDisabled,
+    shadowOpacity: 0,
+    elevation: 0,
   },
   nextButtonText: {
     fontSize: typography.fontSize.md,
-    fontWeight: typography.fontWeight.medium,
-    color: colors.textLight,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.textWhite,
+    letterSpacing: typography.letterSpacing.wide,
   },
   nextButtonTextDisabled: {
-    color: colors.textPlaceholder,
+    color: 'rgba(255, 255, 255, 0.6)',
   },
 });

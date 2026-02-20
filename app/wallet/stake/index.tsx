@@ -1,15 +1,16 @@
 import Success from '@/components/kyc/Success';
 import Verifying from '@/components/kyc/Verifying';
+import { colors } from '@/constants/theme';
 import { useRouter } from 'expo-router';
 import React, { useCallback, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import EnterStakeAmount from './EnterStakeAmount';
 import StakePayment from './StakePayment';
 import {
-    StakeData,
-    StakeStep,
-    STAKING_CONFIG,
-    STAKING_WALLET_ADDRESS,
+  StakeData,
+  StakeStep,
+  STAKING_CONFIG,
+  STAKING_WALLET_ADDRESS,
 } from './types';
 
 const initialStakeData: StakeData = {
@@ -33,7 +34,6 @@ export default function StakeFlow() {
   };
 
   const generateQRData = (amount: string): string => {
-    // In real app, this would generate proper payment QR data
     return JSON.stringify({
       type: 'stake',
       amount,
@@ -61,7 +61,6 @@ export default function StakeFlow() {
     setCurrentStep('processing');
 
     try {
-      // Simulate payment verification
       await new Promise((resolve) => setTimeout(resolve, 3000));
       setCurrentStep('success');
     } catch (error) {
@@ -147,6 +146,6 @@ export default function StakeFlow() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F5F5',
+    backgroundColor: colors.background,
   },
 });

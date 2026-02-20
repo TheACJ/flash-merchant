@@ -7,6 +7,7 @@ import {
   spacing,
   typography,
 } from '@/constants/theme';
+import { RootState } from '@/store';
 import { useRouter } from 'expo-router';
 import {
   ArrowLeft,
@@ -28,6 +29,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSelector } from 'react-redux';
 
 interface MenuItemProps {
   icon: React.ReactNode;
@@ -65,6 +67,13 @@ const MenuItem: React.FC<MenuItemProps> = ({
 
 export default function ProfileScreen() {
   const router = useRouter();
+  const merchantProfile = useSelector(
+    (state: RootState) => state.merchantAuth.merchantProfile
+  );
+
+  const displayName = merchantProfile?.name || 'Merchant';
+  const displayTag = merchantProfile?.normalizedTag ? `@${merchantProfile.normalizedTag}` : '';
+  const isVerified = merchantProfile?.status === 'verified' || merchantProfile?.isVerified;
 
   return (
     <SafeAreaView style={styles.container}>
@@ -104,10 +113,10 @@ export default function ProfileScreen() {
             </View>
             <View style={styles.profileInfo}>
               <View style={styles.nameRow}>
-                <Text style={styles.profileName}>Cryptoguru</Text>
-                <CheckCircle2 size={16} color={colors.success} />
+                <Text style={styles.profileName}>{displayName}</Text>
+                {isVerified && <CheckCircle2 size={16} color={colors.success} />}
               </View>
-              <Text style={styles.profileRole}>Merchant Account</Text>
+              <Text style={styles.profileRole}>{displayTag || 'Merchant Account'}</Text>
             </View>
           </View>
           <ChevronRight size={20} color={colors.textTertiary} />

@@ -7,6 +7,7 @@ import {
   spacing,
   typography,
 } from '@/constants/theme';
+import { RootState } from '@/store';
 import { useRouter } from 'expo-router';
 import {
   ArrowLeft,
@@ -28,6 +29,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSelector } from 'react-redux';
 
 interface FormFieldProps {
   label: string;
@@ -72,10 +74,14 @@ const FormField: React.FC<FormFieldProps> = ({
 
 export default function EditProfileScreen() {
   const router = useRouter();
-  const [tag, setTag] = useState('Cryptoguru');
-  const [phone, setPhone] = useState('+234 800 000 0000');
-  const [email, setEmail] = useState('cryptoguru@example.com');
-  const [address, setAddress] = useState('123 Main Street, Lagos');
+  const merchantProfile = useSelector(
+    (state: RootState) => state.merchantAuth.merchantProfile
+  );
+
+  const [tag, setTag] = useState(merchantProfile?.normalizedTag || '');
+  const [phone, setPhone] = useState(merchantProfile?.phoneNumber || '');
+  const [email, setEmail] = useState(merchantProfile?.email || '');
+  const [address, setAddress] = useState(merchantProfile?.location?.address || '');
 
   return (
     <SafeAreaView style={styles.container}>

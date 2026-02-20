@@ -103,6 +103,9 @@ interface StakeTokens {
 class MerchantApiService {
   private api: AxiosInstance;
   private authToken: string | null = null;
+  private refreshToken: string | null = null;
+  private isRefreshing: boolean = false;
+  private failedQueue: Array<{ resolve: (token: string) => void; reject: (error: any) => void }> = [];
 
   constructor() {
     this.api = axios.create({
@@ -118,7 +121,7 @@ class MerchantApiService {
       async (config) => {
         // Check if this request should skip authentication
         const skipAuth = (config as any).skipAuth === true;
-        
+
         // Only add auth token if not skipped
         if (!skipAuth) {
           // Always try to get auth token from memory first, then SecureStore
@@ -172,6 +175,8 @@ class MerchantApiService {
         return response;
       },
       async (error: AxiosError) => {
+        const originalRequest = error.config as any;
+
         // Log error response
         console.error('\n❌ API ERROR:', {
           status: error.response?.status,
@@ -181,32 +186,121 @@ class MerchantApiService {
           message: error.message,
         });
 
-        // Only clear auth token on 401 for authenticated requests
-        const skipAuth = (error.config as any)?.skipAuth === true;
-        if (error.response?.status === 401 && !skipAuth) {
-          console.log('🔒 Unauthorized - Clearing auth token');
-          await this.clearAuth();
+        // Only handle 401 for authenticated requests
+        const skipAuth = originalRequest?.skipAuth === true;
+        if (error.response?.status === 401 && !skipAuth && !originalRequest?._retry) {
+          // Try to refresh the token
+          if (this.isRefreshing) {
+            // Already refreshing, queue this request
+            return new Promise((resolve, reject) => {
+              this.failedQueue.push({ resolve, reject });
+            }).then((token) => {
+              originalRequest.headers.Authorization = `Bearer ${token}`;
+              return this.api(originalRequest);
+            }).catch((err) => {
+              return Promise.reject(err);
+            });
+          }
+
+          originalRequest._retry = true;
+          this.isRefreshing = true;
+
+          try {
+            const newToken = await this.refreshAccessToken();
+            if (newToken) {
+              // Process queued requests
+              this.failedQueue.forEach(({ resolve }) => resolve(newToken));
+              this.failedQueue = [];
+
+              // Retry original request
+              originalRequest.headers.Authorization = `Bearer ${newToken}`;
+              return this.api(originalRequest);
+            }
+          } catch (refreshError) {
+            // Refresh failed, clear auth and reject queued requests
+            this.failedQueue.forEach(({ reject }) => reject(refreshError));
+            this.failedQueue = [];
+            await this.clearAuth();
+            return Promise.reject(refreshError);
+          } finally {
+            this.isRefreshing = false;
+          }
         }
+
         return Promise.reject(error);
       }
     );
   }
 
   // ==================== Auth Management ====================
-  
-  async setAuthToken(token: string): Promise<void> {
-    console.log('🔑 Setting auth token:', token.substring(0, 20) + '...');
-    this.authToken = token;
-    await SecureStore.setItemAsync(STORAGE_KEYS.session_token, token);
+
+  async setAuthToken(accessToken: string, refreshToken?: string): Promise<void> {
+    console.log('🔑 Setting auth token:', accessToken.substring(0, 20) + '...');
+    this.authToken = accessToken;
+    await SecureStore.setItemAsync(STORAGE_KEYS.session_token, accessToken);
+
+    // Store refresh token if provided
+    if (refreshToken) {
+      this.refreshToken = refreshToken;
+      await SecureStore.setItemAsync(STORAGE_KEYS.refresh_token, refreshToken);
+      console.log('🔑 Refresh token stored');
+    }
+
     // Verify it was stored
     const verified = await SecureStore.getItemAsync(STORAGE_KEYS.session_token);
     console.log('🔑 Token verified in SecureStore:', verified ? 'YES' : 'NO');
   }
 
   async clearAuth(): Promise<void> {
-    console.log('🗑️ Clearing auth token');
+    console.log('🗑️ Clearing auth tokens');
     this.authToken = null;
+    this.refreshToken = null;
     await SecureStore.deleteItemAsync(STORAGE_KEYS.session_token);
+    await SecureStore.deleteItemAsync(STORAGE_KEYS.refresh_token);
+  }
+
+  /**
+   * Refresh the access token using the refresh token
+   */
+  private async refreshAccessToken(): Promise<string | null> {
+    console.log('🔄 Attempting to refresh access token...');
+
+    try {
+      // Get refresh token from memory or storage
+      if (!this.refreshToken) {
+        this.refreshToken = await SecureStore.getItemAsync(STORAGE_KEYS.refresh_token) || null;
+      }
+
+      if (!this.refreshToken) {
+        console.log('⚠️ No refresh token available');
+        return null;
+      }
+
+      // Call refresh endpoint
+      const response = await axios.post(`${FLASH_API_BASE_URL}/merchant/token/refresh/`, {
+        refresh: this.refreshToken,
+      });
+
+      if (response.data.access) {
+        // Update access token
+        this.authToken = response.data.access;
+        await SecureStore.setItemAsync(STORAGE_KEYS.session_token, response.data.access);
+
+        // Update refresh token if a new one is provided
+        if (response.data.refresh) {
+          this.refreshToken = response.data.refresh;
+          await SecureStore.setItemAsync(STORAGE_KEYS.refresh_token, response.data.refresh);
+        }
+
+        console.log('✅ Token refresh successful');
+        return response.data.access;
+      }
+
+      return null;
+    } catch (error) {
+      console.error('❌ Token refresh failed:', error);
+      return null;
+    }
   }
 
   // ==================== Onboarding Endpoints ====================
@@ -220,9 +314,9 @@ class MerchantApiService {
   async registerComplete(data: MerchantRegistrationComplete): Promise<ApiResponse> {
     console.log('✅ Completing registration with session:', data.session_token.substring(0, 10) + '...');
     const response = await this.api.post('/merchant/register/complete/', data);
-    // Backend returns 'access' token (JWT), not 'token'
+    // Backend returns 'access' and 'refresh' tokens (JWT)
     if (response.data.access) {
-      await this.setAuthToken(response.data.access);
+      await this.setAuthToken(response.data.access, response.data.refresh);
     }
     return response.data;
   }
@@ -236,9 +330,9 @@ class MerchantApiService {
   async loginComplete(data: MerchantLoginComplete): Promise<ApiResponse> {
     console.log('🔓 Completing login for:', data.phone_number);
     const response = await this.api.post('/merchant/login/complete/', data);
-    // Backend returns 'access' token (JWT), not 'token'
+    // Backend returns 'access' and 'refresh' tokens (JWT)
     if (response.data.access) {
-      await this.setAuthToken(response.data.access);
+      await this.setAuthToken(response.data.access, response.data.refresh);
     }
     return response.data;
   }
@@ -321,8 +415,8 @@ class MerchantApiService {
     return response.data;
   }
 
-  async getMerchantTransactions(params?: { 
-    page?: number; 
+  async getMerchantTransactions(params?: {
+    page?: number;
     status?: string;
     type?: string;
   }): Promise<ApiResponse> {
@@ -380,26 +474,26 @@ class MerchantApiService {
 
   handleError(error: any): { success: false; error: string } {
     console.error('\n💥 HANDLING ERROR:', error);
-    
+
     if (axios.isAxiosError(error)) {
       const axiosError = error as AxiosError<any>;
-      const errorMessage = axiosError.response?.data?.message || 
-                          axiosError.response?.data?.error || 
-                          axiosError.message || 
-                          'An unexpected error occurred';
-      
+      const errorMessage = axiosError.response?.data?.message ||
+        axiosError.response?.data?.error ||
+        axiosError.message ||
+        'An unexpected error occurred';
+
       console.error('📛 Error details:', {
         status: axiosError.response?.status,
         message: errorMessage,
         data: axiosError.response?.data,
       });
-      
+
       return {
         success: false,
         error: errorMessage
       };
     }
-    
+
     console.error('📛 Non-Axios error:', error.message);
     return {
       success: false,

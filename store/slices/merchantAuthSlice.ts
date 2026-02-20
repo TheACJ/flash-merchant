@@ -1,13 +1,49 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 
-interface MerchantProfile {
-  id: string;
-  tag: string;
+export interface MerchantProfile {
+  // Identity
+  normalizedTag: string;
+  name: string;
   businessName: string;
   email: string;
-  phone: string;
-  address: string;
-  kycStatus: 'pending' | 'verified' | 'rejected';
+  phoneNumber: string;
+  description: string | null;
+  agentId: string;
+
+  // Security & Status
+  tier: string;
+  isVerified: boolean;
+  verifiedAt: string | null;
+  kycStatus?: 'pending' | 'verified' | 'rejected'; // Keep for backwards compatibility if needed
+  reputationScore: string;
+  verificationScore: string;
+  status: string;
+
+  // Financials
+  dailyLimit: string;
+  transactionLimit: string;
+  availableFiatLiquidity: string;
+  ratePercentage: string;
+  flashFeePercent: number;
+
+  // Activity
+  reviewCount: number;
+  totalTrades: number;
+  completedTrades: number;
+
+  // Location
+  location: {
+    address: string;
+    state: string;
+    latitude: number;
+    longitude: number;
+  };
+
+  // Complex Data (placeholder types, can be refined as needed)
+  bankDetails: any;
+  orderLimit: any;
+  stakeAsset: any;
+  paymentMethods: any[];
 }
 
 interface MerchantAuthState {

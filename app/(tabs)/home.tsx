@@ -21,12 +21,12 @@ import {
   Star,
   Timer,
   TrendingUp,
-  User,
-  Wallet
+  User
 } from 'lucide-react-native';
 import React, { useState } from 'react';
 import {
   Dimensions,
+  Image,
   ScrollView,
   StatusBar,
   StyleSheet,
@@ -34,12 +34,20 @@ import {
   TouchableOpacity,
   View
 } from 'react-native';
+
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useSelector } from 'react-redux';
 
 import { RootState } from '../../store';
 
 const { width } = Dimensions.get('window');
+const CHAIN_ICONS: Record<string, any> = {
+  ethereum: require('../../assets/images/eth.png'),
+  bitcoin: require('../../assets/images/btc.png'),
+  solana: require('../../assets/images/sol.png'),
+  bnb: require('../../assets/images/bnb.png'),
+};
+
 
 interface QuickAction {
   id: string;
@@ -82,7 +90,9 @@ const HomeScreen: React.FC = () => {
   const messageCount = 0;
 
   // Derived values from API data
-  const userName = merchantProfile?.tag ? `@${merchantProfile.tag}` : '@User';
+  const displayName = merchantProfile?.normalizedTag || 'Merchant';
+  const isVerified = merchantProfile?.isVerified || merchantProfile?.status === 'verified';
+  const userName = merchantProfile?.normalizedTag ? `@${merchantProfile.normalizedTag}` : '@User';
   const walletBalance = totalBalance || 0;
 
   const quickActions: QuickAction[] = [
@@ -126,7 +136,7 @@ const HomeScreen: React.FC = () => {
     {
       id: 'transactions',
       label: 'Transactions',
-      value: '0', // TODO: Fetch from API
+      value: (merchantProfile?.completedTrades || 0).toString(),
       icon: CreditCard,
       iconColor: colors.primary,
     },
@@ -173,7 +183,7 @@ const HomeScreen: React.FC = () => {
             style={styles.userSection}
             activeOpacity={0.7}
             accessibilityLabel="User Profile"
-            onPress={() => router.push('/settings/profile')}
+            onPress={() => router.push('/wallet/profile')}
           >
             <View style={styles.avatar}>
               <User
@@ -321,12 +331,13 @@ const HomeScreen: React.FC = () => {
                 <View key={wallet.id} style={styles.walletCard}>
                   <View style={styles.walletCardHeader}>
                     <View style={styles.walletIconContainer}>
-                      <Wallet
-                        size={layout.iconSize.sm}
-                        color={colors.primary}
-                        strokeWidth={1.8}
+                      <Image
+                        source={CHAIN_ICONS[wallet.type] || require('../../assets/images/default-coin.png')}
+                        style={styles.chainIcon}
+                        resizeMode="contain"
                       />
                     </View>
+
                     <Text style={styles.walletType}>
                       {wallet.type.toUpperCase()}
                     </Text>
@@ -615,10 +626,16 @@ const styles = StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: borderRadius.sm,
-    backgroundColor: colors.primaryLight,
+    backgroundColor: colors.backgroundInput,
     justifyContent: 'center',
     alignItems: 'center',
+    overflow: 'hidden',
   },
+  chainIcon: {
+    width: 20,
+    height: 20,
+  },
+
   walletType: {
     fontSize: typography.fontSize.xs,
     fontWeight: typography.fontWeight.bold,
