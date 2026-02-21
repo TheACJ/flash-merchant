@@ -7,7 +7,7 @@ import {
   spacing,
   typography,
 } from '@/constants/theme';
-import { usePreferredCurrency, useTotalBalance } from '@/hooks';
+import { useExchangeRates, usePreferredCurrency, useTotalBalance } from '@/hooks';
 import { useRouter } from 'expo-router';
 import {
   ArrowDownToLine,
@@ -23,7 +23,7 @@ import {
   TrendingUp,
   User
 } from 'lucide-react-native';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Dimensions,
   Image,
@@ -67,13 +67,17 @@ interface SummaryCard {
 const HomeScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
   const [balanceVisible, setBalanceVisible] = useState<boolean>(true);
+  const [convertedBalance, setConvertedBalance] = useState<number>(0);
   const router = useRouter();
 
 
   // Get currency from Redux (loaded from API)
   const { code: currencyCode, formatCurrency, isLoading: currencyLoading } = usePreferredCurrency();
 
-  // Get balance from cache (loaded from API)
+  // Get exchange rates for currency conversion
+  const { convertCurrency } = useExchangeRates();
+
+  // Get balance from cache (loaded from API) - returns USD value
   const { totalBalance, isLoading: balanceLoading } = useTotalBalance();
 
   const wallets = useSelector(
@@ -93,7 +97,29 @@ const HomeScreen: React.FC = () => {
   const displayName = merchantProfile?.normalizedTag || 'Merchant';
   const isVerified = merchantProfile?.isVerified || merchantProfile?.status === 'verified';
   const userName = merchantProfile?.normalizedTag ? `@${merchantProfile.normalizedTag}` : '@User';
-  const walletBalance = totalBalance || 0;
+  const rawWalletBalance = totalBalance || 0; // USD value from API
+
+  // Convert USD balance to preferred currency
+  useEffect(() => {
+    const convertBalance = async () => {
+      if (!currencyCode || currencyCode === 'USD') {
+        // No conversion needed for USD
+        setConvertedBalance(rawWalletBalance);
+        return;
+      }
+
+      try {
+        const converted = await convertCurrency(rawWalletBalance, 'USD', currencyCode);
+        setConvertedBalance(converted);
+      } catch (error) {
+        console.error('[HomeScreen] Currency conversion failed:', error);
+        // Fallback to raw USD value
+        setConvertedBalance(rawWalletBalance);
+      }
+    };
+
+    convertBalance();
+  }, [currencyCode, rawWalletBalance, convertCurrency]);
 
   const quickActions: QuickAction[] = [
     {
@@ -251,7 +277,7 @@ const HomeScreen: React.FC = () => {
 
           <View style={styles.balanceRow}>
             <Text style={styles.balanceAmount}>
-              {balanceVisible ? formatCurrency(walletBalance) : '••••••'}
+              {balanceVisible ? formatCurrency(convertedBalance) : '••••••'}
             </Text>
             <TouchableOpacity
               onPress={() => setBalanceVisible(!balanceVisible)}
@@ -590,6 +616,8 @@ const styles = StyleSheet.create({
     fontWeight: typography.fontWeight.bold,
     color: colors.textPrimary,
     letterSpacing: typography.letterSpacing.tight,
+    marginTop: spacing.md,
+    paddingHorizontal: layout.screenPaddingHorizontal,
   },
   sectionBadge: {
     backgroundColor: colors.primaryLight,

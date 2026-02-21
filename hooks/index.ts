@@ -18,3 +18,10 @@ export { default as useExchangeRates } from './useExchangeRates';
 
 // App Initialization
 export { useAppInitialization } from './useAppInitialization';
+
+// Location Hooks
+export { useGlobalLocation } from './useGlobalLocation';
+
+// Device Hooks
+export { useDevice } from './useDevice';
+

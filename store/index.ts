@@ -1,5 +1,7 @@
 import { configureStore } from '@reduxjs/toolkit';
 import currencyReducer from './slices/currencySlice';
+import deviceReducer from './slices/deviceSlice';
+import locationReducer from './slices/locationSlice';
 import merchantAuthReducer from './slices/merchantAuthSlice';
 import merchantWalletReducer from './slices/merchantWalletSlice';
 
@@ -8,6 +10,8 @@ export const store = configureStore({
     merchantWallet: merchantWalletReducer,
     merchantAuth: merchantAuthReducer,
     currency: currencyReducer,
+    location: locationReducer,
+    device: deviceReducer,
   },
 });
 

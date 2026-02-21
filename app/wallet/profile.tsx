@@ -1,5 +1,5 @@
 import { borderRadius, colors, layout, shadows, spacing, typography } from '@/constants/theme';
-import { usePreferredCurrency, useTotalBalance } from '@/hooks';
+import { useExchangeRates, usePreferredCurrency, useTotalBalance } from '@/hooks';
 import { RootState } from '@/store';
 import { useRouter } from 'expo-router';
 import {
@@ -16,7 +16,7 @@ import {
   User,
   Wallet,
 } from 'lucide-react-native';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Dimensions,
   ScrollView,
@@ -74,12 +74,106 @@ function LimitRow({ label, value, isLast = false }: LimitRowProps) {
 export default function WalletProfileScreen() {
   const router = useRouter();
   const { totalBalance } = useTotalBalance();
-  const { formatCurrency: formatCurrencyHook } = usePreferredCurrency();
+  const { formatCurrency: formatCurrencyHook, code: preferredCurrencyCode } = usePreferredCurrency();
+  const { convertCurrency, rates } = useExchangeRates();
   const merchantProfile = useSelector(
     (state: RootState) => state.merchantAuth.merchantProfile
   );
 
   const [balanceVisible, setBalanceVisible] = useState(true);
+  const [convertedValues, setConvertedValues] = useState({
+    transactionLimit: 0,
+    dailyLimitValue: 0,
+    availableLiquidity: 0,
+    inOrdersAmount: 0,
+    dailyUsed: 0,
+    walletBalance: 0,
+  });
+
+  // Raw USD values from API
+  const rawTransactionLimit = parseFloat(merchantProfile?.transactionLimit || '0');
+  const rawDailyLimitValue = parseFloat(merchantProfile?.dailyLimit || '0');
+  const rawAvailableLiquidity = parseFloat(merchantProfile?.availableFiatLiquidity || '0');
+
+  // Staking data from profile (FLA$H tokens, not currency)
+  const stakeAsset = merchantProfile?.stakeAsset;
+  const stakingTier = merchantProfile?.tier || 'None';
+  const stakingTarget = stakeAsset?.target || 0;
+  const stakingProgress = stakeAsset?.staked_amount || 0;
+
+  // Order/in-orders data from profile
+  const orderLimit = merchantProfile?.orderLimit;
+  const rawInOrdersAmount = orderLimit?.in_orders || 0;
+  const rawDailyUsed = orderLimit?.daily_used || 0;
+
+  const rawWalletBalance = totalBalance || 0;
+
+  // Convert USD values to preferred currency
+  useEffect(() => {
+    const convertValues = async () => {
+      if (!preferredCurrencyCode || preferredCurrencyCode === 'USD') {
+        // No conversion needed for USD
+        setConvertedValues({
+          transactionLimit: rawTransactionLimit,
+          dailyLimitValue: rawDailyLimitValue,
+          availableLiquidity: rawAvailableLiquidity,
+          inOrdersAmount: rawInOrdersAmount,
+          dailyUsed: rawDailyUsed,
+          walletBalance: rawWalletBalance,
+        });
+        return;
+      }
+
+      try {
+        const [
+          convertedTransactionLimit,
+          convertedDailyLimitValue,
+          convertedAvailableLiquidity,
+          convertedInOrdersAmount,
+          convertedDailyUsed,
+          convertedWalletBalance,
+        ] = await Promise.all([
+          convertCurrency(rawTransactionLimit, 'USD', preferredCurrencyCode),
+          convertCurrency(rawDailyLimitValue, 'USD', preferredCurrencyCode),
+          convertCurrency(rawAvailableLiquidity, 'USD', preferredCurrencyCode),
+          convertCurrency(rawInOrdersAmount, 'USD', preferredCurrencyCode),
+          convertCurrency(rawDailyUsed, 'USD', preferredCurrencyCode),
+          convertCurrency(rawWalletBalance, 'USD', preferredCurrencyCode),
+        ]);
+
+        setConvertedValues({
+          transactionLimit: convertedTransactionLimit,
+          dailyLimitValue: convertedDailyLimitValue,
+          availableLiquidity: convertedAvailableLiquidity,
+          inOrdersAmount: convertedInOrdersAmount,
+          dailyUsed: convertedDailyUsed,
+          walletBalance: convertedWalletBalance,
+        });
+      } catch (error) {
+        console.error('[WalletProfile] Currency conversion failed:', error);
+        // Fallback to raw USD values
+        setConvertedValues({
+          transactionLimit: rawTransactionLimit,
+          dailyLimitValue: rawDailyLimitValue,
+          availableLiquidity: rawAvailableLiquidity,
+          inOrdersAmount: rawInOrdersAmount,
+          dailyUsed: rawDailyUsed,
+          walletBalance: rawWalletBalance,
+        });
+      }
+    };
+
+    convertValues();
+  }, [
+    preferredCurrencyCode,
+    rawTransactionLimit,
+    rawDailyLimitValue,
+    rawAvailableLiquidity,
+    rawInOrdersAmount,
+    rawDailyUsed,
+    rawWalletBalance,
+    convertCurrency,
+  ]);
 
   const displayName = merchantProfile?.name || 'Merchant';
   const roleText = merchantProfile?.tier
@@ -88,32 +182,11 @@ export default function WalletProfileScreen() {
   const isVerified =
     merchantProfile?.isVerified || merchantProfile?.status === 'verified';
 
-  const transactionLimit = parseFloat(merchantProfile?.transactionLimit || '0');
-  const dailyLimitValue = parseFloat(merchantProfile?.dailyLimit || '0');
-  const availableLiquidity = parseFloat(
-    merchantProfile?.availableFiatLiquidity || '0'
-  );
+  const formatCurrency = (amount: number): string => formatCurrencyHook(amount);
 
-  // Staking data from profile
-  const stakeAsset = merchantProfile?.stakeAsset;
-  const stakingTier = merchantProfile?.tier || 'None';
-  const stakingTarget = stakeAsset?.target || 0;
-  const stakingProgress = stakeAsset?.staked_amount || 0;
-
-  // Order/in-orders data from profile
-  const orderLimit = merchantProfile?.orderLimit;
-  const inOrdersAmount = orderLimit?.in_orders || 0;
-  const dailyUsed = orderLimit?.daily_used || 0;
-
-  const walletBalance = totalBalance || 0;
-
-  const formatCurrency = (amount: number): string =>
-    `$${amount.toLocaleString('en-US', {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    })}`;
-
-  const progressPercentage = (stakingProgress / stakingTarget) * 100;
+  const progressPercentage = stakingTarget > 0
+    ? (stakingProgress / stakingTarget) * 100
+    : 0;
 
   return (
     <View style={styles.container}>
@@ -189,7 +262,7 @@ export default function WalletProfileScreen() {
               </TouchableOpacity>
             </View>
             <Text style={styles.balanceAmount}>
-              {balanceVisible ? formatCurrency(walletBalance) : '••••••'}
+              {balanceVisible ? formatCurrency(convertedValues.walletBalance) : '••••••'}
             </Text>
           </View>
         </View>
@@ -209,14 +282,14 @@ export default function WalletProfileScreen() {
             iconBgColor={colors.infoLight}
             iconColor={colors.info}
             label="Total Fiat"
-            value={formatCurrency(availableLiquidity)}
+            value={formatCurrency(convertedValues.availableLiquidity)}
           />
           <InfoCard
             icon={Lock}
             iconBgColor={colors.warningLight}
             iconColor={colors.warning}
             label="In Orders"
-            value={formatCurrency(inOrdersAmount)}
+            value={formatCurrency(convertedValues.inOrdersAmount)}
           />
         </View>
 
@@ -251,7 +324,7 @@ export default function WalletProfileScreen() {
             <View style={styles.stakingProgressSection}>
               <View style={styles.stakingProgressHeader}>
                 <Text style={styles.stakingLeftAmount}>
-                  {formatCurrency(stakingTarget - stakingProgress)}
+                  {(stakingTarget - stakingProgress).toLocaleString()} FLA$H
                 </Text>
                 <Text style={styles.stakingLeftLabel}>remaining</Text>
               </View>
@@ -270,7 +343,7 @@ export default function WalletProfileScreen() {
                   {progressPercentage.toFixed(0)}% complete
                 </Text>
                 <Text style={styles.progressLabelRight}>
-                  Daily: {formatCurrency(dailyLimitValue)}
+                  Daily: {formatCurrency(convertedValues.dailyLimitValue)}
                 </Text>
               </View>
             </View>
@@ -287,15 +360,15 @@ export default function WalletProfileScreen() {
           <View style={styles.limitsCard}>
             <LimitRow
               label="Per Transaction"
-              value={formatCurrency(transactionLimit)}
+              value={formatCurrency(convertedValues.transactionLimit)}
             />
             <LimitRow
               label="Daily Volume"
-              value={formatCurrency(dailyLimitValue)}
+              value={formatCurrency(convertedValues.dailyLimitValue)}
             />
             <LimitRow
               label="Monthly Volume"
-              value={formatCurrency(dailyLimitValue * 30)}
+              value={formatCurrency(convertedValues.dailyLimitValue * 30)}
               isLast
             />
           </View>

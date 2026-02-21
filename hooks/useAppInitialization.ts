@@ -1,5 +1,6 @@
 import { globalCacheOrchestrator } from '@/services/GlobalCacheOrchestrator';
 import { merchantProfileOrchestrator } from '@/services/MerchantProfileOrchestrator';
+import { AppDispatch } from '@/store';
 import { loadPreferredCurrency } from '@/store/slices/currencySlice';
 import { useEffect, useRef } from 'react';
 import { useDispatch } from 'react-redux';
@@ -9,7 +10,7 @@ import { useBalanceOrchestrator } from './useBalanceOrchestrator';
  * useAppInitialization - Hook for initializing all app services
  */
 export function useAppInitialization() {
-  const dispatch = useDispatch();
+  const dispatch = useDispatch<AppDispatch>();
   const isInitialized = useRef(false);
 
   useBalanceOrchestrator();

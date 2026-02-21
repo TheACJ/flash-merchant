@@ -1,28 +1,90 @@
+import {
+  borderRadius,
+  colors,
+  layout,
+  shadows,
+  spacing,
+  typography,
+} from '@/constants/theme';
 import { useRouter } from 'expo-router';
 import {
-    ArrowLeft,
-    BellOff,
-    CheckCircle,
-    ChevronRight,
+  ArrowLeft,
+  ArrowUpFromLine,
+  Bell,
+  BellOff,
+  CheckCircle2,
+  ChevronRight,
+  Coins,
+  CreditCard,
+  Info,
+  Sparkles,
 } from 'lucide-react-native';
 import React, { useCallback, useMemo, useState } from 'react';
 import {
-    FlatList,
-    Platform,
-    RefreshControl,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  FlatList,
+  Platform,
+  RefreshControl,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
-    MOCK_NOTIFICATIONS,
-    Notification,
-    NOTIFICATION_FILTERS,
-    NotificationStatus,
-    NotificationType,
+  MOCK_NOTIFICATIONS,
+  Notification,
+  NOTIFICATION_FILTERS,
+  NotificationStatus,
+  NotificationType,
 } from './types';
+
+// Icon mapping for notification types
+const getNotificationIcon = (type: NotificationType) => {
+  switch (type) {
+    case 'withdrawal':
+      return ArrowUpFromLine;
+    case 'deposit':
+      return CreditCard;
+    case 'stake':
+      return Coins;
+    case 'update':
+      return Sparkles;
+    default:
+      return Bell;
+  }
+};
+
+const getStatusConfig = (
+  status: NotificationStatus
+): { color: string; bgColor: string; label: string } => {
+  switch (status) {
+    case 'new':
+      return {
+        color: colors.error,
+        bgColor: colors.errorLight,
+        label: 'New',
+      };
+    case 'completed':
+      return {
+        color: colors.success,
+        bgColor: colors.successLight,
+        label: 'Completed',
+      };
+    case 'pending':
+      return {
+        color: colors.warning,
+        bgColor: colors.warningLight,
+        label: 'Pending',
+      };
+    default:
+      return {
+        color: colors.textTertiary,
+        bgColor: colors.backgroundInput,
+        label: 'Unknown',
+      };
+  }
+};
 
 interface NotificationCardProps {
   notification: Notification;
@@ -30,17 +92,6 @@ interface NotificationCardProps {
 }
 
 function NotificationCard({ notification, onPress }: NotificationCardProps) {
-  const getStatusColor = (status: NotificationStatus): string => {
-    switch (status) {
-      case 'new':
-        return '#C31D1E';
-      case 'completed':
-        return '#128807';
-      default:
-        return '#657084';
-    }
-  };
-
   const formatTimestamp = (date: Date): string => {
     const now = new Date();
     const diffMs = now.getTime() - date.getTime();
@@ -48,86 +99,124 @@ function NotificationCard({ notification, onPress }: NotificationCardProps) {
     const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
     const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
 
-    if (diffMins < 60) {
-      return `${diffMins} min ago`;
-    } else if (diffHours < 24) {
-      return `${diffHours} hr ago`;
-    } else {
-      return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
-    }
+    if (diffMins < 1) return 'Just now';
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    if (diffDays < 7) return `${diffDays}d ago`;
+    return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
   };
 
-  const statusColor = getStatusColor(notification.status);
-  const isNew = notification.status === 'new';
+  const statusConfig = getStatusConfig(notification.status);
+  const IconComponent = getNotificationIcon(notification.type);
   const isCompleted = notification.status === 'completed';
 
   return (
     <TouchableOpacity
-      style={styles.notificationCard}
+      style={[
+        styles.notificationCard,
+        !notification.isRead && styles.notificationCardUnread,
+      ]}
       onPress={() => onPress(notification)}
-      activeOpacity={0.7}
+      activeOpacity={0.6}
       accessibilityLabel={`${notification.title}. ${notification.description}`}
     >
-      {/* Status Row */}
-      <View style={styles.statusRow}>
-        <View style={styles.statusIndicator}>
-          {isCompleted ? (
-            <>
-              <CheckCircle size={15} color={statusColor} strokeWidth={2} />
-              <Text style={[styles.statusText, { color: '#000000' }]}>
-                completed
-              </Text>
-            </>
-          ) : (
-            <>
-              <View
-                style={[styles.statusDot, { backgroundColor: statusColor }]}
+      {/* Left accent bar for unread */}
+      {!notification.isRead && <View style={styles.unreadAccent} />}
+
+      <View style={styles.cardContent}>
+        {/* Top Row */}
+        <View style={styles.cardTopRow}>
+          <View
+            style={[
+              styles.typeIconWrapper,
+              { backgroundColor: statusConfig.bgColor },
+            ]}
+          >
+            {isCompleted ? (
+              <CheckCircle2
+                size={layout.iconSize.sm}
+                color={statusConfig.color}
+                strokeWidth={1.8}
               />
-              <Text style={[styles.statusText, { color: '#000000' }]}>
-                {isNew ? 'New' : 'Pending'}
+            ) : (
+              <IconComponent
+                size={layout.iconSize.sm}
+                color={statusConfig.color}
+                strokeWidth={1.8}
+              />
+            )}
+          </View>
+
+          <View style={styles.cardTopRight}>
+            <View
+              style={[
+                styles.statusBadge,
+                { backgroundColor: statusConfig.bgColor },
+              ]}
+            >
+              <View
+                style={[
+                  styles.statusDot,
+                  { backgroundColor: statusConfig.color },
+                ]}
+              />
+              <Text
+                style={[
+                  styles.statusText,
+                  { color: statusConfig.color },
+                ]}
+              >
+                {statusConfig.label}
               </Text>
-            </>
-          )}
+            </View>
+            <Text style={styles.timestamp}>
+              {formatTimestamp(notification.timestamp)}
+            </Text>
+          </View>
         </View>
-        <Text style={styles.timestamp}>
-          {formatTimestamp(notification.timestamp)}
-        </Text>
-      </View>
 
-      {/* Content */}
-      <View style={styles.notificationContent}>
-        <Text style={styles.notificationTitle}>{notification.title}</Text>
-        <Text style={styles.notificationDescription}>
-          {notification.description}
-        </Text>
-      </View>
+        {/* Content */}
+        <View style={styles.cardBody}>
+          <Text style={styles.notificationTitle}>{notification.title}</Text>
+          <Text style={styles.notificationDescription}>
+            {notification.description}
+          </Text>
+        </View>
 
-      {/* Action */}
-      <View style={styles.actionRow}>
-        <Text style={[styles.actionText, { color: statusColor }]}>
-          {notification.actionLabel}
-        </Text>
-        <ChevronRight size={15} color={statusColor} strokeWidth={2} />
+        {/* Action Row */}
+        <TouchableOpacity
+          style={styles.actionRow}
+          activeOpacity={0.6}
+          onPress={() => onPress(notification)}
+        >
+          <Text style={styles.actionText}>{notification.actionLabel}</Text>
+          <ChevronRight
+            size={layout.iconSize.xs}
+            color={colors.primary}
+            strokeWidth={2}
+          />
+        </TouchableOpacity>
       </View>
     </TouchableOpacity>
   );
 }
 
-interface EmptyStateProps {
-  onGoHome: () => void;
-}
-
-function EmptyState({ onGoHome }: EmptyStateProps) {
+function EmptyState({ onGoHome }: { onGoHome: () => void }) {
   return (
     <View style={styles.emptyContainer}>
       <View style={styles.emptyContent}>
-        <BellOff size={100} color="#657084" strokeWidth={1.5} />
-        <View style={styles.emptyTextContainer}>
-          <Text style={styles.emptyTitle}>No Notifications</Text>
-          <Text style={styles.emptyDescription}>
-            We will let you know when there will be something to update you
-          </Text>
+        <View style={styles.emptyIconWrapper}>
+          <BellOff
+            size={56}
+            color={colors.textPlaceholder}
+            strokeWidth={1.2}
+          />
         </View>
+        <Text style={styles.emptyTitle}>No Notifications</Text>
+        <Text style={styles.emptyDescription}>
+          We'll let you know when there's something to update you about. Check
+          back soon!
+        </Text>
       </View>
 
       <View style={styles.emptyButtonContainer}>
@@ -136,7 +225,7 @@ function EmptyState({ onGoHome }: EmptyStateProps) {
           onPress={onGoHome}
           activeOpacity={0.8}
         >
-          <Text style={styles.goHomeButtonText}>Go back home</Text>
+          <Text style={styles.goHomeButtonText}>Go Back Home</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -145,93 +234,101 @@ function EmptyState({ onGoHome }: EmptyStateProps) {
 
 export default function NotificationsScreen() {
   const router = useRouter();
-  const [selectedFilter, setSelectedFilter] = useState<NotificationType>('all');
-  const [notifications, setNotifications] = useState<Notification[]>(MOCK_NOTIFICATIONS);
+  const [selectedFilter, setSelectedFilter] =
+    useState<NotificationType>('all');
+  const [notifications, setNotifications] =
+    useState<Notification[]>(MOCK_NOTIFICATIONS);
   const [refreshing, setRefreshing] = useState(false);
 
   const filteredNotifications = useMemo(() => {
-    if (selectedFilter === 'all') {
-      return notifications;
-    }
+    if (selectedFilter === 'all') return notifications;
     return notifications.filter((n) => n.type === selectedFilter);
   }, [notifications, selectedFilter]);
 
+  const unreadCount = useMemo(
+    () => notifications.filter((n) => !n.isRead).length,
+    [notifications]
+  );
+
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
-    // Simulate API call
     await new Promise((resolve) => setTimeout(resolve, 1500));
     setRefreshing(false);
   }, []);
 
-  const handleNotificationPress = useCallback((notification: Notification) => {
-    // Mark as read
-    setNotifications((prev) =>
-      prev.map((n) =>
-        n.id === notification.id ? { ...n, isRead: true } : n
-      )
-    );
+  const handleNotificationPress = useCallback(
+    (notification: Notification) => {
+      setNotifications((prev) =>
+        prev.map((n) =>
+          n.id === notification.id ? { ...n, isRead: true } : n
+        )
+      );
+    },
+    []
+  );
 
-    // Navigate based on notification type
-    switch (notification.type) {
-      case 'withdrawal':
-        // Navigate to withdrawal details
-        break;
-      case 'deposit':
-        // Navigate to deposit details
-        break;
-      case 'stake':
-        // Navigate to stake details
-        break;
-      default:
-        break;
-    }
+  const handleMarkAllRead = useCallback(() => {
+    setNotifications((prev) =>
+      prev.map((n) => ({ ...n, isRead: true }))
+    );
   }, []);
 
-  const handleGoBack = () => {
-    router.back();
-  };
+  const handleGoHome = () => router.replace('/');
 
-  const handleGoHome = () => {
-    router.replace('/');
-  };
-
-  const renderFilterTab = (filter: { id: NotificationType; label: string }) => {
-    const isActive = selectedFilter === filter.id;
-    return (
-      <TouchableOpacity
-        key={filter.id}
-        style={[styles.filterTab, isActive && styles.filterTabActive]}
-        onPress={() => setSelectedFilter(filter.id)}
-        activeOpacity={0.7}
-      >
-        <Text
-          style={[styles.filterTabText, isActive && styles.filterTabTextActive]}
-        >
-          {filter.label}
-        </Text>
-      </TouchableOpacity>
-    );
-  };
-
-  const isEmpty = filteredNotifications.length === 0;
+  const isEmpty =
+    filteredNotifications.length === 0 && selectedFilter === 'all';
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
+      <StatusBar
+        barStyle="dark-content"
+        backgroundColor="transparent"
+        translucent
+      />
+
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity
           style={styles.backButton}
-          onPress={handleGoBack}
+          onPress={() => router.back()}
           activeOpacity={0.7}
           accessibilityLabel="Go back"
         >
-          <ArrowLeft size={24} color="#000000" strokeWidth={2} />
+          <ArrowLeft
+            size={layout.iconSize.md}
+            color={colors.textPrimary}
+            strokeWidth={2}
+          />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Notifications</Text>
-        <View style={styles.headerSpacer} />
+
+        <View style={styles.headerCenter}>
+          <Text style={styles.headerTitle}>Notifications</Text>
+          {unreadCount > 0 && (
+            <View style={styles.headerBadge}>
+              <Text style={styles.headerBadgeText}>{unreadCount}</Text>
+            </View>
+          )}
+        </View>
+
+        {unreadCount > 0 ? (
+          <TouchableOpacity
+            style={styles.markReadButton}
+            onPress={handleMarkAllRead}
+            activeOpacity={0.7}
+            accessibilityLabel="Mark all as read"
+          >
+            <CheckCircle2
+              size={layout.iconSize.md}
+              color={colors.primary}
+              strokeWidth={1.8}
+            />
+          </TouchableOpacity>
+        ) : (
+          <View style={styles.headerSpacer} />
+        )}
       </View>
 
-      {isEmpty && selectedFilter === 'all' ? (
+      {isEmpty ? (
         <EmptyState onGoHome={handleGoHome} />
       ) : (
         <>
@@ -240,18 +337,47 @@ export default function NotificationsScreen() {
             <FlatList
               horizontal
               data={NOTIFICATION_FILTERS}
-              renderItem={({ item }) => renderFilterTab(item)}
+              renderItem={({ item: filter }) => {
+                const isActive = selectedFilter === filter.id;
+                return (
+                  <TouchableOpacity
+                    style={[
+                      styles.filterTab,
+                      isActive && styles.filterTabActive,
+                    ]}
+                    onPress={() => setSelectedFilter(filter.id)}
+                    activeOpacity={0.7}
+                  >
+                    <Text
+                      style={[
+                        styles.filterTabText,
+                        isActive && styles.filterTabTextActive,
+                      ]}
+                    >
+                      {filter.label}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              }}
               keyExtractor={(item) => item.id}
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={styles.filterList}
             />
           </View>
 
-          {/* Notifications List */}
-          {isEmpty ? (
+          {/* Notification List */}
+          {filteredNotifications.length === 0 ? (
             <View style={styles.emptyFilterContainer}>
+              <View style={styles.emptyFilterIcon}>
+                <Info
+                  size={layout.iconSize.xl}
+                  color={colors.textPlaceholder}
+                  strokeWidth={1.5}
+                />
+              </View>
+              <Text style={styles.emptyFilterTitle}>Nothing here</Text>
               <Text style={styles.emptyFilterText}>
-                No {selectedFilter} notifications
+                No {selectedFilter} notifications at the moment.
               </Text>
             </View>
           ) : (
@@ -270,22 +396,12 @@ export default function NotificationsScreen() {
                 <RefreshControl
                   refreshing={refreshing}
                   onRefresh={handleRefresh}
-                  tintColor="#0F6EC0"
+                  tintColor={colors.primary}
+                  colors={[colors.primary]}
                 />
               }
             />
           )}
-
-          {/* Go Home Button */}
-          <View style={styles.bottomContainer}>
-            <TouchableOpacity
-              style={styles.goHomeButton}
-              onPress={handleGoHome}
-              activeOpacity={0.8}
-            >
-              <Text style={styles.goHomeButtonText}>Go back home</Text>
-            </TouchableOpacity>
-          </View>
         </>
       )}
     </SafeAreaView>
@@ -295,115 +411,194 @@ export default function NotificationsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F5F5',
+    backgroundColor: colors.background,
   },
+
+  // Header
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
+    paddingHorizontal: layout.screenPaddingHorizontal,
+    paddingVertical: spacing.base,
   },
   backButton: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: '#F4F6F5',
+    width: layout.avatarSize.md,
+    height: layout.avatarSize.md,
+    borderRadius: borderRadius.full,
+    backgroundColor: colors.backgroundCard,
+    justifyContent: 'center',
+    alignItems: 'center',
+    ...shadows.xs,
+  },
+  headerCenter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  headerTitle: {
+    fontSize: typography.fontSize.lg,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.textPrimary,
+    letterSpacing: typography.letterSpacing.wide,
+  },
+  headerBadge: {
+    minWidth: 22,
+    height: 22,
+    borderRadius: borderRadius.full,
+    backgroundColor: colors.error,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: spacing.xs,
+  },
+  headerBadgeText: {
+    fontSize: typography.fontSize['2xs'],
+    fontWeight: typography.fontWeight.bold,
+    color: colors.textWhite,
+  },
+  markReadButton: {
+    width: layout.avatarSize.md,
+    height: layout.avatarSize.md,
+    borderRadius: borderRadius.full,
+    backgroundColor: colors.primaryLight,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  headerTitle: {
-    fontSize: 25,
-    fontWeight: '600',
-    color: '#000000',
-    textAlign: 'center',
-  },
   headerSpacer: {
-    width: 50,
+    width: layout.avatarSize.md,
   },
+
+  // Filters
   filterContainer: {
-    paddingVertical: 10,
+    marginBottom: spacing.sm,
   },
   filterList: {
-    paddingHorizontal: 52,
-    gap: 8,
+    paddingHorizontal: layout.screenPaddingHorizontal,
+    gap: spacing.sm,
   },
   filterTab: {
-    paddingHorizontal: 16,
-    paddingVertical: 13,
-    borderRadius: 10,
-    marginRight: 8,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+    borderRadius: borderRadius.full,
+    backgroundColor: colors.backgroundCard,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
   },
   filterTabActive: {
-    backgroundColor: '#0F6EC0',
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
   },
   filterTabText: {
-    fontSize: 18,
-    fontWeight: '400',
-    color: '#323333',
-    textAlign: 'center',
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.textSecondary,
   },
   filterTabTextActive: {
-    color: '#F4F6F5',
+    color: colors.textWhite,
+    fontWeight: typography.fontWeight.semibold,
   },
+
+  // List
   listContent: {
-    paddingHorizontal: 52,
-    paddingTop: 10,
-    paddingBottom: 100,
-    gap: 25,
+    paddingHorizontal: layout.screenPaddingHorizontal,
+    paddingTop: spacing.sm,
+    paddingBottom: spacing['4xl'],
+    gap: spacing.md,
   },
+
+  // Notification Card
   notificationCard: {
-    backgroundColor: '#F4F6F5',
-    borderRadius: 10,
-    padding: 20,
-    gap: 20,
+    backgroundColor: colors.backgroundCard,
+    borderRadius: borderRadius.lg,
+    overflow: 'hidden',
+    ...shadows.sm,
   },
-  statusRow: {
+  notificationCardUnread: {
+    borderLeftWidth: 0,
+  },
+  unreadAccent: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    bottom: 0,
+    width: 3,
+    backgroundColor: colors.primary,
+    borderTopLeftRadius: borderRadius.lg,
+    borderBottomLeftRadius: borderRadius.lg,
+  },
+  cardContent: {
+    padding: spacing.base,
+    gap: spacing.md,
+  },
+  cardTopRow: {
     flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'space-between',
+  },
+  typeIconWrapper: {
+    width: 40,
+    height: 40,
+    borderRadius: borderRadius.md,
+    justifyContent: 'center',
     alignItems: 'center',
   },
-  statusIndicator: {
+  cardTopRight: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: spacing.md,
+  },
+  statusBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing['2xs'],
+    borderRadius: borderRadius.full,
   },
   statusDot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
+    width: 6,
+    height: 6,
+    borderRadius: borderRadius.full,
   },
   statusText: {
-    fontSize: 16,
-    fontWeight: '400',
+    fontSize: typography.fontSize.xs,
+    fontWeight: typography.fontWeight.semibold,
   },
   timestamp: {
-    fontSize: 14,
-    color: '#323333',
+    fontSize: typography.fontSize.xs,
+    color: colors.textTertiary,
+    fontWeight: typography.fontWeight.regular,
   },
-  notificationContent: {
-    gap: 15,
+  cardBody: {
+    gap: spacing.xs,
   },
   notificationTitle: {
-    fontSize: 20,
-    fontWeight: '500',
-    color: '#000000',
+    fontSize: typography.fontSize.md,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.textPrimary,
+    lineHeight: typography.fontSize.md * typography.lineHeight.snug,
   },
   notificationDescription: {
-    fontSize: 16,
-    fontWeight: '400',
-    color: '#323333',
-    lineHeight: 22,
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.regular,
+    color: colors.textTertiary,
+    lineHeight: typography.fontSize.sm * typography.lineHeight.relaxed,
   },
   actionRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: spacing['2xs'],
+    paddingTop: spacing.xs,
+    borderTopWidth: 1,
+    borderTopColor: colors.divider,
   },
   actionText: {
-    fontSize: 16,
-    fontWeight: '400',
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.primary,
   },
+
+  // Empty State (full)
   emptyContainer: {
     flex: 1,
     justifyContent: 'space-between',
@@ -412,59 +607,74 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 40,
-    gap: 30,
+    paddingHorizontal: layout.screenPaddingHorizontal * 2,
+    gap: spacing.xl,
   },
-  emptyTextContainer: {
+  emptyIconWrapper: {
+    width: 100,
+    height: 100,
+    borderRadius: borderRadius.full,
+    backgroundColor: colors.backgroundInput,
+    justifyContent: 'center',
     alignItems: 'center',
-    gap: 15,
   },
   emptyTitle: {
-    fontSize: 25,
-    fontWeight: '500',
-    color: '#000000',
+    fontSize: typography.fontSize.xl,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.textPrimary,
     textAlign: 'center',
   },
   emptyDescription: {
-    fontSize: 18,
-    fontWeight: '400',
-    color: '#323333',
+    fontSize: typography.fontSize.base,
+    fontWeight: typography.fontWeight.regular,
+    color: colors.textTertiary,
     textAlign: 'center',
-    lineHeight: 24,
+    lineHeight: typography.fontSize.base * typography.lineHeight.relaxed,
   },
   emptyButtonContainer: {
-    paddingHorizontal: 52,
-    paddingBottom: Platform.OS === 'ios' ? 50 : 40,
+    paddingHorizontal: layout.screenPaddingHorizontal,
+    paddingBottom: Platform.OS === 'ios' ? spacing['3xl'] : spacing['2xl'],
   },
+  goHomeButton: {
+    backgroundColor: colors.primary,
+    borderRadius: borderRadius.lg,
+    height: layout.buttonHeight,
+    justifyContent: 'center',
+    alignItems: 'center',
+    ...shadows.button,
+  },
+  goHomeButtonText: {
+    fontSize: typography.fontSize.md,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.textWhite,
+    letterSpacing: typography.letterSpacing.wide,
+  },
+
+  // Empty Filter State
   emptyFilterContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    paddingHorizontal: layout.screenPaddingHorizontal * 2,
+    gap: spacing.md,
   },
-  emptyFilterText: {
-    fontSize: 16,
-    color: '#657084',
-  },
-  bottomContainer: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    paddingHorizontal: 52,
-    paddingBottom: Platform.OS === 'ios' ? 40 : 30,
-    paddingTop: 15,
-    backgroundColor: '#F5F5F5',
-  },
-  goHomeButton: {
-    backgroundColor: '#0F6EC0',
-    borderRadius: 15,
-    height: 60,
+  emptyFilterIcon: {
+    width: 64,
+    height: 64,
+    borderRadius: borderRadius.full,
+    backgroundColor: colors.backgroundInput,
     justifyContent: 'center',
     alignItems: 'center',
+    marginBottom: spacing.sm,
   },
-  goHomeButtonText: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#F5F5F5',
+  emptyFilterTitle: {
+    fontSize: typography.fontSize.lg,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.textPrimary,
+  },
+  emptyFilterText: {
+    fontSize: typography.fontSize.base,
+    color: colors.textTertiary,
+    textAlign: 'center',
   },
 });

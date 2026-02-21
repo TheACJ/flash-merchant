@@ -1,3 +1,4 @@
+import { AssetIcon } from '@/components/AssetIcon';
 import {
   borderRadius,
   colors,
@@ -19,7 +20,6 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { AssetIcon } from './SelectAssetAmount';
 import { Asset } from './types';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');

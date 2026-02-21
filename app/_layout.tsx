@@ -1,15 +1,17 @@
 import { ONBOARDING_STEPS } from '@/constants/storage';
 import { useAppInitialization } from '@/hooks/useAppInitialization';
+import MerchantWalletService from '@/services/MerchantWalletService';
+import { AppDispatch, RootState, store } from '@/store';
+import { initializeDevice } from '@/store/slices/deviceSlice';
+import { fetchGlobalLocation } from '@/store/slices/locationSlice';
+import { addWallet } from '@/store/slices/merchantWalletSlice';
+import { getOnboardingStep } from '@/utils/onboarding';
 import { Stack, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, StatusBar, useColorScheme, View } from 'react-native';
 import 'react-native-get-random-values';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { Provider, useDispatch } from 'react-redux';
-import MerchantWalletService from '../services/MerchantWalletService';
-import { store } from '../store';
-import { addWallet } from '../store/slices/merchantWalletSlice';
-import { getOnboardingStep } from '../utils/onboarding';
+import { Provider, useDispatch, useSelector } from 'react-redux';
 
 const ROUTE_MAP = {
   welcome: '/(welcome)',
@@ -65,9 +67,13 @@ const routeFromStep = (step: string | null): RoutePath => {
 function RootLayoutContent() {
   const colorScheme = useColorScheme();
   const router = useRouter();
-  const dispatch = useDispatch();
+  const dispatch = useDispatch<AppDispatch>();
   const [initialRoute, setInitialRoute] = useState<RoutePath | null>(null);
   const [isReady, setIsReady] = useState(false);
+
+  // Get location and device state from Redux
+  const locationState = useSelector((state: RootState) => state.location);
+  const deviceState = useSelector((state: RootState) => state.device);
 
   // Initialize all cache orchestrators and services in background
   useAppInitialization();
@@ -88,6 +94,27 @@ function RootLayoutContent() {
 
     loadWallets();
   }, [dispatch]);
+
+  // Initialize device fingerprint on app start
+  // This runs once and stores device info in Redux for use throughout the app
+  useEffect(() => {
+    // Only initialize if we don't already have device info and aren't currently loading
+    if (!deviceState.deviceInfo && deviceState.status === 'idle') {
+      console.log('[RootLayout] Initializing device fingerprint...');
+      dispatch(initializeDevice());
+    }
+  }, [dispatch, deviceState.deviceInfo, deviceState.status]);
+
+  // Fetch global location on app start
+  // This runs once and stores location in Redux for use throughout the app
+  useEffect(() => {
+    // Only fetch if we don't already have a location and aren't currently loading
+    if (!locationState.location && locationState.status === 'idle') {
+      console.log('[RootLayout] Fetching global location...');
+      // Use fetchGlobalLocation which will request permissions if needed
+      dispatch(fetchGlobalLocation());
+    }
+  }, [dispatch, locationState.location, locationState.status]);
 
   useEffect(() => {
     const checkOnboardingStatus = async () => {

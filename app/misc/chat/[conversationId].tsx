@@ -1,85 +1,178 @@
+import {
+  borderRadius,
+  colors,
+  layout,
+  shadows,
+  spacing,
+  typography,
+} from '@/constants/theme';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import {
-    ArrowLeft,
-    ArrowUp,
-    Paperclip,
-    User,
+  ArrowLeft,
+  CheckCheck,
+  Paperclip,
+  Send,
+  User,
 } from 'lucide-react-native';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
-    FlatList,
-    Keyboard,
-    KeyboardAvoidingView,
-    Platform,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  FlatList,
+  KeyboardAvoidingView,
+  Platform,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
-    Conversation,
-    Message,
-    MOCK_CONVERSATIONS,
-    MOCK_MESSAGES,
-    MOCK_USER,
+  Conversation,
+  Message,
+  MOCK_CONVERSATIONS,
+  MOCK_MESSAGES,
+  MOCK_USER,
 } from './types';
 
 interface MessageBubbleProps {
   message: Message;
   isCurrentUser: boolean;
   showAvatar: boolean;
+  showTimestamp: boolean;
 }
 
-function MessageBubble({ message, isCurrentUser, showAvatar }: MessageBubbleProps) {
+function MessageBubble({
+  message,
+  isCurrentUser,
+  showAvatar,
+  showTimestamp,
+}: MessageBubbleProps) {
+  const formatTime = (date: Date): string =>
+    date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
   return (
     <View
       style={[
         styles.messageBubbleContainer,
-        isCurrentUser ? styles.messageBubbleRight : styles.messageBubbleLeft,
+        isCurrentUser
+          ? styles.messageBubbleRight
+          : styles.messageBubbleLeft,
       ]}
     >
-      {!isCurrentUser && showAvatar && (
-        <View style={styles.messageAvatar}>
-          <User size={16} color="#E7E7E7" strokeWidth={2} />
+      {!isCurrentUser && (
+        <View style={styles.avatarColumn}>
+          {showAvatar ? (
+            <View style={styles.messageAvatar}>
+              <User
+                size={layout.iconSize.xs}
+                color={colors.textWhite}
+                strokeWidth={2}
+              />
+            </View>
+          ) : (
+            <View style={styles.avatarPlaceholder} />
+          )}
         </View>
       )}
-      {!isCurrentUser && !showAvatar && <View style={styles.avatarPlaceholder} />}
 
       <View
         style={[
-          styles.messageBubble,
-          isCurrentUser ? styles.messageBubbleSent : styles.messageBubbleReceived,
+          styles.bubbleColumn,
+          isCurrentUser && styles.bubbleColumnRight,
         ]}
       >
-        <Text style={styles.messageText}>{message.content}</Text>
-      </View>
-
-      {isCurrentUser && showAvatar && (
-        <View style={styles.messageAvatar}>
-          <User size={16} color="#E7E7E7" strokeWidth={2} />
+        <View
+          style={[
+            styles.messageBubble,
+            isCurrentUser
+              ? styles.messageBubbleSent
+              : styles.messageBubbleReceived,
+          ]}
+        >
+          <Text
+            style={[
+              styles.messageText,
+              isCurrentUser && styles.messageTextSent,
+            ]}
+          >
+            {message.content}
+          </Text>
         </View>
-      )}
-      {isCurrentUser && !showAvatar && <View style={styles.avatarPlaceholder} />}
+
+        {showTimestamp && (
+          <View
+            style={[
+              styles.timestampRow,
+              isCurrentUser && styles.timestampRowRight,
+            ]}
+          >
+            <Text style={styles.timestampText}>
+              {formatTime(message.timestamp)}
+            </Text>
+            {isCurrentUser && (
+              <CheckCheck
+                size={14}
+                color={
+                  message.isRead ? colors.primary : colors.textPlaceholder
+                }
+                strokeWidth={2}
+              />
+            )}
+          </View>
+        )}
+      </View>
+    </View>
+  );
+}
+
+interface DateSeparatorProps {
+  date: Date;
+}
+
+function DateSeparator({ date }: DateSeparatorProps) {
+  const formatDate = (d: Date): string => {
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    const isToday = d.toDateString() === today.toDateString();
+    const isYesterday = d.toDateString() === yesterday.toDateString();
+
+    if (isToday) return 'Today';
+    if (isYesterday) return 'Yesterday';
+    return d.toLocaleDateString([], {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+    });
+  };
+
+  return (
+    <View style={styles.dateSeparator}>
+      <View style={styles.dateLine} />
+      <View style={styles.dateBadge}>
+        <Text style={styles.dateSeparatorText}>{formatDate(date)}</Text>
+      </View>
+      <View style={styles.dateLine} />
     </View>
   );
 }
 
 export default function ConversationScreen() {
   const router = useRouter();
-  const { conversationId } = useLocalSearchParams<{ conversationId: string }>();
+  const { conversationId } = useLocalSearchParams<{
+    conversationId: string;
+  }>();
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState<Message[]>([]);
   const [conversation, setConversation] = useState<Conversation | null>(null);
   const flatListRef = useRef<FlatList>(null);
+  const inputRef = useRef<TextInput>(null);
 
   useEffect(() => {
-    // Find conversation
     const conv = MOCK_CONVERSATIONS.find((c) => c.id === conversationId);
     setConversation(conv || null);
-
-    // Load messages
     const msgs = MOCK_MESSAGES[conversationId || ''] || [];
     setMessages(msgs);
   }, [conversationId]);
@@ -99,48 +192,42 @@ export default function ConversationScreen() {
 
     setMessages((prev) => [...prev, newMessage]);
     setMessage('');
-    Keyboard.dismiss();
 
-    // Scroll to bottom
     setTimeout(() => {
       flatListRef.current?.scrollToEnd({ animated: true });
     }, 100);
   }, [message, conversationId]);
 
-  const handleGoBack = () => {
-    router.back();
-  };
-
-  const renderMessage = ({ item, index }: { item: Message; index: number }) => {
+  const renderMessage = ({
+    item,
+    index,
+  }: {
+    item: Message;
+    index: number;
+  }) => {
     const isCurrentUser = item.senderId === MOCK_USER.id;
     const prevMessage = messages[index - 1];
-    const showAvatar = !prevMessage || prevMessage.senderId !== item.senderId;
+    const nextMessage = messages[index + 1];
+    const showAvatar =
+      !prevMessage || prevMessage.senderId !== item.senderId;
+    const showTimestamp =
+      !nextMessage || nextMessage.senderId !== item.senderId;
 
     return (
       <MessageBubble
         message={item}
         isCurrentUser={isCurrentUser}
         showAvatar={showAvatar}
+        showTimestamp={showTimestamp}
       />
     );
   };
 
-  const formatDate = (date: Date): string => {
-    const today = new Date();
-    const isToday =
-      date.getDate() === today.getDate() &&
-      date.getMonth() === today.getMonth() &&
-      date.getFullYear() === today.getFullYear();
-
-    if (isToday) return 'Today';
-    return date.toLocaleDateString();
-  };
-
   if (!conversation) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={styles.container} edges={['top']}>
         <View style={styles.loadingContainer}>
-          <Text>Loading...</Text>
+          <Text style={styles.loadingText}>Loading...</Text>
         </View>
       </SafeAreaView>
     );
@@ -148,48 +235,67 @@ export default function ConversationScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
+      <StatusBar
+        barStyle="dark-content"
+        backgroundColor="transparent"
+        translucent
+      />
+
       {/* Header */}
       <View style={styles.header}>
-        <View style={styles.headerLeft}>
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={handleGoBack}
-            activeOpacity={0.7}
-          >
-            <ArrowLeft size={24} color="#000000" strokeWidth={2} />
-          </TouchableOpacity>
-        </View>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => router.back()}
+          activeOpacity={0.7}
+          accessibilityLabel="Go back"
+        >
+          <ArrowLeft
+            size={layout.iconSize.md}
+            color={colors.textPrimary}
+            strokeWidth={2}
+          />
+        </TouchableOpacity>
 
-        <View style={styles.headerCenter}>
-          <Text style={styles.headerName}>{conversation.participant.name}</Text>
-          <Text
-            style={[
-              styles.headerStatus,
-              { color: conversation.participant.isOnline ? '#128807' : '#657084' },
-            ]}
-          >
-            {conversation.participant.isOnline ? 'Online' : 'Offline'}
-          </Text>
-        </View>
+        <TouchableOpacity
+          style={styles.headerProfile}
+          activeOpacity={0.7}
+          accessibilityLabel={`${conversation.participant.name}'s profile`}
+        >
+          <View style={styles.headerAvatar}>
+            <User
+              size={layout.iconSize.sm}
+              color={colors.textWhite}
+              strokeWidth={2}
+            />
+            {conversation.participant.isOnline && (
+              <View style={styles.headerOnlineDot} />
+            )}
+          </View>
+
+          <View style={styles.headerInfo}>
+            <Text style={styles.headerName} numberOfLines={1}>
+              {conversation.participant.name}
+            </Text>
+            <Text
+              style={[
+                styles.headerStatus,
+                conversation.participant.isOnline && styles.headerStatusOnline,
+              ]}
+            >
+              {conversation.participant.isOnline ? 'Online' : 'Offline'}
+            </Text>
+          </View>
+        </TouchableOpacity>
 
         <View style={styles.headerSpacer} />
       </View>
 
       {/* Messages */}
       <KeyboardAvoidingView
-        style={styles.messagesContainer}
+        style={styles.messagesWrapper}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
       >
-        {/* Date Separator */}
-        {messages.length > 0 && (
-          <View style={styles.dateSeparator}>
-            <Text style={styles.dateSeparatorText}>
-              {formatDate(messages[0].timestamp)}
-            </Text>
-          </View>
-        )}
-
         <FlatList
           ref={flatListRef}
           data={messages}
@@ -200,29 +306,47 @@ export default function ConversationScreen() {
           onContentSizeChange={() => {
             flatListRef.current?.scrollToEnd({ animated: false });
           }}
+          ListHeaderComponent={
+            messages.length > 0 ? (
+              <DateSeparator date={messages[0].timestamp} />
+            ) : null
+          }
+          ListEmptyComponent={
+            <View style={styles.emptyMessages}>
+              <Text style={styles.emptyMessagesText}>
+                No messages yet. Say hello!
+              </Text>
+            </View>
+          }
         />
 
         {/* Input Area */}
         <View style={styles.inputContainer}>
-          <View style={styles.inputWrapper}>
-            <TextInput
-              style={styles.input}
-              value={message}
-              onChangeText={setMessage}
-              placeholder="Type a message..."
-              placeholderTextColor="#657084"
-              multiline
-              maxLength={1000}
-            />
-          </View>
-
           <TouchableOpacity
             style={styles.attachButton}
             activeOpacity={0.7}
             accessibilityLabel="Attach file"
           >
-            <Paperclip size={28} color="#657084" strokeWidth={1.5} />
+            <Paperclip
+              size={layout.iconSize.md}
+              color={colors.textTertiary}
+              strokeWidth={1.8}
+            />
           </TouchableOpacity>
+
+          <View style={styles.inputWrapper}>
+            <TextInput
+              ref={inputRef}
+              style={styles.input}
+              value={message}
+              onChangeText={setMessage}
+              placeholder="Type a message..."
+              placeholderTextColor={colors.textPlaceholder}
+              multiline
+              maxLength={1000}
+              returnKeyType="default"
+            />
+          </View>
 
           <TouchableOpacity
             style={[
@@ -234,7 +358,11 @@ export default function ConversationScreen() {
             activeOpacity={0.7}
             accessibilityLabel="Send message"
           >
-            <ArrowUp size={24} color="#F4F6F5" strokeWidth={2} />
+            <Send
+              size={layout.iconSize.sm}
+              color={colors.textWhite}
+              strokeWidth={2}
+            />
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
@@ -245,68 +373,124 @@ export default function ConversationScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F5F5',
+    backgroundColor: colors.background,
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },
+  loadingText: {
+    fontSize: typography.fontSize.md,
+    color: colors.textTertiary,
+  },
+
+  // Header
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    backgroundColor: '#F4F6F5',
-  },
-  headerLeft: {
-    width: 50,
+    paddingHorizontal: layout.screenPaddingHorizontal,
+    paddingVertical: spacing.md,
+    backgroundColor: colors.backgroundElevated,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.divider,
   },
   backButton: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: '#F5F5F5',
+    width: layout.avatarSize.md,
+    height: layout.avatarSize.md,
+    borderRadius: borderRadius.full,
+    backgroundColor: colors.backgroundInput,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  headerCenter: {
+  headerProfile: {
+    flexDirection: 'row',
     alignItems: 'center',
-    gap: 2,
+    gap: spacing.md,
+    flex: 1,
+    justifyContent: 'center',
+  },
+  headerAvatar: {
+    width: layout.avatarSize.sm,
+    height: layout.avatarSize.sm,
+    borderRadius: borderRadius.full,
+    backgroundColor: colors.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  headerOnlineDot: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    width: 10,
+    height: 10,
+    borderRadius: borderRadius.full,
+    backgroundColor: colors.success,
+    borderWidth: 2,
+    borderColor: colors.backgroundElevated,
+  },
+  headerInfo: {
+    alignItems: 'flex-start',
+    gap: spacing['2xs'],
   },
   headerName: {
-    fontSize: 25,
-    fontWeight: '500',
-    color: '#000000',
+    fontSize: typography.fontSize.md,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.textPrimary,
   },
   headerStatus: {
-    fontSize: 14,
-    fontWeight: '400',
+    fontSize: typography.fontSize.xs,
+    fontWeight: typography.fontWeight.regular,
+    color: colors.textTertiary,
+  },
+  headerStatusOnline: {
+    color: colors.success,
+    fontWeight: typography.fontWeight.medium,
   },
   headerSpacer: {
-    width: 50,
+    width: layout.avatarSize.md,
   },
-  messagesContainer: {
+
+  // Messages
+  messagesWrapper: {
     flex: 1,
   },
+  messagesList: {
+    paddingHorizontal: layout.screenPaddingHorizontal,
+    paddingBottom: spacing.md,
+    paddingTop: spacing.sm,
+    gap: spacing.xs,
+  },
+
+  // Date Separator
   dateSeparator: {
+    flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 16,
+    paddingVertical: spacing.lg,
+    gap: spacing.md,
+  },
+  dateLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: colors.divider,
+  },
+  dateBadge: {
+    backgroundColor: colors.backgroundInput,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: borderRadius.full,
   },
   dateSeparatorText: {
-    fontSize: 14,
-    color: '#657084',
+    fontSize: typography.fontSize.xs,
+    color: colors.textTertiary,
+    fontWeight: typography.fontWeight.medium,
   },
-  messagesList: {
-    paddingHorizontal: 52,
-    paddingBottom: 16,
-    gap: 12,
-  },
+
+  // Message Bubbles
   messageBubbleContainer: {
     flexDirection: 'row',
-    alignItems: 'flex-end',
-    gap: 12,
+    marginBottom: spacing['2xs'],
   },
   messageBubbleLeft: {
     justifyContent: 'flex-start',
@@ -314,73 +498,126 @@ const styles = StyleSheet.create({
   messageBubbleRight: {
     justifyContent: 'flex-end',
   },
+  avatarColumn: {
+    width: 32,
+    marginRight: spacing.sm,
+    justifyContent: 'flex-end',
+  },
   messageAvatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#657084',
+    width: 28,
+    height: 28,
+    borderRadius: borderRadius.full,
+    backgroundColor: colors.textTertiary,
     justifyContent: 'center',
     alignItems: 'center',
   },
   avatarPlaceholder: {
-    width: 40,
+    width: 28,
+  },
+  bubbleColumn: {
+    maxWidth: '75%',
+    alignItems: 'flex-start',
+  },
+  bubbleColumnRight: {
+    alignItems: 'flex-end',
   },
   messageBubble: {
-    maxWidth: '70%',
-    padding: 15,
-    borderRadius: 20,
+    paddingHorizontal: spacing.base,
+    paddingVertical: spacing.md,
+    borderRadius: borderRadius.xl,
   },
   messageBubbleReceived: {
-    backgroundColor: '#F4F6F5',
-    borderBottomLeftRadius: 2,
+    backgroundColor: colors.backgroundCard,
+    borderBottomLeftRadius: borderRadius.xs,
+    ...shadows.xs,
   },
   messageBubbleSent: {
-    backgroundColor: '#F4F6F5',
-    borderBottomRightRadius: 2,
+    backgroundColor: colors.primary,
+    borderBottomRightRadius: borderRadius.xs,
+    ...shadows.xs,
   },
   messageText: {
-    fontSize: 16,
-    color: '#000000',
-    lineHeight: 22,
+    fontSize: typography.fontSize.base,
+    color: colors.textPrimary,
+    lineHeight: typography.fontSize.base * typography.lineHeight.relaxed,
   },
-  inputContainer: {
+  messageTextSent: {
+    color: colors.textWhite,
+  },
+  timestampRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 52,
-    paddingVertical: 16,
-    backgroundColor: '#F5F5F5',
+    gap: spacing['2xs'],
+    marginTop: spacing['2xs'],
+    paddingHorizontal: spacing.xs,
+  },
+  timestampRowRight: {
+    justifyContent: 'flex-end',
+  },
+  timestampText: {
+    fontSize: typography.fontSize['2xs'],
+    color: colors.textPlaceholder,
+    fontWeight: typography.fontWeight.regular,
+  },
+
+  // Empty
+  emptyMessages: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingTop: spacing['6xl'],
+  },
+  emptyMessagesText: {
+    fontSize: typography.fontSize.base,
+    color: colors.textTertiary,
+  },
+
+  // Input
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    paddingHorizontal: layout.screenPaddingHorizontal,
+    paddingVertical: spacing.md,
+    backgroundColor: colors.backgroundElevated,
     borderTopWidth: 1,
-    borderTopColor: '#D2D6E1',
-    gap: 12,
+    borderTopColor: colors.divider,
+    gap: spacing.sm,
+  },
+  attachButton: {
+    width: layout.avatarSize.md,
+    height: layout.avatarSize.md,
+    borderRadius: borderRadius.full,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   inputWrapper: {
     flex: 1,
-    backgroundColor: '#F4F6F5',
-    borderRadius: 25,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    backgroundColor: colors.backgroundInput,
+    borderRadius: borderRadius.xl,
+    paddingHorizontal: spacing.base,
+    paddingVertical: Platform.OS === 'ios' ? spacing.md : spacing.sm,
     maxHeight: 120,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
   },
   input: {
-    fontSize: 16,
-    color: '#000000',
+    fontSize: typography.fontSize.base,
+    color: colors.textPrimary,
     maxHeight: 80,
-  },
-  attachButton: {
-    width: 40,
-    height: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
+    lineHeight: typography.fontSize.base * typography.lineHeight.normal,
   },
   sendButton: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: '#0F6EC0',
+    width: layout.avatarSize.md,
+    height: layout.avatarSize.md,
+    borderRadius: borderRadius.full,
+    backgroundColor: colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
+    ...shadows.button,
   },
   sendButtonDisabled: {
-    backgroundColor: '#D2D6E1',
+    backgroundColor: colors.borderLight,
+    shadowOpacity: 0,
+    elevation: 0,
   },
 });

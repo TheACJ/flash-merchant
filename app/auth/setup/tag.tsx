@@ -9,6 +9,7 @@ import {
   typography,
 } from '@/constants/theme';
 import merchantApi from '@/services/MerchantApiService';
+import { merchantProfileOrchestrator } from '@/services/MerchantProfileOrchestrator';
 import { setOnboardingStep } from '@/utils/onboarding';
 import { useRouter } from 'expo-router';
 import {
@@ -105,6 +106,9 @@ export default function CreateTag() {
         response.data?.merchant?.tag;
 
       if (isSuccess) {
+        // Refresh merchant profile to get the updated tag in Redux and storage
+        await merchantProfileOrchestrator.refresh();
+
         await setOnboardingStep(ONBOARDING_STEPS.bank_setup);
         Alert.alert('Success', response.message || 'Merchant tag created successfully!', [
           {
@@ -115,6 +119,9 @@ export default function CreateTag() {
       } else {
         // Check if the error is "Merchant already has a tag" - this means success in a way
         if (response.error?.includes('already has a tag') || response.data?.error?.includes('already has a tag')) {
+          // Refresh merchant profile to ensure Redux has the latest data
+          await merchantProfileOrchestrator.refresh();
+
           await setOnboardingStep(ONBOARDING_STEPS.bank_setup);
           Alert.alert('Success', 'Merchant tag already exists!', [
             {
@@ -132,6 +139,9 @@ export default function CreateTag() {
       const err = merchantApi.handleError(error);
       // Check if the error is "Merchant already has a tag"
       if (err.error?.includes('already has a tag')) {
+        // Refresh merchant profile to ensure Redux has the latest data
+        await merchantProfileOrchestrator.refresh();
+
         await setOnboardingStep(ONBOARDING_STEPS.bank_setup);
         Alert.alert('Success', 'Merchant tag already exists!', [
           {

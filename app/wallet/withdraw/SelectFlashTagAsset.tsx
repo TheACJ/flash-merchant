@@ -1,3 +1,4 @@
+import { AssetIcon } from '@/components/AssetIcon';
 import {
   borderRadius,
   colors,
@@ -24,7 +25,6 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AssetSelector from '../deposit/AssetSelector';
-import { AssetIcon } from '../deposit/SelectAssetAmount';
 import { Asset, convertAPIAsset } from './types';
 
 interface SelectFlashTagAssetProps {
@@ -54,7 +54,15 @@ export default function SelectFlashTagAsset({
 
   const assets = useMemo(() => {
     if (apiAssets.length > 0) {
-      return apiAssets.map((apiAsset) =>
+      // Deduplicate by ID
+      const uniqueAssets = new Map<string, typeof apiAssets[0]>();
+      for (const apiAsset of apiAssets) {
+        if (!uniqueAssets.has(apiAsset.id)) {
+          uniqueAssets.set(apiAsset.id, apiAsset);
+        }
+      }
+
+      return Array.from(uniqueAssets.values()).map((apiAsset) =>
         convertAPIAsset({
           id: apiAsset.id,
           name: apiAsset.name,

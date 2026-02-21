@@ -1,6 +1,8 @@
 import { STORAGE_KEYS } from '@/constants/storage';
+import { determineCurrencyFromLocationObject } from '@/utils/locationCurrency';
 import * as SecureStore from 'expo-secure-store';
 import { store } from '../store';
+import { setPreferredCurrency } from '../store/slices/currencySlice';
 import { MerchantProfile, setMerchantProfile } from '../store/slices/merchantAuthSlice';
 import MerchantApiService from './MerchantApiService';
 import { merchantProfileCache } from './MerchantProfileCache';
@@ -175,6 +177,24 @@ class MerchantProfileOrchestrator {
     }
 
     /**
+     * Set preferred currency based on merchant location
+     * This is called during initialization to set currency from location
+     */
+    async setCurrencyFromLocation(profile: MerchantProfile): Promise<void> {
+        try {
+            if (profile.location && (profile.location.latitude || profile.location.state)) {
+                const currencyCode = await determineCurrencyFromLocationObject(profile.location);
+                console.log(`[MerchantProfileOrchestrator] Setting preferred currency to ${currencyCode} based on location`);
+
+                // Dispatch to Redux store (which will also persist to SecureStore)
+                await store.dispatch(setPreferredCurrency(currencyCode));
+            }
+        } catch (error) {
+            console.error('[MerchantProfileOrchestrator] Failed to set currency from location:', error);
+        }
+    }
+
+    /**
      * Update Redux store, in-memory cache, and persistent storage
      */
     private async updateLocalState(profile: MerchantProfile): Promise<void> {
@@ -186,6 +206,9 @@ class MerchantProfileOrchestrator {
 
         // Persist to SecureStore
         await this.saveToStorage(profile);
+
+        // Set preferred currency based on location
+        await this.setCurrencyFromLocation(profile);
     }
 
     /**

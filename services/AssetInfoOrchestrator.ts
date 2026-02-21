@@ -1,7 +1,7 @@
 import { assetInfoCache } from './AssetInfoCache';
 import FlashApiService from './FlashApiService';
 
-const PREFETCH_INTERVAL = 5 * 60 * 1000; // 5 minutes
+const PREFETCH_INTERVAL = 30 * 60 * 1000; // 30 minutes
 
 console.log('[AssetInfoOrchestrator] Module loaded');
 
@@ -35,17 +35,25 @@ class AssetInfoOrchestrator {
       // Fetch asset list from API
       console.log('[AssetInfoOrchestrator] Fetching asset list from API...');
       const assetsResponse = await FlashApiService.getAssets();
-      
+
       if (assetsResponse.success && assetsResponse.data) {
-        // Extract asset IDs from API response
-        this.assetIds = assetsResponse.data.assets.map(asset => asset.id);
-        console.log('[AssetInfoOrchestrator] Fetched asset IDs from API:', this.assetIds);
-        
-        // Cache each asset's info
+        // Deduplicate assets by ID
+        const uniqueAssets = new Map<string, typeof assetsResponse.data.assets[0]>();
         for (const asset of assetsResponse.data.assets) {
+          if (!uniqueAssets.has(asset.id)) {
+            uniqueAssets.set(asset.id, asset);
+          }
+        }
+
+        // Extract unique asset IDs from API response
+        this.assetIds = Array.from(uniqueAssets.keys());
+        console.log('[AssetInfoOrchestrator] Fetched asset IDs from API:', this.assetIds);
+
+        // Cache each unique asset's info
+        for (const asset of uniqueAssets.values()) {
           assetInfoCache.setAsset(asset);
         }
-        
+
         // Also fetch detailed info for all assets
         const assets = await assetInfoCache.getAssets(this.assetIds);
         console.log('[AssetInfoOrchestrator] Cached', assets.size, 'assets');
@@ -53,7 +61,7 @@ class AssetInfoOrchestrator {
         console.error('[AssetInfoOrchestrator] Failed to fetch asset list:', assetsResponse.error);
         throw new Error(assetsResponse.error || 'Failed to fetch asset list');
       }
-      
+
       this.isInitialized = true;
       console.log('[AssetInfoOrchestrator] Initialization complete');
     } catch (error) {

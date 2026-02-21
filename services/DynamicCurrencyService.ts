@@ -142,6 +142,17 @@ export default class DynamicCurrencyService {
   }
 
   /**
+   * Get currency by country code
+   * Returns the currency for a given country code
+   */
+  async getCurrencyByCountryCode(countryCode: string): Promise<DynamicCurrency | undefined> {
+    const currencies = await this.getCurrencies();
+    return currencies.find(currency =>
+      currency.countryCode.toUpperCase() === countryCode.toUpperCase()
+    );
+  }
+
+  /**
    * Get region from country code
    */
   private getRegionFromCountryCode(countryCode: string): string {

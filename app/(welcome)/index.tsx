@@ -157,9 +157,10 @@ const WelcomeScreen: React.FC = () => {
       {slides.map((_, i) => {
         const inputRange = [(i - 1) * width, i * width, (i + 1) * width];
 
-        const dotWidth = scrollX.interpolate({
+        // Use scaleX instead of width for native driver compatibility
+        const dotScaleX = scrollX.interpolate({
           inputRange,
-          outputRange: [SLIDE_DOT_SIZE, SLIDE_DOT_ACTIVE_WIDTH, SLIDE_DOT_SIZE],
+          outputRange: [1, SLIDE_DOT_ACTIVE_WIDTH / SLIDE_DOT_SIZE, 1],
           extrapolate: 'clamp',
         });
 
@@ -175,7 +176,7 @@ const WelcomeScreen: React.FC = () => {
             style={[
               styles.dot,
               {
-                width: dotWidth,
+                transform: [{ scaleX: dotScaleX }],
                 opacity: dotOpacity,
                 backgroundColor: colors.primary,
               },
@@ -301,6 +302,7 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
   },
   dot: {
+    width: SLIDE_DOT_SIZE,
     height: SLIDE_DOT_SIZE,
     borderRadius: borderRadius.full,
   },

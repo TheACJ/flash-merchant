@@ -7,10 +7,12 @@ import {
   spacing,
   typography,
 } from '@/constants/theme';
+import { useGlobalLocation } from '@/hooks';
 import { useWalletGeneration } from '@/hooks/useWalletGeneration';
 import merchantApi from '@/services/MerchantApiService';
+import { merchantProfileOrchestrator } from '@/services/MerchantProfileOrchestrator';
 import walletWorkletService from '@/services/WalletWorkletService';
-import * as Location from 'expo-location';
+import { setAuthenticated, setSessionToken } from '@/store/slices/merchantAuthSlice';
 import { useRouter } from 'expo-router';
 import {
   AlertTriangle,
@@ -55,6 +57,8 @@ interface SignupData {
     latitude?: number;
     longitude?: number;
   };
+  merchant?: any; // Merchant data from API response
+  access?: string; // Access token from API response
 }
 
 // ─── Reusable Input Component ───────────────────────────────────────────────
@@ -249,64 +253,49 @@ const SignupScreen1: React.FC<SignupScreen1Props> = ({ onNext }) => {
   const [latitude, setLatitude] = useState<number | undefined>();
   const [longitude, setLongitude] = useState<number | undefined>();
   const [loading, setLoading] = useState(false);
-  const [locationLoading, setLocationLoading] = useState(true);
   const { status: walletStatus, progress } = useWalletGeneration();
 
+  // Use global location from Redux (fetched at app startup)
+  const {
+    location: globalLocation,
+    isLoading: locationLoading,
+    fetchLocation
+  } = useGlobalLocation();
+
   useEffect(() => {
-    getCurrentLocation();
     // Start wallet generation in the background as soon as component mounts
     walletWorkletService.startBackgroundGeneration();
+
+    // If we don't have a global location yet, try to fetch it
+    // This is a fallback in case the app root didn't fetch it yet
+    if (!globalLocation) {
+      fetchLocation();
+    }
   }, []);
 
-  const requestLocationPermission = async () => {
-    try {
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      return status === 'granted';
-    } catch {
-      return false;
-    }
-  };
+  // Update local state when global location changes
+  useEffect(() => {
+    if (globalLocation) {
+      setLatitude(globalLocation.latitude);
+      setLongitude(globalLocation.longitude);
 
-  const getCurrentLocation = async () => {
-    setLocationLoading(true);
-    try {
-      const hasPermission = await requestLocationPermission();
-      if (!hasPermission) {
-        setLocationLoading(false);
-        return;
-      }
-
-      const location = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.High,
-      });
-      const { latitude: lat, longitude: lng } = location.coords;
-      setLatitude(lat);
-      setLongitude(lng);
-
-      const reverseGeocode = await Location.reverseGeocodeAsync({
-        latitude: lat,
-        longitude: lng,
-      });
-
-      if (reverseGeocode?.length > 0) {
-        const place = reverseGeocode[0];
+      // Use formatted address if available, otherwise build from components
+      if (globalLocation.formattedAddress) {
+        setAddress(globalLocation.formattedAddress);
+        setState(globalLocation.region || globalLocation.city || '');
+      } else if (globalLocation.city || globalLocation.region) {
         const addressParts = [
-          place.name,
-          place.street,
-          place.district,
-          place.city,
-          place.region,
-          place.country,
+          globalLocation.name,
+          globalLocation.street,
+          globalLocation.district,
+          globalLocation.city,
+          globalLocation.region,
         ].filter(Boolean);
         setAddress(addressParts.join(', '));
-        setState(place.region || place.city || '');
+        setState(globalLocation.region || globalLocation.city || '');
       }
-    } catch (error) {
-      console.error('Error getting location:', error);
-    } finally {
-      setLocationLoading(false);
     }
-  };
+  }, [globalLocation]);
 
   const isFormValid = phoneNumber && email && name && address && state;
 
@@ -362,7 +351,7 @@ const SignupScreen1: React.FC<SignupScreen1Props> = ({ onNext }) => {
           <Text style={styles.screenSubtitle}>
             Set up your Flash merchant POS in minutes
           </Text>
-          
+
           {/* Wallet Generation Progress Indicator */}
           {walletStatus === 'generating' && (
             <View style={styles.walletProgressContainer}>
@@ -578,8 +567,8 @@ const SignupScreen2: React.FC<SignupScreen2Props> = ({ onNext, userData }) => {
     setLoading(true);
     try {
       // Wait for wallet generation to complete if not already done
-      const generatedWallets = isCompleted && wallets 
-        ? wallets 
+      const generatedWallets = isCompleted && wallets
+        ? wallets
         : await walletWorkletService.waitForCompletion();
 
       const response = await merchantApi.registerComplete({
@@ -594,7 +583,13 @@ const SignupScreen2: React.FC<SignupScreen2Props> = ({ onNext, userData }) => {
       });
 
       if (response.merchant) {
-        onNext({ ...userData, verificationCode });
+        // Pass merchant data along with user data for profile initialization
+        onNext({
+          ...userData,
+          verificationCode,
+          merchant: response.merchant,
+          access: response.access,
+        });
       } else {
         Alert.alert('Error', response.error || 'Verification failed');
         setCode(Array(OTP_LENGTH).fill(''));
@@ -708,7 +703,7 @@ const SignupScreen2: React.FC<SignupScreen2Props> = ({ onNext, userData }) => {
             <ActivityIndicator size="small" color={colors.textWhite} />
           ) : null}
           <Text style={styles.primaryButtonText}>
-            {loading 
+            {loading
               ? (walletStatus === 'generating' ? 'Securing wallets...' : 'Verifying…')
               : 'Verify & Continue'}
           </Text>
@@ -734,6 +729,18 @@ const SignupScreen: React.FC = () => {
   const handleComplete = async (data: SignupData) => {
     const finalData = { ...userData, ...data };
     console.log('Signup completed:', finalData);
+
+    // Initialize merchant profile orchestrator with merchant data
+    // This will set the preferred currency based on location
+    if (finalData.merchant) {
+      await merchantProfileOrchestrator.initialize(finalData.merchant);
+
+      if (finalData.access) {
+        dispatch(setAuthenticated(true));
+        dispatch(setSessionToken(finalData.access));
+      }
+    }
+
     router.replace('/auth/create-wallet/loading');
   };
 

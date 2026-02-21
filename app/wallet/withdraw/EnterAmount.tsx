@@ -6,6 +6,7 @@ import {
   spacing,
   typography,
 } from '@/constants/theme';
+import { usePreferredCurrency } from '@/hooks';
 import { ArrowLeft, Delete, User, Wallet } from 'lucide-react-native';
 import React, { useCallback, useState } from 'react';
 import {
@@ -47,19 +48,14 @@ export default function EnterAmount({
 }: EnterAmountProps) {
   const [amount, setAmount] = useState(initialAmount || '0');
   const [error, setError] = useState('');
+  const { formatCurrency, code: currencyCode } = usePreferredCurrency();
 
   const formatDisplayAmount = (value: string): string => {
-    if (!value || value === '0') return '$0';
+    if (!value || value === '0') return formatCurrency(0);
     const numValue = parseFloat(value);
-    if (isNaN(numValue)) return '$0';
+    if (isNaN(numValue)) return formatCurrency(0);
 
-    const parts = value.split('.');
-    const integerPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-
-    if (parts.length > 1) {
-      return `$${integerPart}.${parts[1]}`;
-    }
-    return `$${integerPart}`;
+    return formatCurrency(numValue);
   };
 
   const handleKeyPress = useCallback(
@@ -92,7 +88,7 @@ export default function EnterAmount({
 
         const newValue = prev + key;
         if (parseFloat(newValue) > MAX_AMOUNT) {
-          setError(`Maximum amount is $${MAX_AMOUNT.toLocaleString()}`);
+          setError(`Maximum amount is ${formatCurrency(MAX_AMOUNT)}`);
           return prev;
         }
 
@@ -109,7 +105,7 @@ export default function EnterAmount({
       return;
     }
     if (numAmount < 1) {
-      setError('Minimum amount is $1.00');
+      setError(`Minimum amount is ${formatCurrency(1)}`);
       return;
     }
     onSubmit(amount);

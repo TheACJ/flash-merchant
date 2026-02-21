@@ -22,3 +22,10 @@ export { priceOrchestrator } from './PriceOrchestrator';
 // Currency Services
 export { default as DynamicCurrencyService, type DynamicCurrency } from './DynamicCurrencyService';
 export { default as ExchangeRateService } from './ExchangeRateService';
+
+// Location Services
+export { default as LocationService, type LocationData, type LocationPermissionStatus } from './LocationService';
+
+// Device Services
+export { default as DeviceService, type DeviceInfo } from './DeviceService';
+

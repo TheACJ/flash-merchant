@@ -284,22 +284,22 @@ const DisclaimerAndPrivacy: React.FC = () => {
   >('disclaimer');
   const fadeAnim = useRef(new Animated.Value(1)).current;
 
-  const handleSignUp = useCallback(async () => {
-    try {
-      await setOnboardingStep(ONBOARDING_STEPS.create_wallet);
-      router.push('/auth/create-wallet');
-    } catch (error) {
-      console.error('Navigation to signup failed:', error);
-    }
+  const handleSignUp = useCallback(() => {
+    // Save onboarding step in background (fire-and-forget)
+    setOnboardingStep(ONBOARDING_STEPS.create_wallet).catch((error) => {
+      console.error('Failed to save onboarding step:', error);
+    });
+    // Navigate immediately for instant response
+    router.push('/auth/create-wallet');
   }, [router]);
 
-  const handleLogin = useCallback(async () => {
-    try {
-      await setOnboardingStep(ONBOARDING_STEPS.import_wallet);
-      router.push('/auth/login');
-    } catch (error) {
-      console.error('Navigation to login failed:', error);
-    }
+  const handleLogin = useCallback(() => {
+    // Save onboarding step in background (fire-and-forget)
+    setOnboardingStep(ONBOARDING_STEPS.import_wallet).catch((error) => {
+      console.error('Failed to save onboarding step:', error);
+    });
+    // Navigate immediately for instant response
+    router.push('/auth/login');
   }, [router]);
 
   const navigateTo = useCallback(

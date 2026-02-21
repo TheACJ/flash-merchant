@@ -6,6 +6,7 @@ import {
   spacing,
   typography,
 } from '@/constants/theme';
+import { usePreferredCurrency } from '@/hooks';
 import {
   ArrowLeft,
   Clock,
@@ -78,6 +79,7 @@ export default function EnterStakeAmount({
   const [error, setError] = useState('');
   const [isFocused, setIsFocused] = useState(false);
   const inputRef = useRef<TextInput>(null);
+  const { formatCurrency, code: currencyCode, getCurrencyInfo } = usePreferredCurrency();
 
   const formatAmount = (value: string): string => {
     const cleaned = value.replace(/[^0-9.]/g, '');
@@ -104,12 +106,12 @@ export default function EnterStakeAmount({
       return false;
     }
     if (numAmount < stakingConfig.minAmount) {
-      setError(`Minimum stake amount is $${stakingConfig.minAmount}`);
+      setError(`Minimum stake amount is ${formatCurrency(stakingConfig.minAmount)}`);
       return false;
     }
     if (numAmount > stakingConfig.maxAmount) {
       setError(
-        `Maximum stake amount is $${stakingConfig.maxAmount.toLocaleString()}`
+        `Maximum stake amount is ${formatCurrency(stakingConfig.maxAmount)}`
       );
       return false;
     }
@@ -127,8 +129,11 @@ export default function EnterStakeAmount({
     const numAmount = parseFloat(amount) || 0;
     const dailyRate = stakingConfig.apr / 100 / 365;
     const returns = numAmount * dailyRate * stakingConfig.lockPeriodDays;
-    return `$${returns.toFixed(2)}`;
+    return formatCurrency(returns);
   };
+
+  const currencyInfo = getCurrencyInfo();
+  const currencySymbol = currencyInfo?.symbol || '$';
 
   const quickAmounts = [100, 500, 1000, 5000];
 
@@ -207,7 +212,7 @@ export default function EnterStakeAmount({
                       isFocused && styles.currencyPrefixFocused,
                     ]}
                   >
-                    $
+                    {currencySymbol}
                   </Text>
                 </View>
                 <TextInput
@@ -259,7 +264,7 @@ export default function EnterStakeAmount({
                           isActive && styles.quickAmountTextActive,
                         ]}
                       >
-                        ${quickAmount.toLocaleString()}
+                        {formatCurrency(quickAmount)}
                       </Text>
                     </TouchableOpacity>
                   );
@@ -290,7 +295,7 @@ export default function EnterStakeAmount({
                 <InfoCard
                   icon={Coins}
                   label="Min Stake"
-                  value={`$${stakingConfig.minAmount}`}
+                  value={formatCurrency(stakingConfig.minAmount)}
                   iconColor={colors.primary}
                 />
                 <InfoCard

@@ -1,3 +1,4 @@
+import { AssetIcon } from '@/components/AssetIcon';
 import {
   borderRadius,
   colors,
@@ -53,7 +54,15 @@ export default function SelectAssetAmount({
 
   const assets = useMemo(() => {
     if (apiAssets.length > 0) {
-      return apiAssets.map((apiAsset) =>
+      // Deduplicate by ID
+      const uniqueAssets = new Map<string, typeof apiAssets[0]>();
+      for (const apiAsset of apiAssets) {
+        if (!uniqueAssets.has(apiAsset.id)) {
+          uniqueAssets.set(apiAsset.id, apiAsset);
+        }
+      }
+
+      return Array.from(uniqueAssets.values()).map((apiAsset) =>
         convertAPIAsset({
           id: apiAsset.id,
           name: apiAsset.name,
@@ -280,87 +289,6 @@ export default function SelectAssetAmount({
     </SafeAreaView>
   );
 }
-
-// Asset Icon Component
-interface AssetIconProps {
-  asset: Asset;
-  size?: number;
-}
-
-function AssetIcon({ asset, size = 40 }: AssetIconProps) {
-  const iconStyles = {
-    width: size,
-    height: size,
-    borderRadius: size / 5,
-    backgroundColor: asset.iconBgColor,
-    justifyContent: 'center' as const,
-    alignItems: 'center' as const,
-  };
-
-  const getIconContent = () => {
-    const fontSize = size * 0.45;
-    switch (asset.iconType) {
-      case 'bitcoin':
-        return (
-          <Text style={[styles.iconText, { color: colors.textWhite, fontSize }]}>
-            ₿
-          </Text>
-        );
-      case 'ethereum':
-        return (
-          <Text
-            style={[styles.iconText, { color: colors.textTertiary, fontSize }]}
-          >
-            Ξ
-          </Text>
-        );
-      case 'solana':
-        return (
-          <Text style={[styles.iconText, { color: '#14F195', fontSize }]}>
-            ◎
-          </Text>
-        );
-      case 'polygon':
-        return (
-          <Text style={[styles.iconText, { color: '#8247E5', fontSize }]}>
-            ⬡
-          </Text>
-        );
-      case 'zcash':
-        return (
-          <Text
-            style={[styles.iconText, { color: colors.background, fontSize }]}
-          >
-            Z
-          </Text>
-        );
-      case 'usdt':
-        return (
-          <Text style={[styles.iconText, { color: colors.textWhite, fontSize }]}>
-            ₮
-          </Text>
-        );
-      case 'bnb':
-        return (
-          <Text
-            style={[styles.iconText, { color: colors.background, fontSize }]}
-          >
-            B
-          </Text>
-        );
-      default:
-        return (
-          <Text style={[styles.iconText, { fontSize }]}>
-            {asset.symbol[0]}
-          </Text>
-        );
-    }
-  };
-
-  return <View style={iconStyles}>{getIconContent()}</View>;
-}
-
-export { AssetIcon };
 
 const styles = StyleSheet.create({
   container: {

@@ -64,7 +64,11 @@ export function useAssetCache(assetIds: string[]) {
     if (cachedData.size > 0) {
       assetsRef.current = cachedData;
       hasLoaded.current = true;
-      setAssetsArray(Array.from(cachedData.values()));
+      // Deduplicate by ID before setting state
+      const uniqueArray = Array.from(cachedData.values()).filter((asset, index, self) =>
+        index === self.findIndex(a => a.id === asset.id)
+      );
+      setAssetsArray(uniqueArray);
     } else {
       setAssetsArray([]);
       setIsInitialLoad(true);
@@ -94,7 +98,11 @@ export function useAssetCache(assetIds: string[]) {
           assetsRef.current = result;
           hasLoaded.current = true;
           setIsInitialLoad(false);
-          setAssetsArray(Array.from(result.values()));
+          // Deduplicate by ID before setting state
+          const uniqueArray = Array.from(result.values()).filter((asset, index, self) =>
+            index === self.findIndex(a => a.id === asset.id)
+          );
+          setAssetsArray(uniqueArray);
           setError(null);
         }
       } catch (err) {
@@ -196,7 +204,11 @@ export function useAssetCache(assetIds: string[]) {
         assetsRef.current = result;
         hasLoaded.current = true;
         setIsInitialLoad(false);
-        setAssetsArray(Array.from(result.values()));
+        // Deduplicate by ID before setting state
+        const uniqueArray = Array.from(result.values()).filter((asset, index, self) =>
+          index === self.findIndex(a => a.id === asset.id)
+        );
+        setAssetsArray(uniqueArray);
         setError(null);
       }
     } catch (err) {

@@ -1,4 +1,4 @@
-export type NotificationType = 
+export type NotificationType =
   | 'withdrawal'
   | 'deposit'
   | 'stake'
@@ -29,17 +29,17 @@ export const NOTIFICATION_FILTERS: NotificationFilter[] = [
   { id: 'withdrawal', label: 'Withdrawal' },
   { id: 'deposit', label: 'Deposit' },
   { id: 'stake', label: 'Stake' },
-  { id: 'update', label: 'Update' },
+  { id: 'update', label: 'Updates' },
 ];
 
-// Mock notifications data
+// Mock notifications
 export const MOCK_NOTIFICATIONS: Notification[] = [
   {
     id: '1',
     type: 'withdrawal',
     status: 'new',
     title: 'Remote withdrawal request',
-    description: '@Alicejhon222 requesting $500',
+    description: '@Alicejhon222 is requesting $500 withdrawal from your merchant account.',
     actionLabel: 'Tap to review',
     timestamp: new Date(Date.now() - 5 * 60 * 1000),
     isRead: false,
@@ -48,9 +48,9 @@ export const MOCK_NOTIFICATIONS: Notification[] = [
     id: '2',
     type: 'stake',
     status: 'new',
-    title: 'Stake',
-    description: 'Your 500 flash token are now staked',
-    actionLabel: 'Tap to view',
+    title: 'Staking confirmed',
+    description: 'Your 500 FLA$H tokens are now staked. Lock period: 30 days.',
+    actionLabel: 'View details',
     timestamp: new Date(Date.now() - 15 * 60 * 1000),
     isRead: false,
   },
@@ -58,9 +58,9 @@ export const MOCK_NOTIFICATIONS: Notification[] = [
     id: '3',
     type: 'update',
     status: 'new',
-    title: 'New feature is available',
-    description: 'We have added a new feature to flash',
-    actionLabel: 'Tap to view',
+    title: 'New feature available',
+    description: 'Remote deposits are now available! Accept crypto payments from anywhere.',
+    actionLabel: 'Learn more',
     timestamp: new Date(Date.now() - 30 * 60 * 1000),
     isRead: false,
   },
@@ -68,10 +68,30 @@ export const MOCK_NOTIFICATIONS: Notification[] = [
     id: '4',
     type: 'deposit',
     status: 'completed',
-    title: 'Remote deposit',
-    description: '@Alicejhon222 deposited $500',
-    actionLabel: 'Tap to review',
+    title: 'Deposit completed',
+    description: '@Alicejhon222 successfully deposited $500 via physical POS.',
+    actionLabel: 'View receipt',
     timestamp: new Date(Date.now() - 60 * 60 * 1000),
+    isRead: true,
+  },
+  {
+    id: '5',
+    type: 'withdrawal',
+    status: 'completed',
+    title: 'Withdrawal processed',
+    description: '$250 withdrawal to @BobWilliams has been completed successfully.',
+    actionLabel: 'View details',
+    timestamp: new Date(Date.now() - 3 * 60 * 60 * 1000),
+    isRead: true,
+  },
+  {
+    id: '6',
+    type: 'stake',
+    status: 'pending',
+    title: 'Staking reward pending',
+    description: 'Your staking reward of $12.50 is ready to claim.',
+    actionLabel: 'Claim reward',
+    timestamp: new Date(Date.now() - 5 * 60 * 60 * 1000),
     isRead: true,
   },
 ];
