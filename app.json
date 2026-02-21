@@ -54,7 +54,8 @@
           "imageWidth": 200,
           "resizeMode": "contain"
         }
-      ]
+      ],
+      "react-native-threads"
     ],
     "experiments": {
       "typedRoutes": true
