@@ -3,9 +3,11 @@
  * 
  * This service handles cryptocurrency wallet generation in a background thread
  * to prevent UI blocking during the computationally intensive process.
+ * 
+ * NOTE: This file is kept for reference but is not actively used.
+ * The actual implementation uses react-native-threads via WalletThreadService.
  */
 
-import { Wallet } from 'react-native-worklets-core';
 import type { MultiChainWalletResult } from '../MerchantWalletService';
 
 // We'll need to import the actual wallet creation logic here
@@ -26,13 +28,13 @@ export interface WalletGenerationStatus {
  */
 export const generateWalletsWorklet = (entropy: string) => {
   'worklet';
-  
+
   // Import statements need to be at the top level
   // We'll need to structure this differently
-  
+
   // For now, this is a placeholder that will be called from the main thread
   // with the actual wallet generation logic passed through
-  
+
   return {
     entropy,
     timestamp: Date.now()
@@ -48,7 +50,7 @@ export class WalletGenerationManager {
   private status: WalletGenerationStatus = { status: 'idle', progress: 0 };
   private listeners: Array<(status: WalletGenerationStatus) => void> = [];
 
-  private constructor() {}
+  private constructor() { }
 
   static getInstance(): WalletGenerationManager {
     if (!WalletGenerationManager.instance) {
@@ -211,7 +213,7 @@ export class WalletGenerationManager {
    */
   subscribe(listener: (status: WalletGenerationStatus) => void): () => void {
     this.listeners.push(listener);
-    
+
     // Return unsubscribe function
     return () => {
       const index = this.listeners.indexOf(listener);

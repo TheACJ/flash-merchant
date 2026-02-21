@@ -7,24 +7,24 @@ export const commonStyles = StyleSheet.create({
     flex: 1,
     backgroundColor: theme.colors.background,
   },
-  
+
   safeArea: {
     flex: 1,
     backgroundColor: theme.colors.background,
   },
-  
+
   scrollContent: {
     paddingTop: 80,
-    paddingHorizontal: theme.layout.containerPaddingLarge,
+    paddingHorizontal: theme.layout.screenPaddingHorizontal,
     paddingBottom: 40,
   },
-  
+
   // Headers
   header: {
     alignItems: 'center',
     marginBottom: 50,
   },
-  
+
   title: {
     fontFamily: theme.typography.fontFamily,
     fontWeight: theme.typography.fontWeight.semibold,
@@ -34,7 +34,7 @@ export const commonStyles = StyleSheet.create({
     color: theme.colors.textPrimary,
     marginBottom: 15,
   },
-  
+
   subtitle: {
     fontFamily: theme.typography.fontFamily,
     fontWeight: theme.typography.fontWeight.medium,
@@ -43,12 +43,12 @@ export const commonStyles = StyleSheet.create({
     textAlign: 'center',
     color: theme.colors.textSecondary,
   },
-  
+
   // Inputs
   inputGroup: {
     gap: 15,
   },
-  
+
   inputLabel: {
     fontFamily: theme.typography.fontFamily,
     fontWeight: theme.typography.fontWeight.medium,
@@ -56,7 +56,7 @@ export const commonStyles = StyleSheet.create({
     lineHeight: theme.typography.lineHeight.normal,
     color: theme.colors.textPrimary,
   },
-  
+
   input: {
     height: theme.layout.inputHeight,
     backgroundColor: theme.colors.backgroundCard,
@@ -68,12 +68,12 @@ export const commonStyles = StyleSheet.create({
     fontSize: theme.typography.fontSize.md,
     color: theme.colors.textPrimary,
   },
-  
+
   inputError: {
     borderColor: theme.colors.error,
     borderWidth: 1.5,
   },
-  
+
   // Buttons
   button: {
     height: theme.layout.buttonHeight,
@@ -83,11 +83,11 @@ export const commonStyles = StyleSheet.create({
     alignItems: 'center',
     ...theme.shadows.lg,
   },
-  
+
   buttonDisabled: {
     opacity: 0.5,
   },
-  
+
   buttonText: {
     fontFamily: theme.typography.fontFamily,
     fontWeight: theme.typography.fontWeight.regular,
@@ -96,15 +96,15 @@ export const commonStyles = StyleSheet.create({
     textAlign: 'center',
     color: theme.colors.textLight,
   },
-  
+
   buttonSecondary: {
     backgroundColor: theme.colors.primaryLight,
   },
-  
+
   buttonSecondaryText: {
     color: theme.colors.primary,
   },
-  
+
   // Cards
   card: {
     backgroundColor: theme.colors.backgroundCard,
@@ -112,41 +112,41 @@ export const commonStyles = StyleSheet.create({
     padding: theme.spacing.lg,
     ...theme.shadows.sm,
   },
-  
+
   // Text
   textPrimary: {
     color: theme.colors.textPrimary,
     fontSize: theme.typography.fontSize.md,
     fontWeight: theme.typography.fontWeight.regular,
   },
-  
+
   textSecondary: {
     color: theme.colors.textSecondary,
     fontSize: theme.typography.fontSize.base,
     fontWeight: theme.typography.fontWeight.regular,
   },
-  
+
   textLink: {
     color: theme.colors.primary,
     textDecorationLine: 'underline',
   },
-  
+
   // Spacing
   mt1: { marginTop: theme.spacing.sm },
   mt2: { marginTop: theme.spacing.md },
   mt3: { marginTop: theme.spacing.base },
   mt4: { marginTop: theme.spacing.lg },
-  
+
   mb1: { marginBottom: theme.spacing.sm },
   mb2: { marginBottom: theme.spacing.md },
   mb3: { marginBottom: theme.spacing.base },
   mb4: { marginBottom: theme.spacing.lg },
-  
+
   px1: { paddingHorizontal: theme.spacing.sm },
   px2: { paddingHorizontal: theme.spacing.md },
   px3: { paddingHorizontal: theme.spacing.base },
   px4: { paddingHorizontal: theme.spacing.lg },
-  
+
   py1: { paddingVertical: theme.spacing.sm },
   py2: { paddingVertical: theme.spacing.md },
   py3: { paddingVertical: theme.spacing.base },

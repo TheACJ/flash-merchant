@@ -1,5 +1,5 @@
+import Processing from '@/components/Processing';
 import Success from '@/components/kyc/Success';
-import Verifying from '@/components/kyc/Verifying';
 import { colors } from '@/constants/theme';
 import { useRouter } from 'expo-router';
 import React, { useCallback, useState } from 'react';
@@ -119,7 +119,7 @@ export default function StakeFlow() {
 
       case 'processing':
         return (
-          <Verifying
+          <Processing
             title="Verifying Payment"
             message="Please wait while we confirm your staking transaction..."
           />

@@ -1,8 +1,8 @@
-import { Connection, PublicKey, Keypair, LAMPORTS_PER_SOL } from "@solana/web3.js";
-import { mnemonicToSeedSync, entropyToMnemonic, validateMnemonic } from "@scure/bip39";
-import { wordlist } from "@scure/bip39/wordlists/english";
 import { hmac } from "@noble/hashes/hmac";
 import { sha512 } from "@noble/hashes/sha512";
+import { entropyToMnemonic, mnemonicToSeedSync, validateMnemonic } from "@scure/bip39";
+import { wordlist } from "@scure/bip39/wordlists/english.js";
+import { Connection, Keypair, LAMPORTS_PER_SOL, PublicKey } from "@solana/web3.js";
 
 const HARDENED_OFFSET = 0x80000000;
 
@@ -46,12 +46,12 @@ class SolanaService {
     } else {
       mnemonic = entropyToMnemonic(entropy, wordlist);
     }
-    
+
     const seed = mnemonicToSeedSync(mnemonic, "");
     const path = `m/44'/501'/0'/0'`;
     const priv = await deriveEd25519Path(seed, path);
     const keypair = Keypair.fromSeed(priv);
-    
+
     return {
       address: keypair.publicKey.toBase58(),
       publicKey: keypair.publicKey.toBase58(),
@@ -64,12 +64,12 @@ class SolanaService {
     if (!validateMnemonic(mnemonic, wordlist)) {
       throw new Error("Invalid mnemonic phrase");
     }
-    
+
     const seed = mnemonicToSeedSync(mnemonic, "");
     const path = `m/44'/501'/0'/0'`;
     const priv = await deriveEd25519Path(seed, path);
     const keypair = Keypair.fromSeed(priv);
-    
+
     return {
       address: keypair.publicKey.toBase58(),
       publicKey: keypair.publicKey.toBase58(),
