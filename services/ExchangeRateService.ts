@@ -11,6 +11,9 @@ const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
  * - Fetches exchange rates from FlashAPI
  * - Caches rates for offline access
  * - Provides currency conversion utilities
+ * 
+ * IMPORTANT: This cache protects against empty/null data upserts during
+ * network downtime or unavailable APIs to preserve existing valid data.
  */
 export default class ExchangeRateService {
   private static instance: ExchangeRateService;
@@ -25,7 +28,35 @@ export default class ExchangeRateService {
   }
 
   /**
+   * Validates that an exchange rate has meaningful data
+   * Returns true if the rate is valid
+   */
+  private isValidExchangeRate(rate: any): rate is ExchangeRate {
+    if (!rate) return false;
+    if (!rate.base_currency || rate.base_currency.trim() === '') return false;
+    if (!rate.target_currency || rate.target_currency.trim() === '') return false;
+    if (!rate.rate) return false;
+    const rateNum = parseFloat(rate.rate);
+    if (isNaN(rateNum) || rateNum <= 0) return false;
+    return true;
+  }
+
+  /**
+   * Validates that an array of exchange rates has meaningful data
+   * Returns true if the array is valid and has at least one valid rate
+   */
+  private isValidRatesArray(rates: any[] | null | undefined): rates is ExchangeRate[] {
+    if (!rates) return false;
+    if (!Array.isArray(rates)) return false;
+    if (rates.length === 0) return false;
+    // At least some rates should be valid
+    const validCount = rates.filter(r => this.isValidExchangeRate(r)).length;
+    return validCount > 0;
+  }
+
+  /**
    * Fetch exchange rates from FlashAPI
+   * Preserves existing cache if API returns empty/error during network issues
    */
   async fetchExchangeRates(): Promise<ExchangeRate[]> {
     try {
@@ -51,24 +82,43 @@ export default class ExchangeRateService {
         throw new Error('Invalid exchange rates response format');
       }
 
+      // Validate rates before caching
+      if (!this.isValidRatesArray(rates)) {
+        console.warn('[ExchangeRateService] API returned invalid/empty rates, preserving existing cache');
+        // Return existing rates if available
+        if (this.rates.length > 0) {
+          return this.rates;
+        }
+        throw new Error('Invalid exchange rates data');
+      }
+
+      // Filter to only valid rates
+      const validRates = rates.filter(r => this.isValidExchangeRate(r));
+
       // Cache the result
-      this.rates = rates;
+      this.rates = validRates;
       this.lastFetched = Date.now();
 
-      await this.saveToCache(rates);
+      await this.saveToCache(validRates);
 
-      console.log(`[ExchangeRateService] Fetched ${rates.length} exchange rates`);
-      return rates;
+      console.log(`[ExchangeRateService] Fetched ${validRates.length} exchange rates`);
+      return validRates;
     } catch (error) {
       console.error('[ExchangeRateService] Error fetching exchange rates:', error);
 
       // Try to load from cache as fallback
       const cached = await this.loadFromCache();
-      if (cached) {
+      if (cached && this.isValidRatesArray(cached.rates)) {
         console.log('[ExchangeRateService] Using cached exchange rates as fallback');
         this.rates = cached.rates;
         this.lastFetched = cached.timestamp;
         return cached.rates;
+      }
+
+      // Return existing in-memory rates if available
+      if (this.rates.length > 0) {
+        console.log('[ExchangeRateService] Using existing in-memory rates as fallback');
+        return this.rates;
       }
 
       throw error;

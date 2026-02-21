@@ -3,6 +3,9 @@
  * 
  * Provides synchronous getters for instant UI updates and
  * supports real-time updates via subscribers.
+ * 
+ * IMPORTANT: This cache protects against empty/null data upserts during
+ * network downtime or unavailable APIs to preserve existing valid data.
  */
 
 interface PriceData {
@@ -26,6 +29,31 @@ class PriceCache {
   }
 
   /**
+   * Validates that price data has meaningful values before caching
+   * Returns true if the data is valid and should be cached
+   */
+  private isValidPriceData(data: PriceData | null | undefined): data is PriceData {
+    if (!data) return false;
+    // usd should be a valid non-negative number
+    if (typeof data.usd !== 'number' || isNaN(data.usd) || data.usd < 0) return false;
+    // usd24hChange should be a valid number (can be negative)
+    if (typeof data.usd24hChange !== 'number' || isNaN(data.usd24hChange)) return false;
+    return true;
+  }
+
+  /**
+   * Validates that an exchange rate has a meaningful value before caching
+   * Returns true if the rate is valid and should be cached
+   */
+  private isValidExchangeRate(rate: number | null | undefined): rate is number {
+    if (rate === null || rate === undefined) return false;
+    if (typeof rate !== 'number' || isNaN(rate)) return false;
+    // Exchange rate should be positive
+    if (rate <= 0) return false;
+    return true;
+  }
+
+  /**
    * Get price for an asset
    */
   getPrice(id: string): PriceData | null {
@@ -36,8 +64,15 @@ class PriceCache {
 
   /**
    * Set price for an asset
+   * Only updates cache if the data is valid, preserving existing data during network issues
    */
   setPrice(id: string, data: PriceData): void {
+    // Validate before caching
+    if (!this.isValidPriceData(data)) {
+      console.warn(`[PriceCache] Attempted to set invalid/empty price data for ${id}, preserving existing cache`);
+      return;
+    }
+
     const existing = this.prices.get(id);
     this.prices.set(id, { ...data, cachedAt: Date.now() });
     console.log(`[PriceCache] setPrice(${id}): ${data.usd}`);
@@ -59,8 +94,15 @@ class PriceCache {
 
   /**
    * Set exchange rate between two currencies
+   * Only updates cache if the rate is valid, preserving existing data during network issues
    */
   setExchangeRate(from: string, to: string, rate: number): void {
+    // Validate before caching
+    if (!this.isValidExchangeRate(rate)) {
+      console.warn(`[PriceCache] Attempted to set invalid exchange rate for ${from}_${to}, preserving existing cache`);
+      return;
+    }
+
     const key = `${from}_${to}`;
     const existing = this.exchangeRates.get(key);
     this.exchangeRates.set(key, rate);

@@ -7,7 +7,7 @@ import {
   spacing,
   typography,
 } from '@/constants/theme';
-import { useExchangeRates, usePreferredCurrency, useTotalBalance } from '@/hooks';
+import { useDashboardSummary, useExchangeRates, usePreferredCurrency, useTotalBalance } from '@/hooks';
 import { useRouter } from 'expo-router';
 import {
   ArrowDownToLine,
@@ -23,7 +23,7 @@ import {
   TrendingUp,
   User
 } from 'lucide-react-native';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   Dimensions,
   Image,
@@ -89,6 +89,39 @@ const HomeScreen: React.FC = () => {
     (state: RootState) => state.merchantAuth.merchantProfile
   );
 
+  // Get dashboard summary data from cache (auto-refreshes every 5 minutes globally)
+  const { summary: dashboardSummary, isLoading: dashboardLoading } = useDashboardSummary();
+
+  // State for converted dashboard values
+  const [convertedAmountToday, setConvertedAmountToday] = useState<number>(0);
+  const [convertedLiquidity, setConvertedLiquidity] = useState<number>(0);
+
+  // Convert dashboard values to preferred currency
+  useEffect(() => {
+    const convertDashboardValues = async () => {
+      // Convert total amount today
+      if (!currencyCode || currencyCode === 'USD') {
+        setConvertedAmountToday(dashboardSummary.totalAmountToday);
+        setConvertedLiquidity(dashboardSummary.availableLiquidity);
+        return;
+      }
+
+      try {
+        const convertedAmount = await convertCurrency(dashboardSummary.totalAmountToday, 'USD', currencyCode);
+        const convertedLiq = await convertCurrency(dashboardSummary.availableLiquidity, 'USD', currencyCode);
+        setConvertedAmountToday(convertedAmount);
+        setConvertedLiquidity(convertedLiq);
+      } catch (error) {
+        console.error('[HomeScreen] Dashboard currency conversion failed:', error);
+        // Fallback to raw USD values
+        setConvertedAmountToday(dashboardSummary.totalAmountToday);
+        setConvertedLiquidity(dashboardSummary.availableLiquidity);
+      }
+    };
+
+    convertDashboardValues();
+  }, [currencyCode, dashboardSummary.totalAmountToday, dashboardSummary.availableLiquidity, convertCurrency]);
+
   // TODO: These should come from API/notification service
   const notificationCount = 0;
   const messageCount = 0;
@@ -142,45 +175,46 @@ const HomeScreen: React.FC = () => {
     },
   ];
 
-  // TODO: These statistics should come from a merchant dashboard API endpoint
-  // For now, showing placeholder values until API integration is complete
-  const summaryCards: SummaryCard[] = [
+  // Summary cards populated from dashboard API data
+  // Data is cached and auto-refreshes every 5 minutes globally
+  // Currency values are converted to preferred currency
+  const summaryCards: SummaryCard[] = useMemo(() => [
     {
-      id: 'deposits',
-      label: 'Total Deposits',
-      value: formatCurrency(0), // TODO: Fetch from API
-      icon: ArrowDownToLine,
-      iconColor: colors.success,
-    },
-    {
-      id: 'withdrawals',
-      label: 'Total Withdrawals',
-      value: formatCurrency(0), // TODO: Fetch from API
-      icon: ArrowUpFromLine,
-      iconColor: colors.error,
-    },
-    {
-      id: 'transactions',
-      label: 'Transactions',
-      value: (merchantProfile?.completedTrades || 0).toString(),
+      id: 'transactions_today',
+      label: 'Today\'s Transactions',
+      value: dashboardSummary.totalTransactionsToday.toString(),
       icon: CreditCard,
       iconColor: colors.primary,
     },
     {
-      id: 'success',
-      label: 'Success Rate',
-      value: '0%', // TODO: Fetch from API
-      icon: Star,
-      iconColor: colors.warning,
+      id: 'amount_today',
+      label: 'Today\'s Volume',
+      value: formatCurrency(convertedAmountToday),
+      icon: TrendingUp,
+      iconColor: colors.success,
     },
     {
       id: 'pending',
-      label: 'Pending',
-      value: '0', // TODO: Fetch from API
+      label: 'Pending Requests',
+      value: dashboardSummary.pendingRequests.toString(),
       icon: Timer,
       iconColor: colors.info,
     },
-  ];
+    {
+      id: 'liquidity',
+      label: 'Available Liquidity',
+      value: formatCurrency(convertedLiquidity),
+      icon: ArrowDownToLine,
+      iconColor: colors.success,
+    },
+    {
+      id: 'reputation',
+      label: 'Reputation Score',
+      value: dashboardSummary.reputationScore.toFixed(1),
+      icon: Star,
+      iconColor: colors.warning,
+    },
+  ], [dashboardSummary, convertedAmountToday, convertedLiquidity, formatCurrency]);
 
   const renderBadge = (count: number) => {
     if (count <= 0) return null;

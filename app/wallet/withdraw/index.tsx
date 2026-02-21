@@ -1,6 +1,7 @@
 import Success from '@/components/kyc/Success';
-import Verifying from '@/components/kyc/Verifying';
+import Processing from '@/components/Processing';
 import { colors } from '@/constants/theme';
+import FlashTagService, { FlashTagInfo } from '@/services/FlashTagService';
 import { useRouter } from 'expo-router';
 import React, { useCallback, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
@@ -11,8 +12,9 @@ import {
   Asset,
   CustomerInfo,
   EXCHANGE_RATES,
+  getChainForAsset,
   WithdrawalData,
-  WithdrawalStep,
+  WithdrawalStep
 } from './types';
 
 const initialWithdrawalData: WithdrawalData = {
@@ -32,23 +34,40 @@ export default function WithdrawFlow() {
     useState<WithdrawalStep>('selectFlashTagAsset');
   const [withdrawalData, setWithdrawalData] =
     useState<WithdrawalData>(initialWithdrawalData);
-
-  const fetchCustomerInfo = async (
-    flashTag: string
-  ): Promise<CustomerInfo> => {
-    await new Promise((resolve) => setTimeout(resolve, 500));
-    return {
-      flashTag,
-      name: 'Victoria Banks',
-      walletAddress: '0x1293...4b2F8c3c',
-    };
-  };
+  const [resolvedTagInfo, setResolvedTagInfo] = useState<FlashTagInfo | null>(null);
 
   const handleFlashTagAssetSubmit = useCallback(
     async (flashTag: string, asset: Asset) => {
       try {
-        const customer = await fetchCustomerInfo(flashTag);
-        const exchangeRate = EXCHANGE_RATES[asset.id] || 1;
+        // Resolve the flash tag to get wallet address for the selected asset's chain
+        // Use the mapping to get the correct chain name (e.g., bnb -> bnb, usdt -> ethereum)
+        const chain = getChainForAsset(asset.id);
+        const tagWithoutAt = flashTag.replace('@', '');
+
+        const resolution = await FlashTagService.resolveTag(tagWithoutAt, chain);
+
+        let customer: CustomerInfo;
+
+        if (!resolution.success || !resolution.data) {
+          console.error('[WithdrawFlow] Failed to resolve tag:', resolution.error);
+          // Fallback to placeholder data
+          customer = {
+            flashTag,
+            name: tagWithoutAt,
+            walletAddress: 'Unable to resolve wallet',
+          };
+          setResolvedTagInfo(null);
+        } else {
+          console.log('[WithdrawFlow] Tag resolved:', resolution.data);
+          setResolvedTagInfo(resolution.data);
+          customer = {
+            flashTag,
+            name: resolution.data.displayName || resolution.data.username || tagWithoutAt,
+            walletAddress: resolution.data.address,
+          };
+        }
+
+        const exchangeRate = asset.price || EXCHANGE_RATES[asset.id] || 1;
 
         setWithdrawalData((prev) => ({
           ...prev,
@@ -58,7 +77,24 @@ export default function WithdrawFlow() {
         }));
         setCurrentStep('enterAmount');
       } catch (error) {
-        console.error('Error fetching customer info:', error);
+        console.error('Error resolving flash tag:', error);
+        // Fallback with placeholder data
+        const tagWithoutAt = flashTag.replace('@', '');
+        const customer: CustomerInfo = {
+          flashTag,
+          name: tagWithoutAt,
+          walletAddress: 'Unable to resolve wallet',
+        };
+        const exchangeRate = asset.price || EXCHANGE_RATES[asset.id] || 1;
+
+        setResolvedTagInfo(null);
+        setWithdrawalData((prev) => ({
+          ...prev,
+          customer,
+          asset,
+          exchangeRate: `1 ${asset.symbol}=$${exchangeRate.toLocaleString()}`,
+        }));
+        setCurrentStep('enterAmount');
       }
     },
     []
@@ -112,6 +148,7 @@ export default function WithdrawFlow() {
 
   const handleGoHome = useCallback(() => {
     setWithdrawalData(initialWithdrawalData);
+    setResolvedTagInfo(null);
     setCurrentStep('selectFlashTagAsset');
     router.replace('/');
   }, [router]);
@@ -155,7 +192,7 @@ export default function WithdrawFlow() {
 
       case 'processing':
         return (
-          <Verifying
+          <Processing
             title="Processing Withdrawal"
             message="Please wait while we process your transaction..."
           />

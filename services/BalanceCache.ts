@@ -3,6 +3,9 @@
  * 
  * Provides synchronous getters for instant UI updates and
  * supports real-time updates via subscribers.
+ * 
+ * IMPORTANT: This cache protects against empty/null data upserts during
+ * network downtime or unavailable APIs to preserve existing valid data.
  */
 
 import FlashApiService, { WalletBalanceBreakdownItem } from './FlashApiService';
@@ -27,6 +30,32 @@ class BalanceCache {
       BalanceCache.instance = new BalanceCache();
     }
     return BalanceCache.instance;
+  }
+
+  /**
+   * Validates that balance data has meaningful values before caching
+   * Returns true if the data is valid and should be cached
+   */
+  private isValidBalanceData(data: BalanceData | null | undefined): data is BalanceData {
+    if (!data) return false;
+    if (!data.walletId || data.walletId.trim() === '') return false;
+    // totalFiat should be a valid number (can be 0 for empty wallets)
+    if (typeof data.totalFiat !== 'number' || isNaN(data.totalFiat)) return false;
+    // breakdown should be an array (can be empty)
+    if (!Array.isArray(data.breakdown)) return false;
+    return true;
+  }
+
+  /**
+   * Validates API response data before creating BalanceData
+   */
+  private isValidApiResponse(response: any): boolean {
+    if (!response) return false;
+    // total_fiat should be a valid number
+    if (typeof response.total_fiat !== 'number' || isNaN(response.total_fiat)) return false;
+    // breakdown should be an array
+    if (!Array.isArray(response.breakdown)) return false;
+    return true;
   }
 
   // --------------------------------------------------------------------------
@@ -89,8 +118,15 @@ class BalanceCache {
 
   /**
    * Set balance for a wallet and notify listeners
+   * Only updates cache if the data is valid, preserving existing data during network issues
    */
   setBalance(walletId: string, data: BalanceData): void {
+    // Validate before caching
+    if (!this.isValidBalanceData(data)) {
+      console.warn(`[BalanceCache] Attempted to set invalid/empty balance data for ${walletId}, preserving existing cache`);
+      return;
+    }
+
     console.log(`[BalanceCache] Setting balance for ${walletId}: $${data.totalFiat.toFixed(2)}`);
 
     this.cache.set(walletId, {
@@ -215,6 +251,12 @@ class BalanceCache {
       });
 
       if (response.success && response.data) {
+        // Validate API response before caching
+        if (!this.isValidApiResponse(response.data)) {
+          console.warn(`[BalanceCache] API returned invalid/empty balance data for ${walletId}, preserving existing cache`);
+          return this.getBalanceSync(walletId);
+        }
+
         const balanceData: BalanceData = {
           walletId,
           totalFiat: response.data.total_fiat,
@@ -227,10 +269,12 @@ class BalanceCache {
         return balanceData;
       }
 
-      return null;
+      // Return existing cache on failure instead of null
+      return this.getBalanceSync(walletId);
     } catch (error) {
       console.error(`[BalanceCache] Error fetching balance for ${walletId}:`, error);
-      return null;
+      // Return existing cache on error
+      return this.getBalanceSync(walletId);
     } finally {
       this.setRefreshing(walletId, false);
     }

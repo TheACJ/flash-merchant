@@ -2,6 +2,7 @@ import axios, { AxiosError, AxiosInstance } from 'axios';
 
 // API Configuration
 const FLASH_API_BASE_URL = process.env.EXPO_PUBLIC_FLASH_API_URL || 'https://flashback.koyeb.app/api/v1';
+const FLASH_USERS_BASE_URL = `${FLASH_API_BASE_URL}/users`;
 
 export interface FlashApiResponse<T = any> {
   success: boolean;
@@ -88,6 +89,24 @@ export interface WalletBalanceResponse {
   total_fiat: number;
   breakdown: WalletBalanceBreakdownItem[];
   snapshot_at: string;
+}
+
+export interface UserTagInfo {
+  tag: string;
+  normalized_tag: string;
+  wallets: {
+    ethereum?: { addresses: string[] };
+    solana?: { addresses: string[] };
+    bitcoin?: { addresses: string[] };
+    bnb?: { addresses: string[] };
+  };
+}
+
+export interface UserTagsResponse {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: UserTagInfo[];
 }
 
 /**
@@ -436,6 +455,26 @@ class FlashApiService {
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Failed to fetch wallet balance'
+      };
+    }
+  }
+
+  /**
+ * Get all user tags with pagination support
+ */
+  async getAllUserTags(page: number = 1, pageSize: number = 100): Promise<FlashApiResponse<UserTagsResponse>> {
+    try {
+      const url = new URL(`${FLASH_USERS_BASE_URL}/tags/`);
+      url.searchParams.set('page', page.toString());
+      url.searchParams.set('page_size', pageSize.toString());
+
+      const data = await this.deduplicateRequest<UserTagsResponse>('GET', url.toString());
+      return { success: true, data };
+    } catch (error) {
+      console.error('[FlashApiService] Error fetching tags:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to fetch tags'
       };
     }
   }

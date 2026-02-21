@@ -100,6 +100,27 @@ interface StakeTokens {
   duration_days: number;
 }
 
+interface RecentTransaction {
+  id: string;
+  transaction_type: string;
+  amount_fiat: number;
+  currency: string;
+  status: string;
+  created_at: string;
+  customer_tag?: string;
+}
+
+interface MerchantDashboardResponse {
+  total_transactions_today: number;
+  total_amount_today: number;
+  pending_requests: number;
+  available_liquidity: number;
+  daily_limit_remaining: number;
+  reputation_score: number;
+  tier: string;
+  recent_transactions: RecentTransaction[];
+}
+
 class MerchantApiService {
   private api: AxiosInstance;
   private authToken: string | null = null;
@@ -383,7 +404,7 @@ class MerchantApiService {
     return response.data;
   }
 
-  async getMerchantDashboard(): Promise<ApiResponse> {
+  async getMerchantDashboard(): Promise<ApiResponse<MerchantDashboardResponse> & MerchantDashboardResponse> {
     const response = await this.api.get('/merchant/dashboard/');
     return response.data;
   }

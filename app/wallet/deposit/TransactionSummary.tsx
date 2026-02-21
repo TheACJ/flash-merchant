@@ -6,7 +6,8 @@ import {
   spacing,
   typography,
 } from '@/constants/theme';
-import { ArrowLeft, CheckCircle, Shield } from 'lucide-react-native';
+import { FlashTagInfo } from '@/services/FlashTagService';
+import { ArrowLeft, CheckCircle, Shield, User, Wallet } from 'lucide-react-native';
 import React from 'react';
 import {
   Platform,
@@ -22,6 +23,7 @@ import { TransactionSummary as TransactionSummaryType } from './types';
 interface TransactionSummaryProps {
   data: TransactionSummaryType;
   flashTag: string;
+  resolvedTagInfo?: FlashTagInfo | null;
   onConfirm: () => void;
   onBack: () => void;
 }
@@ -61,9 +63,16 @@ function SummaryRow({
 export default function TransactionSummary({
   data,
   flashTag,
+  resolvedTagInfo,
   onConfirm,
   onBack,
 }: TransactionSummaryProps) {
+  // Truncate wallet address for display
+  const truncateAddress = (address: string): string => {
+    if (address.length <= 16) return address;
+    return `${address.slice(0, 8)}...${address.slice(-8)}`;
+  };
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       {/* Header */}
@@ -110,6 +119,38 @@ export default function TransactionSummary({
           </View>
         </View>
 
+        {/* Recipient Card - Shows resolved tag info */}
+        {resolvedTagInfo && (
+          <View style={styles.recipientCard}>
+            <View style={styles.recipientHeader}>
+              <Wallet
+                size={layout.iconSize.xs}
+                color={colors.primary}
+                strokeWidth={2}
+              />
+              <Text style={styles.recipientHeaderText}>Recipient</Text>
+            </View>
+            <View style={styles.recipientInfo}>
+              <View style={styles.recipientAvatar}>
+                <User
+                  size={layout.iconSize.sm}
+                  color={colors.textWhite}
+                  strokeWidth={2}
+                />
+              </View>
+              <View style={styles.recipientDetails}>
+                <Text style={styles.recipientTag}>{flashTag}</Text>
+                <Text style={styles.recipientAddress}>
+                  {truncateAddress(resolvedTagInfo.address)}
+                </Text>
+                <Text style={styles.recipientChain}>
+                  {resolvedTagInfo.chain.toUpperCase()} Network
+                </Text>
+              </View>
+            </View>
+          </View>
+        )}
+
         {/* Summary Card */}
         <View style={styles.summaryCard}>
           <View style={styles.summaryCardHeader}>
@@ -117,6 +158,12 @@ export default function TransactionSummary({
           </View>
 
           <SummaryRow label="Recipient" value={flashTag} />
+          {resolvedTagInfo && (
+            <SummaryRow
+              label="Wallet Address"
+              value={truncateAddress(resolvedTagInfo.address)}
+            />
+          )}
           <SummaryRow label="Your Balance" value={data.yourBalance} />
           <SummaryRow label="Exchange Rate" value={data.exchangeRate} />
           <SummaryRow
@@ -270,6 +317,62 @@ const styles = StyleSheet.create({
     fontSize: typography.fontSize.sm,
     fontWeight: typography.fontWeight.semibold,
     color: colors.textWhite,
+  },
+
+  // Recipient Card
+  recipientCard: {
+    backgroundColor: colors.backgroundCard,
+    borderRadius: borderRadius.lg,
+    padding: spacing.lg,
+    marginBottom: spacing.lg,
+    ...shadows.sm,
+  },
+  recipientHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginBottom: spacing.base,
+  },
+  recipientHeaderText: {
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.primary,
+    textTransform: 'uppercase',
+    letterSpacing: typography.letterSpacing.wider,
+  },
+  recipientInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.base,
+  },
+  recipientAvatar: {
+    width: layout.avatarSize.lg,
+    height: layout.avatarSize.lg,
+    borderRadius: borderRadius.full,
+    backgroundColor: colors.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  recipientDetails: {
+    flex: 1,
+  },
+  recipientTag: {
+    fontSize: typography.fontSize.lg,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.textPrimary,
+    marginBottom: spacing.xs,
+  },
+  recipientAddress: {
+    fontSize: typography.fontSize.sm,
+    color: colors.textSecondary,
+    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+    marginBottom: spacing.xs,
+  },
+  recipientChain: {
+    fontSize: typography.fontSize.xs,
+    color: colors.textTertiary,
+    textTransform: 'uppercase',
+    letterSpacing: typography.letterSpacing.wide,
   },
 
   // Summary Card

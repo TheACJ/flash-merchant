@@ -110,7 +110,7 @@ export default function EnterCodeScreen() {
       );
 
       if (existingMnemonic) {
-        router.replace('/(tabs)/home');
+        router.replace('/auth/login/loading');
       } else {
         router.push('/auth/login/import-wallet');
       }

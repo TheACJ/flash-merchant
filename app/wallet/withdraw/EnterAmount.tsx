@@ -7,8 +7,8 @@ import {
   typography,
 } from '@/constants/theme';
 import { usePreferredCurrency } from '@/hooks';
-import { ArrowLeft, Delete, User, Wallet } from 'lucide-react-native';
-import React, { useCallback, useState } from 'react';
+import { ArrowLeft, ArrowRightLeft, Delete, User, Wallet } from 'lucide-react-native';
+import React, { useCallback, useMemo, useState } from 'react';
 import {
   Platform,
   StatusBar,
@@ -37,7 +37,8 @@ const KEYPAD_KEYS = [
 ];
 
 const MAX_AMOUNT = 100000;
-const MAX_DECIMALS = 2;
+const MAX_DECIMALS_FIAT = 2;
+const MAX_DECIMALS_CRYPTO = 8;
 
 export default function EnterAmount({
   customer,
@@ -48,15 +49,60 @@ export default function EnterAmount({
 }: EnterAmountProps) {
   const [amount, setAmount] = useState(initialAmount || '0');
   const [error, setError] = useState('');
-  const { formatCurrency, code: currencyCode } = usePreferredCurrency();
+  const [isCryptoMode, setIsCryptoMode] = useState(false); // false = fiat, true = crypto
+  const { formatCurrency, code: currencyCode, getCurrencyInfo } = usePreferredCurrency();
+
+  // Get currency symbol
+  const currencySymbol = getCurrencyInfo()?.symbol || currencyCode || '$';
+
+  // Get asset price in USD
+  const assetPriceUSD = useMemo(() => {
+    return asset?.price || 0;
+  }, [asset]);
+
+  // Convert between crypto and fiat
+  const convertedAmount = useMemo(() => {
+    const numAmount = parseFloat(amount) || 0;
+    if (numAmount === 0 || assetPriceUSD === 0) return 0;
+
+    if (isCryptoMode) {
+      // Amount is in crypto, convert to fiat
+      return numAmount * assetPriceUSD;
+    } else {
+      // Amount is in fiat, convert to crypto
+      return numAmount / assetPriceUSD;
+    }
+  }, [amount, isCryptoMode, assetPriceUSD]);
 
   const formatDisplayAmount = (value: string): string => {
-    if (!value || value === '0') return formatCurrency(0);
+    if (!value || value === '0') return isCryptoMode ? `0 ${asset?.symbol || ''}` : formatCurrency(0);
     const numValue = parseFloat(value);
-    if (isNaN(numValue)) return formatCurrency(0);
+    if (isNaN(numValue)) return isCryptoMode ? `0 ${asset?.symbol || ''}` : formatCurrency(0);
 
+    if (isCryptoMode) {
+      return `${numValue.toFixed(8)} ${asset?.symbol || ''}`;
+    }
     return formatCurrency(numValue);
   };
+
+  // Toggle between crypto and fiat input mode
+  const toggleInputMode = useCallback(() => {
+    if (!asset || assetPriceUSD === 0) return;
+
+    const numAmount = parseFloat(amount) || 0;
+    if (numAmount > 0) {
+      if (isCryptoMode) {
+        // Switching from crypto to fiat - convert crypto amount to fiat
+        const fiatAmount = numAmount * assetPriceUSD;
+        setAmount(fiatAmount.toFixed(2));
+      } else {
+        // Switching from fiat to crypto - convert fiat amount to crypto
+        const cryptoAmount = numAmount / assetPriceUSD;
+        setAmount(cryptoAmount.toFixed(8));
+      }
+    }
+    setIsCryptoMode(!isCryptoMode);
+  }, [isCryptoMode, amount, assetPriceUSD, asset]);
 
   const handleKeyPress = useCallback(
     (key: string) => {
@@ -84,10 +130,13 @@ export default function EnterAmount({
         if (prev === '0' && key !== '.') return key;
 
         const parts = prev.split('.');
-        if (parts.length > 1 && parts[1].length >= MAX_DECIMALS) return prev;
+        const maxDecimals = isCryptoMode ? MAX_DECIMALS_CRYPTO : MAX_DECIMALS_FIAT;
+        if (parts.length > 1 && parts[1].length >= maxDecimals) return prev;
 
         const newValue = prev + key;
-        if (parseFloat(newValue) > MAX_AMOUNT) {
+
+        // For fiat mode, check max amount
+        if (!isCryptoMode && parseFloat(newValue) > MAX_AMOUNT) {
           setError(`Maximum amount is ${formatCurrency(MAX_AMOUNT)}`);
           return prev;
         }
@@ -95,7 +144,7 @@ export default function EnterAmount({
         return newValue;
       });
     },
-    []
+    [isCryptoMode, formatCurrency]
   );
 
   const handleSubmit = () => {
@@ -104,11 +153,24 @@ export default function EnterAmount({
       setError('Please enter a valid amount');
       return;
     }
-    if (numAmount < 1) {
-      setError(`Minimum amount is ${formatCurrency(1)}`);
-      return;
+
+    // Validate minimum based on mode
+    if (isCryptoMode) {
+      const fiatEquivalent = numAmount * assetPriceUSD;
+      if (fiatEquivalent < 1) {
+        setError(`Minimum amount is ${currencySymbol}1.00`);
+        return;
+      }
+    } else {
+      if (numAmount < 1) {
+        setError(`Minimum amount is ${currencySymbol}1.00`);
+        return;
+      }
     }
-    onSubmit(amount);
+
+    // Always submit fiat amount
+    const fiatAmount = isCryptoMode ? convertedAmount : numAmount;
+    onSubmit(fiatAmount.toString());
   };
 
   const truncateAddress = (address: string): string => {
@@ -194,6 +256,35 @@ export default function EnterAmount({
         >
           {formatDisplayAmount(amount)}
         </Text>
+
+        {/* Toggle button */}
+        {asset && assetPriceUSD > 0 && (
+          <TouchableOpacity
+            style={styles.toggleButton}
+            onPress={toggleInputMode}
+            activeOpacity={0.7}
+            accessibilityLabel={`Switch to ${isCryptoMode ? 'fiat' : 'crypto'} input`}
+          >
+            <ArrowRightLeft
+              size={layout.iconSize.xs}
+              color={colors.primary}
+              strokeWidth={2}
+            />
+            <Text style={styles.toggleButtonText}>
+              {isCryptoMode ? currencyCode : asset.symbol}
+            </Text>
+          </TouchableOpacity>
+        )}
+
+        {/* Show converted amount */}
+        {parseFloat(amount) > 0 && assetPriceUSD > 0 && (
+          <Text style={styles.convertedAmountText}>
+            ≈ {isCryptoMode
+              ? formatCurrency(convertedAmount)
+              : `${convertedAmount.toFixed(8)} ${asset?.symbol}`}
+          </Text>
+        )}
+
         {error ? <Text style={styles.errorText}>{error}</Text> : (
           <Text style={styles.assetHint}>
             Withdrawing {asset.symbol} • {asset.name}
@@ -401,6 +492,26 @@ const styles = StyleSheet.create({
   },
   amountTextActive: {
     color: colors.textPrimary,
+  },
+  toggleButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    backgroundColor: colors.primaryLight,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: borderRadius.full,
+    marginTop: spacing.sm,
+  },
+  toggleButtonText: {
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.primary,
+  },
+  convertedAmountText: {
+    fontSize: typography.fontSize.sm,
+    color: colors.textTertiary,
+    marginTop: spacing.xs,
   },
   assetHint: {
     fontSize: typography.fontSize.sm,

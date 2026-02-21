@@ -16,6 +16,9 @@ export { usePreferredCurrency } from './useCurrency';
 // Exchange Rate Hooks
 export { default as useExchangeRates } from './useExchangeRates';
 
+// Dashboard Hooks
+export { useDashboardCache, useDashboardSummary } from './useDashboardCache';
+
 // App Initialization
 export { useAppInitialization } from './useAppInitialization';
 

@@ -1,3 +1,4 @@
+import { dashboardCache } from '@/services/DashboardCache';
 import { globalCacheOrchestrator } from '@/services/GlobalCacheOrchestrator';
 import { merchantProfileOrchestrator } from '@/services/MerchantProfileOrchestrator';
 import { AppDispatch } from '@/store';
@@ -32,6 +33,9 @@ export function useAppInitialization() {
         // Warm merchant profile cache from storage/API
         await merchantProfileOrchestrator.warmCache();
 
+        // Start dashboard cache auto-refresh (every 5 minutes)
+        dashboardCache.startAutoRefresh();
+
         console.log('[useAppInitialization] App initialization complete');
       } catch (error) {
         console.error('[useAppInitialization] Initialization failed:', error);
@@ -42,6 +46,7 @@ export function useAppInitialization() {
 
     return () => {
       globalCacheOrchestrator.stop();
+      dashboardCache.stopAutoRefresh();
     };
   }, [dispatch]);
 

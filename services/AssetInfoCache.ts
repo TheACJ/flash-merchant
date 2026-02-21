@@ -9,6 +9,9 @@ export interface AssetInfo extends Asset {
  * 
  * Provides synchronous getters for instant UI updates and
  * supports real-time updates via subscribers.
+ * 
+ * IMPORTANT: This cache protects against empty/null data upserts during
+ * network downtime or unavailable APIs to preserve existing valid data.
  */
 class AssetInfoCache {
   private cache: Map<string, AssetInfo> = new Map();
@@ -21,6 +24,18 @@ class AssetInfoCache {
       AssetInfoCache.instance = new AssetInfoCache();
     }
     return AssetInfoCache.instance;
+  }
+
+  /**
+   * Validates that an asset has meaningful data before caching
+   * Returns true if the asset is valid and should be cached
+   */
+  private isValidAssetData(asset: Asset | null | undefined): asset is Asset {
+    if (!asset) return false;
+    if (!asset.id || asset.id.trim() === '') return false;
+    if (!asset.symbol || asset.symbol.trim() === '') return false;
+    if (!asset.name || asset.name.trim() === '') return false;
+    return true;
   }
 
   /**
@@ -65,6 +80,12 @@ class AssetInfoCache {
     try {
       const response = await FlashApiService.getAsset(id);
       if (response.success && response.data) {
+        // Validate the data before caching
+        if (!this.isValidAssetData(response.data)) {
+          console.warn(`[AssetInfoCache] Received invalid/empty data for ${id}, preserving existing cache`);
+          return cached || null;
+        }
+
         const assetInfo: AssetInfo = {
           ...response.data,
           cachedAt: Date.now()
@@ -76,10 +97,12 @@ class AssetInfoCache {
       }
     } catch (error) {
       console.error(`[AssetInfoCache] Failed to get asset ${id}:`, error);
+      // Return existing cached data on error, don't update cache with empty data
       return cached || null;
     }
 
-    return null;
+    // If response was not successful but we have cached data, return it
+    return cached || null;
   }
 
   /**
@@ -102,14 +125,42 @@ class AssetInfoCache {
 
   /**
    * Set asset directly in cache
+   * Only updates cache if the asset data is valid
    */
   setAsset(asset: Asset): void {
+    // Validate before caching
+    if (!this.isValidAssetData(asset)) {
+      const assetId = (asset as any)?.id || 'unknown';
+      console.warn(`[AssetInfoCache] Attempted to set invalid/empty asset data for ${assetId}, skipping`);
+      return;
+    }
+
     const assetInfo: AssetInfo = {
       ...asset,
       cachedAt: Date.now()
     };
     this.cache.set(asset.id, assetInfo);
     this.listeners.forEach(listener => listener(asset.id));
+  }
+
+  /**
+   * Set multiple assets at once
+   * Only caches assets with valid data
+   */
+  setAssets(assets: Asset[]): void {
+    for (const asset of assets) {
+      if (this.isValidAssetData(asset)) {
+        const assetInfo: AssetInfo = {
+          ...asset,
+          cachedAt: Date.now()
+        };
+        this.cache.set(asset.id, assetInfo);
+        this.listeners.forEach(listener => listener(asset.id));
+      } else {
+        const assetId = (asset as any)?.id || 'unknown';
+        console.warn(`[AssetInfoCache] Skipping invalid/empty asset data for ${assetId}`);
+      }
+    }
   }
 
   /**

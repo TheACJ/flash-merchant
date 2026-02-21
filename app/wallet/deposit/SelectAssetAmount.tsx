@@ -7,9 +7,9 @@ import {
   spacing,
   typography,
 } from '@/constants/theme';
-import { useAssetCache } from '@/hooks';
+import { useAssetCache, useExchangeRates, usePreferredCurrency } from '@/hooks';
 import { assetInfoOrchestrator } from '@/services/AssetInfoOrchestrator';
-import { ArrowLeft, ChevronDown, Info } from 'lucide-react-native';
+import { ArrowLeft, ArrowRightLeft, ChevronDown, Info } from 'lucide-react-native';
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 import {
   Keyboard,
@@ -46,7 +46,15 @@ export default function SelectAssetAmount({
   const [showAssetSelector, setShowAssetSelector] = useState(false);
   const [amountError, setAmountError] = useState('');
   const [isAmountFocused, setIsAmountFocused] = useState(false);
+  const [isCryptoMode, setIsCryptoMode] = useState(false); // false = fiat, true = crypto
   const amountInputRef = useRef<TextInput>(null);
+
+  // Get preferred currency and exchange rates
+  const { code: currencyCode, formatCurrency, getCurrencyInfo } = usePreferredCurrency();
+  const { convertCurrency } = useExchangeRates();
+
+  // Get currency symbol
+  const currencySymbol = getCurrencyInfo()?.symbol || currencyCode || '$';
 
   const assetIds = assetInfoOrchestrator.getAssetIds();
   const { assets: apiAssets, isLoading: isLoadingAssets } =
@@ -77,14 +85,37 @@ export default function SelectAssetAmount({
     return [];
   }, [apiAssets]);
 
+  // Get current asset price in USD
+  const assetPriceUSD = useMemo(() => {
+    if (!selectedAsset) return 0;
+    return selectedAsset.price || 0;
+  }, [selectedAsset]);
+
+  // Convert between crypto and fiat
+  const convertedAmount = useMemo(() => {
+    const numAmount = parseFloat(amount) || 0;
+    if (numAmount === 0 || assetPriceUSD === 0) return 0;
+
+    if (isCryptoMode) {
+      // Amount is in crypto, convert to fiat
+      return numAmount * assetPriceUSD;
+    } else {
+      // Amount is in fiat, convert to crypto
+      return numAmount / assetPriceUSD;
+    }
+  }, [amount, isCryptoMode, assetPriceUSD]);
+
+  // Format amount based on mode
   const formatAmount = (value: string): string => {
     const cleaned = value.replace(/[^0-9.]/g, '');
     const parts = cleaned.split('.');
     if (parts.length > 2) {
       return parts[0] + '.' + parts.slice(1).join('');
     }
-    if (parts[1]?.length > 2) {
-      return parts[0] + '.' + parts[1].slice(0, 2);
+    // More decimals for crypto mode
+    const maxDecimals = isCryptoMode ? 8 : 2;
+    if (parts[1]?.length > maxDecimals) {
+      return parts[0] + '.' + parts[1].slice(0, maxDecimals);
     }
     return cleaned;
   };
@@ -95,9 +126,30 @@ export default function SelectAssetAmount({
     if (amountError) setAmountError('');
   };
 
+  // Toggle between crypto and fiat input mode
+  const toggleInputMode = useCallback(() => {
+    if (!selectedAsset || assetPriceUSD === 0) return;
+
+    const numAmount = parseFloat(amount) || 0;
+    if (numAmount > 0) {
+      if (isCryptoMode) {
+        // Switching from crypto to fiat - convert crypto amount to fiat
+        const fiatAmount = numAmount * assetPriceUSD;
+        setAmount(fiatAmount.toFixed(2));
+      } else {
+        // Switching from fiat to crypto - convert fiat amount to crypto
+        const cryptoAmount = numAmount / assetPriceUSD;
+        setAmount(cryptoAmount.toFixed(8));
+      }
+    }
+    setIsCryptoMode(!isCryptoMode);
+  }, [isCryptoMode, amount, assetPriceUSD, selectedAsset]);
+
   const handleAssetSelect = useCallback((asset: Asset) => {
     setSelectedAsset(asset);
     setShowAssetSelector(false);
+    // Reset to fiat mode when changing asset
+    setIsCryptoMode(false);
   }, []);
 
   const validateForm = (): boolean => {
@@ -107,9 +159,20 @@ export default function SelectAssetAmount({
       setAmountError('Please enter a valid amount');
       return false;
     }
-    if (numAmount < 1) {
-      setAmountError('Minimum amount is $1.00');
-      return false;
+
+    // Minimum validation based on mode
+    if (isCryptoMode) {
+      // For crypto, check minimum value in fiat equivalent
+      const fiatEquivalent = numAmount * assetPriceUSD;
+      if (fiatEquivalent < 1) {
+        setAmountError(`Minimum amount is ${currencySymbol}1.00`);
+        return false;
+      }
+    } else {
+      if (numAmount < 1) {
+        setAmountError(`Minimum amount is ${currencySymbol}1.00`);
+        return false;
+      }
     }
     return true;
   };
@@ -117,7 +180,9 @@ export default function SelectAssetAmount({
   const handleSubmit = () => {
     Keyboard.dismiss();
     if (validateForm() && selectedAsset) {
-      onSubmit(selectedAsset, amount);
+      // Always submit fiat amount to parent
+      const fiatAmount = isCryptoMode ? convertedAmount : parseFloat(amount);
+      onSubmit(selectedAsset, fiatAmount.toString());
     }
   };
 
@@ -198,7 +263,26 @@ export default function SelectAssetAmount({
 
             {/* Enter Amount */}
             <View style={styles.inputSection}>
-              <Text style={styles.inputLabel}>Enter Amount</Text>
+              <View style={styles.inputLabelRow}>
+                <Text style={styles.inputLabel}>Enter Amount</Text>
+                {selectedAsset && assetPriceUSD > 0 && (
+                  <TouchableOpacity
+                    style={styles.toggleButton}
+                    onPress={toggleInputMode}
+                    activeOpacity={0.7}
+                    accessibilityLabel={`Switch to ${isCryptoMode ? 'fiat' : 'crypto'} input`}
+                  >
+                    <ArrowRightLeft
+                      size={layout.iconSize.xs}
+                      color={colors.primary}
+                      strokeWidth={2}
+                    />
+                    <Text style={styles.toggleButtonText}>
+                      {isCryptoMode ? currencyCode : selectedAsset.symbol}
+                    </Text>
+                  </TouchableOpacity>
+                )}
+              </View>
               <View
                 style={[
                   styles.amountContainer,
@@ -218,7 +302,7 @@ export default function SelectAssetAmount({
                       isAmountFocused && styles.currencyPrefixFocused,
                     ]}
                   >
-                    $
+                    {isCryptoMode ? selectedAsset?.symbol?.slice(0, 3) || 'CRY' : currencySymbol}
                   </Text>
                 </View>
                 <TextInput
@@ -226,7 +310,7 @@ export default function SelectAssetAmount({
                   style={styles.amountInput}
                   value={amount}
                   onChangeText={handleAmountChange}
-                  placeholder="0.00"
+                  placeholder={isCryptoMode ? "0.00000000" : "0.00"}
                   placeholderTextColor={colors.textPlaceholder}
                   keyboardType="decimal-pad"
                   returnKeyType="done"
@@ -235,7 +319,30 @@ export default function SelectAssetAmount({
                   onSubmitEditing={handleSubmit}
                   accessibilityLabel="Amount input"
                 />
+                {/* Toggle button inside input */}
+                {selectedAsset && assetPriceUSD > 0 && (
+                  <TouchableOpacity
+                    style={styles.inputToggle}
+                    onPress={toggleInputMode}
+                    activeOpacity={0.7}
+                    accessibilityLabel={`Switch to ${isCryptoMode ? 'fiat' : 'crypto'} input`}
+                  >
+                    <ArrowRightLeft
+                      size={layout.iconSize.sm}
+                      color={colors.textTertiary}
+                      strokeWidth={2}
+                    />
+                  </TouchableOpacity>
+                )}
               </View>
+              {/* Show converted amount */}
+              {parseFloat(amount) > 0 && assetPriceUSD > 0 && (
+                <Text style={styles.convertedAmountText}>
+                  ≈ {isCryptoMode
+                    ? formatCurrency(convertedAmount)
+                    : `${convertedAmount.toFixed(8)} ${selectedAsset?.symbol}`}
+                </Text>
+              )}
               {amountError ? (
                 <View style={styles.errorRow}>
                   <Info size={14} color={colors.error} strokeWidth={2} />
@@ -375,6 +482,25 @@ const styles = StyleSheet.create({
     letterSpacing: typography.letterSpacing.wide,
     textTransform: 'uppercase',
   },
+  inputLabelRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  toggleButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    backgroundColor: colors.primaryLight,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing['2xs'],
+    borderRadius: borderRadius.full,
+  },
+  toggleButtonText: {
+    fontSize: typography.fontSize.xs,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.primary,
+  },
 
   // Asset Selector
   selectorContainer: {
@@ -472,6 +598,20 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
     height: '100%',
   },
+  inputToggle: {
+    width: 36,
+    height: 36,
+    borderRadius: borderRadius.md,
+    backgroundColor: colors.backgroundInput,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: spacing.sm,
+  },
+  convertedAmountText: {
+    fontSize: typography.fontSize.sm,
+    color: colors.textTertiary,
+    marginTop: spacing.xs,
+  },
   errorRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -517,17 +657,13 @@ const styles = StyleSheet.create({
     height: layout.buttonHeight,
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 1.5,
+    borderWidth: 1,
     borderColor: colors.borderLight,
   },
   goBackButtonText: {
     fontSize: typography.fontSize.md,
-    fontWeight: typography.fontWeight.medium,
-    color: colors.textSecondary,
-  },
-
-  // Icon
-  iconText: {
-    fontWeight: typography.fontWeight.bold,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.textPrimary,
+    letterSpacing: typography.letterSpacing.wide,
   },
 });
