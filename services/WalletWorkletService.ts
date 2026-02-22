@@ -7,7 +7,7 @@ import { setPrivateKeyAsync } from '../utils/SecureStoreWrapper';
 import binanceService from './BinanceService';
 import { BitcoinService, BTC_NETWORKS } from './BitcoinService';
 import solanaService from './SolanaService';
-import { getExecutionEnvironment, getThreadingMethod } from './worklets/CapabilityDetection';
+import { getExecutionEnvironment } from './worklets/CapabilityDetection';
 
 export interface WalletCreationResult {
   id: string;
@@ -35,22 +35,18 @@ export interface WalletGenerationStatus {
   error?: string;
 }
 
-type ThreadingMethod = 'threads' | 'worklets' | 'main-thread';
-
 /**
  * WalletWorkletService - Non-blocking wallet generation
  * 
  * This service generates cryptocurrency wallets without blocking the UI.
- * It uses the best available threading method:
+ * It uses the yield-to-UI pattern which works in all environments:
+ * - Expo Go
+ * - Development builds
+ * - Production builds
  * 
- * PRIORITY:
- * 1. react-native-threads (dev builds) - Full npm access, true background thread
- * 2. react-native-worklets-core (dev builds) - Limited, requires native crypto
- * 3. Main thread with yield-to-UI (Expo Go) - Compatible but slower
- * 
- * FALLBACK BEHAVIOR:
- * - Dev Build / Production: Uses background threads for wallet generation
- * - Expo Go: Falls back to chunked processing with yield-to-UI pattern
+ * The yield-to-UI pattern breaks up heavy computation into chunks with
+ * setTimeout delays, allowing the UI thread to process user interactions
+ * between chunks.
  */
 class WalletWorkletService {
   private readonly WALLETS_STORAGE_KEY = STORAGE_KEYS.wallets_data;
@@ -59,30 +55,9 @@ class WalletWorkletService {
     progress: 0,
   };
   private listeners: Array<(status: WalletGenerationStatus) => void> = [];
-  private threadingMethod: ThreadingMethod = 'main-thread';
-  private threadService: any = null;
 
   constructor() {
-    // Determine the best available threading method
-    this.threadingMethod = getThreadingMethod();
-
-    if (this.threadingMethod === 'threads') {
-      // Lazy load the thread service
-      try {
-        const { WalletThreadService } = require('./workers/WalletThreadService');
-        this.threadService = WalletThreadService.getInstance();
-        console.log('[WalletWorkletService] Using react-native-threads for background wallet generation');
-      } catch (error) {
-        console.warn('[WalletWorkletService] Failed to load thread service, falling back to main thread:', error);
-        this.threadingMethod = 'main-thread';
-      }
-    } else if (this.threadingMethod === 'worklets') {
-      // Worklets have limited crypto support, fall back to main thread
-      console.log('[WalletWorkletService] Worklets available but have limited crypto support, using main thread with yield-to-UI');
-      this.threadingMethod = 'main-thread';
-    } else {
-      console.log(`[WalletWorkletService] Running in ${getExecutionEnvironment()} mode, using main thread with yield-to-UI`);
-    }
+    console.log(`[WalletWorkletService] Running in ${getExecutionEnvironment()} mode, using main thread with yield-to-UI`);
   }
 
   /**
@@ -342,12 +317,8 @@ class WalletWorkletService {
 
       this.updateStatus({ progress: 10 });
 
-      // Use background thread if available, otherwise yield-to-UI pattern
-      if (this.threadingMethod === 'threads' && this.threadService) {
-        return await this.createWalletsWithThread(entropy, mnemonic, now);
-      } else {
-        return await this.createWalletsWithYieldToUI(entropy, mnemonic, now);
-      }
+      // Use yield-to-UI pattern for all environments
+      return await this.createWalletsWithYieldToUI(entropy, mnemonic, now);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
       this.updateStatus({ status: 'error', error: errorMessage });
@@ -356,97 +327,7 @@ class WalletWorkletService {
   }
 
   /**
-   * Create wallets using background thread (dev builds only)
-   * This runs all crypto operations on a separate JS thread
-   */
-  private async createWalletsWithThread(
-    entropy: string,
-    mnemonic: string,
-    now: number
-  ): Promise<MultiChainWalletResult> {
-    try {
-      // Run wallet generation on background thread
-      const rawWallets = await this.threadService.generateWallets(entropy, (progress: number) => {
-        this.updateStatus({ progress });
-      });
-
-      this.updateStatus({ progress: 90 });
-
-      // Create wallet results with proper IDs and storage
-      const ethWalletId = uuidv4();
-      await this.storeWalletSecrets(ethWalletId, rawWallets.ethereum.privateKey, mnemonic);
-
-      const solWalletId = uuidv4();
-      await this.storeWalletSecrets(solWalletId, rawWallets.solana.privateKey, mnemonic);
-
-      const btcWalletId = uuidv4();
-      await this.storeWalletSecrets(btcWalletId, rawWallets.bitcoin.privateKey, mnemonic);
-
-      const bnbWalletId = uuidv4();
-      await this.storeWalletSecrets(bnbWalletId, rawWallets.bnb.privateKey, mnemonic);
-
-      const wallets: MultiChainWalletResult = {
-        ethereum: {
-          id: ethWalletId,
-          address: rawWallets.ethereum.address,
-          publicKey: '',
-          type: 'ethereum',
-          network: process.env.EXPO_PUBLIC_ENVIRONMENT === 'production' ? 'mainnet' : 'sepolia',
-          balance: '0',
-          name: 'Ethereum Wallet',
-          createdAt: now,
-          updatedAt: now,
-        },
-        solana: {
-          id: solWalletId,
-          address: rawWallets.solana.address,
-          publicKey: rawWallets.solana.publicKey,
-          type: 'solana',
-          network: process.env.EXPO_PUBLIC_ENVIRONMENT === 'production' ? 'mainnet' : 'testnet',
-          balance: '0',
-          name: 'Solana Wallet',
-          createdAt: now,
-          updatedAt: now,
-        },
-        bitcoin: {
-          id: btcWalletId,
-          address: rawWallets.bitcoin.address,
-          publicKey: rawWallets.bitcoin.publicKey,
-          type: 'bitcoin',
-          network: process.env.EXPO_PUBLIC_ENVIRONMENT === 'production' ? 'mainnet' : 'testnet',
-          balance: '0',
-          name: 'Bitcoin Wallet',
-          createdAt: now,
-          updatedAt: now,
-        },
-        bnb: {
-          id: bnbWalletId,
-          address: rawWallets.bnb.address,
-          publicKey: rawWallets.bnb.publicKey,
-          type: 'bnb',
-          network: process.env.EXPO_PUBLIC_ENVIRONMENT === 'production' ? 'mainnet' : 'testnet',
-          balance: '0',
-          name: 'BNB Wallet',
-          createdAt: now,
-          updatedAt: now,
-        },
-      };
-
-      // Save all wallets in a single atomic write operation
-      await this.saveAllWalletsToStorage([wallets.ethereum, wallets.solana, wallets.bitcoin, wallets.bnb]);
-
-      this.updateStatus({ status: 'completed', progress: 100, wallets });
-
-      return wallets;
-    } catch (error) {
-      console.warn('[WalletWorkletService] Thread generation failed, falling back to main thread:', error);
-      // Fallback to yield-to-UI pattern
-      return await this.createWalletsWithYieldToUI(entropy, mnemonic, now);
-    }
-  }
-
-  /**
-   * Create wallets with yield-to-UI pattern (Expo Go compatible)
+   * Create wallets with yield-to-UI pattern (works in all environments)
    * Yields control between each wallet creation to allow UI updates
    */
   private async createWalletsWithYieldToUI(

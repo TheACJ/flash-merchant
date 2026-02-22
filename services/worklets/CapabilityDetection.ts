@@ -1,42 +1,19 @@
 /**
  * Threading Capability Detection
  * 
- * Detects whether background threading is available at runtime.
- * This allows conditional use of background threads for wallet generation.
+ * Detects the execution environment and available threading options.
+ * Currently supports main-thread with yield-to-UI pattern for maximum compatibility.
  * 
- * Priority:
- * 1. react-native-threads (best for crypto - full npm access)
- * 2. react-native-worklets-core (limited - no npm packages in worklet context)
- * 3. Main thread with yield-to-UI (Expo Go fallback)
+ * The yield-to-UI pattern breaks up heavy computation into chunks with
+ * setTimeout delays, allowing the UI thread to process user interactions
+ * between chunks.
  */
 
-let _threadsAvailable: boolean | null = null;
 let _workletsAvailable: boolean | null = null;
 
 /**
- * Check if react-native-threads is available
- * This is the preferred option for wallet generation
- */
-export function isThreadsAvailable(): boolean {
-    if (_threadsAvailable !== null) {
-        return _threadsAvailable;
-    }
-
-    try {
-        // Attempt to require the module
-        const threads = require('react-native-threads');
-        _threadsAvailable = !!(threads && threads.Thread);
-        return _threadsAvailable;
-    } catch {
-        // Module not available (Expo Go or not installed)
-        _threadsAvailable = false;
-        return false;
-    }
-}
-
-/**
  * Check if react-native-worklets-core is available
- * This is a fallback option (limited crypto support)
+ * Note: Worklets have limited crypto support, so we typically use main-thread
  */
 export function isWorkletsAvailable(): boolean {
     if (_workletsAvailable !== null) {
@@ -57,7 +34,7 @@ export function isWorkletsAvailable(): boolean {
 
 /**
  * Check if running in Expo Go
- * Expo Go doesn't support native modules like threads/worklets
+ * Expo Go doesn't support native modules like worklets
  */
 export function isExpoGo(): boolean {
     // Expo Go has a specific global constant
@@ -80,29 +57,12 @@ export function getExecutionEnvironment(): 'expo-go' | 'dev-client' | 'productio
 }
 
 /**
- * Check if background threading is supported
- * Prioritizes react-native-threads over worklets
- */
-export function isBackgroundThreadingSupported(): boolean {
-    return (isThreadsAvailable() || isWorkletsAvailable()) && !isExpoGo();
-}
-
-/**
  * Get the best available threading method
+ * Currently always returns 'main-thread' for maximum compatibility
  */
-export function getThreadingMethod(): 'threads' | 'worklets' | 'main-thread' {
-    if (isExpoGo()) {
-        return 'main-thread';
-    }
-
-    if (isThreadsAvailable()) {
-        return 'threads';
-    }
-
-    if (isWorkletsAvailable()) {
-        return 'worklets';
-    }
-
+export function getThreadingMethod(): 'main-thread' {
+    // Always use main-thread with yield-to-UI pattern
+    // This works in all environments (Expo Go, dev client, production)
     return 'main-thread';
 }
 
@@ -110,6 +70,5 @@ export function getThreadingMethod(): 'threads' | 'worklets' | 'main-thread' {
  * Reset cached values (useful for testing)
  */
 export function resetCapabilityCache(): void {
-    _threadsAvailable = null;
     _workletsAvailable = null;
 }
